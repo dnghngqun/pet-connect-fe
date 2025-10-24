@@ -2,7 +2,6 @@
 
 <div align="center">
 
-![Pet Connect Logo](./public/placeholder-logo.svg)
 
 **Nền tảng kết nối yêu thương - Lan tòa nhân ái**
 
