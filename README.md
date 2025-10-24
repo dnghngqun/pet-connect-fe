@@ -329,34 +329,6 @@ export default {
 }
 ```
 
-### Thêm Component Mới
-
-Sử dụng Shadcn/UI CLI:
-
-```bash
-npx shadcn@latest add [component-name]
-```
-
-Ví dụ:
-```bash
-npx shadcn@latest add table
-npx shadcn@latest add form
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Chạy tests (khi đã cấu hình)
-npm run test
-
-# Test coverage
-npm run test:coverage
-```
-
----
-
 ## 📦 Deployment
 
 ### Vercel (Khuyến nghị)
