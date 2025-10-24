@@ -1,10 +1,10 @@
 {
-  "name": "petpals-store",
+  "name": "pet-connect",
   "version": "1.0.0",
   "private": true,
   "author": "Codescandy Team",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next dev",
     "lint": "next lint"
