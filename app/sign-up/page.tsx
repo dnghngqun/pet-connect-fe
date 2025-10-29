@@ -21,12 +21,9 @@ export default function SignUpPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate account creation
-    setTimeout(() => {
-      setIsLoading(false)
-      // Redirect to home page after successful signup
-      window.location.href = "/"
-    }, 1500)
+    //call api use axios
+    window.location.href = "/"
+
   }
 
   return (
