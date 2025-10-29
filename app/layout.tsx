@@ -1,6 +1,7 @@
 import { CartProvider } from "@/components/cart-provider";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
+import PageBackground from "@/components/page-background";
 import { Toaster } from "@/components/ui/toaster";
 import { Inter } from "next/font/google";
 import type React from "react";
@@ -22,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className} suppressHydrationWarning={true}>
+        <PageBackground />
         <CartProvider>
           <div className="flex min-h-screen flex-col">
             <Header />

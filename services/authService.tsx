@@ -15,8 +15,8 @@ export const logout = () => {
   localStorage.removeItem('user');
 };
 
-export const register = async (email: string, password: string) => {
-  const response = await apiClient.post(COMMON_API.register, { email, password });
+export const register = async (fullName: string, phoneNumber: string, email: string, password: string) => {
+  const response = await apiClient.post(COMMON_API.register, {fullName, phoneNumber, email, password });
   return response.data;
 };
 
