@@ -1,3 +1,24 @@
+export interface PetPost {
+  id: string
+  title: string
+  slug: string
+  description: string
+  image: string
+  petType: string
+  status: "lost" | "found" | "for-adoption" | "rescue"
+  location: string
+  postedBy: {
+    id: string
+    name: string
+    phone: string
+    avatar?: string
+  }
+  createdAt: string
+  tags: string[]
+  featured?: boolean
+  views?: number
+}
+
 export interface Product {
   id: string
   name: string

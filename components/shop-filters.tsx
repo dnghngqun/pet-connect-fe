@@ -5,9 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
 import { Button } from "@/components/ui/button"
-import { Cat, Dog, X } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 export default function ShopFilters() {
@@ -15,32 +15,37 @@ export default function ShopFilters() {
   const searchParams = useSearchParams()
 
   // Get current filter values from URL
-  const currentCategory = searchParams.get("category") || ""
-  const currentPet = searchParams.get("pet") || ""
+  const currentStatus = searchParams.get("status") || ""
+  const currentPetType = searchParams.get("petType") || ""
+  const currentLocation = searchParams.get("location") || ""
   const currentSort = searchParams.get("sort") || ""
-  const currentMinPrice = searchParams.get("min") ? Number.parseFloat(searchParams.get("min") as string) : 0
-  const currentMaxPrice = searchParams.get("max") ? Number.parseFloat(searchParams.get("max") as string) : 100
 
   // Local state for filters
-  const [category, setCategory] = useState(currentCategory)
-  const [pet, setPet] = useState(currentPet)
+  const [status, setStatus] = useState(currentStatus)
+  const [petType, setPetType] = useState(currentPetType)
+  const [location, setLocation] = useState(currentLocation)
   const [sort, setSort] = useState(currentSort)
-  const [priceRange, setPriceRange] = useState<[number, number]>([currentMinPrice, currentMaxPrice])
 
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
 
-    if (category) {
-      params.set("category", category)
+    if (status) {
+      params.set("status", status)
     } else {
-      params.delete("category")
+      params.delete("status")
     }
 
-    if (pet) {
-      params.set("pet", pet)
+    if (petType) {
+      params.set("petType", petType)
     } else {
-      params.delete("pet")
+      params.delete("petType")
+    }
+
+    if (location) {
+      params.set("location", location)
+    } else {
+      params.delete("location")
     }
 
     if (sort) {
@@ -49,195 +54,198 @@ export default function ShopFilters() {
       params.delete("sort")
     }
 
-    if (priceRange[0] > 0) {
-      params.set("min", priceRange[0].toString())
-    } else {
-      params.delete("min")
-    }
-
-    if (priceRange[1] < 100) {
-      params.set("max", priceRange[1].toString())
-    } else {
-      params.delete("max")
-    }
-
     router.push(`/shop?${params.toString()}`)
-  }, [category, pet, sort, priceRange, router, searchParams])
+  }, [status, petType, location, sort, router, searchParams])
 
   // Reset all filters
   const resetFilters = () => {
-    setCategory("")
-    setPet("")
+    setStatus("")
+    setPetType("")
+    setLocation("")
     setSort("")
-    setPriceRange([0, 100])
     router.push("/shop")
   }
 
   // Check if any filters are active
-  const hasActiveFilters = category || pet || sort || priceRange[0] > 0 || priceRange[1] < 100
+  const hasActiveFilters = status || petType || location || sort
 
   return (
     <div className="space-y-6">
       {hasActiveFilters && (
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-medium">Active Filters</h3>
+          <h3 className="font-medium">Bộ lọc đang dùng</h3>
           <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 text-xs">
             <X className="h-3 w-3 mr-1" />
-            Clear All
+            Xóa tất cả
           </Button>
         </div>
       )}
 
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {category && (
+          {status && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Category: {category}
-              <Button variant="ghost" size="icon" onClick={() => setCategory("")} className="h-4 w-4 p-0 ml-1">
+              Trạng thái: {status}
+              <Button variant="ghost" size="icon" onClick={() => setStatus("")} className="h-4 w-4 p-0 ml-1">
                 <X className="h-3 w-3" />
-                <span className="sr-only">Remove category filter</span>
+                <span className="sr-only">Xóa bộ lọc trạng thái</span>
               </Button>
             </Badge>
           )}
 
-          {pet && (
+          {petType && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Pet: {pet}
-              <Button variant="ghost" size="icon" onClick={() => setPet("")} className="h-4 w-4 p-0 ml-1">
+              Loại: {petType}
+              <Button variant="ghost" size="icon" onClick={() => setPetType("")} className="h-4 w-4 p-0 ml-1">
                 <X className="h-3 w-3" />
-                <span className="sr-only">Remove pet filter</span>
+                <span className="sr-only">Xóa bộ lọc loại thú cưng</span>
               </Button>
             </Badge>
           )}
 
-          {(priceRange[0] > 0 || priceRange[1] < 100) && (
+          {location && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Price: ${priceRange[0]} - ${priceRange[1]}
-              <Button variant="ghost" size="icon" onClick={() => setPriceRange([0, 100])} className="h-4 w-4 p-0 ml-1">
+              Địa điểm: {location}
+              <Button variant="ghost" size="icon" onClick={() => setLocation("")} className="h-4 w-4 p-0 ml-1">
                 <X className="h-3 w-3" />
-                <span className="sr-only">Remove price filter</span>
+                <span className="sr-only">Xóa bộ lọc địa điểm</span>
               </Button>
             </Badge>
           )}
         </div>
       )}
 
-      <Accordion type="multiple" defaultValue={["category", "pet", "price", "sort"]}>
-        <AccordionItem value="category">
-          <AccordionTrigger>Category</AccordionTrigger>
+      <Accordion type="multiple" defaultValue={["status", "pet-type", "location", "sort"]}>
+        <AccordionItem value="status">
+          <AccordionTrigger>Trạng thái</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="category-toys"
-                  checked={category === "toys"}
-                  onCheckedChange={() => setCategory(category === "toys" ? "" : "toys")}
+                  id="status-lost"
+                  checked={status === "lost"}
+                  onCheckedChange={() => setStatus(status === "lost" ? "" : "lost")}
                 />
-                <Label htmlFor="category-toys">Toys</Label>
+                <Label htmlFor="status-lost">Thất lạc</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="category-food"
-                  checked={category === "food"}
-                  onCheckedChange={() => setCategory(category === "food" ? "" : "food")}
+                  id="status-found"
+                  checked={status === "found"}
+                  onCheckedChange={() => setStatus(status === "found" ? "" : "found")}
                 />
-                <Label htmlFor="category-food">Food</Label>
+                <Label htmlFor="status-found">Tìm thấy</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="category-supplements"
-                  checked={category === "supplements"}
-                  onCheckedChange={() => setCategory(category === "supplements" ? "" : "supplements")}
+                  id="status-adoption"
+                  checked={status === "for-adoption"}
+                  onCheckedChange={() => setStatus(status === "for-adoption" ? "" : "for-adoption")}
                 />
-                <Label htmlFor="category-supplements">Supplements</Label>
+                <Label htmlFor="status-adoption">Cần nhà</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="status-rescue"
+                  checked={status === "rescue"}
+                  onCheckedChange={() => setStatus(status === "rescue" ? "" : "rescue")}
+                />
+                <Label htmlFor="status-rescue">Cứu hộ</Label>
               </div>
             </div>
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="pet">
-          <AccordionTrigger>Pet Type</AccordionTrigger>
+        <AccordionItem value="pet-type">
+          <AccordionTrigger>Loại thú cưng</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="pet-cat"
-                  checked={pet === "cat"}
-                  onCheckedChange={() => setPet(pet === "cat" ? "" : "cat")}
-                />
-                <Label htmlFor="pet-cat" className="flex items-center">
-                  <Cat className="h-4 w-4 mr-1" /> Cats
-                </Label>
-              </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="pet-dog"
-                  checked={pet === "dog"}
-                  onCheckedChange={() => setPet(pet === "dog" ? "" : "dog")}
+                  checked={petType === "Chó"}
+                  onCheckedChange={() => setPetType(petType === "Chó" ? "" : "Chó")}
                 />
-                <Label htmlFor="pet-dog" className="flex items-center">
-                  <Dog className="h-4 w-4 mr-1" /> Dogs
-                </Label>
+                <Label htmlFor="pet-dog">Chó</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="pet-cat"
+                  checked={petType === "Mèo"}
+                  onCheckedChange={() => setPetType(petType === "Mèo" ? "" : "Mèo")}
+                />
+                <Label htmlFor="pet-cat">Mèo</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="pet-bird"
+                  checked={petType === "Chim"}
+                  onCheckedChange={() => setPetType(petType === "Chim" ? "" : "Chim")}
+                />
+                <Label htmlFor="pet-bird">Chim</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="pet-rabbit"
+                  checked={petType === "Thỏ"}
+                  onCheckedChange={() => setPetType(petType === "Thỏ" ? "" : "Thỏ")}
+                />
+                <Label htmlFor="pet-rabbit">Thỏ</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="pet-other"
+                  checked={petType === "Khác"}
+                  onCheckedChange={() => setPetType(petType === "Khác" ? "" : "Khác")}
+                />
+                <Label htmlFor="pet-other">Khác</Label>
               </div>
             </div>
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="price">
-          <AccordionTrigger>Price Range</AccordionTrigger>
+        <AccordionItem value="location">
+          <AccordionTrigger>Địa điểm</AccordionTrigger>
           <AccordionContent>
-            <div className="space-y-4">
-              <Slider
-                defaultValue={[priceRange[0], priceRange[1]]}
-                max={100}
-                step={1}
-                value={[priceRange[0], priceRange[1]]}
-                onValueChange={(value) => setPriceRange([value[0], value[1]])}
-                className="my-6"
+            <div className="space-y-2">
+              <Input
+                placeholder="Ví dụ: Q.1, TP.HCM"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="text-sm"
               />
-              <div className="flex items-center justify-between">
-                <span>${priceRange[0]}</span>
-                <span>${priceRange[1]}</span>
-              </div>
+              <p className="text-xs text-muted-foreground">Nhập từ khóa tìm kiếm địa điểm</p>
             </div>
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="sort">
-          <AccordionTrigger>Sort By</AccordionTrigger>
+          <AccordionTrigger>Sắp xếp theo</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="sort-price-asc"
-                  checked={sort === "price-asc"}
-                  onCheckedChange={() => setSort(sort === "price-asc" ? "" : "price-asc")}
-                />
-                <Label htmlFor="sort-price-asc">Price: Low to High</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="sort-price-desc"
-                  checked={sort === "price-desc"}
-                  onCheckedChange={() => setSort(sort === "price-desc" ? "" : "price-desc")}
-                />
-                <Label htmlFor="sort-price-desc">Price: High to Low</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="sort-rating"
-                  checked={sort === "rating"}
-                  onCheckedChange={() => setSort(sort === "rating" ? "" : "rating")}
-                />
-                <Label htmlFor="sort-rating">Highest Rated</Label>
-              </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="sort-newest"
                   checked={sort === "newest"}
                   onCheckedChange={() => setSort(sort === "newest" ? "" : "newest")}
                 />
-                <Label htmlFor="sort-newest">Newest First</Label>
+                <Label htmlFor="sort-newest">Mới nhất</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="sort-oldest"
+                  checked={sort === "oldest"}
+                  onCheckedChange={() => setSort(sort === "oldest" ? "" : "oldest")}
+                />
+                <Label htmlFor="sort-oldest">Cũ nhất</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="sort-views"
+                  checked={sort === "views"}
+                  onCheckedChange={() => setSort(sort === "views" ? "" : "views")}
+                />
+                <Label htmlFor="sort-views">Lượt xem nhiều</Label>
               </div>
             </div>
           </AccordionContent>

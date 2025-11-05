@@ -17,10 +17,10 @@ export default function Footer() {
           <div>
             <div className="flex items-center space-x-2">
               <PawPrint className="h-6 w-6 text-primary" />
-              <span className="font-bold text-xl">PetPals</span>
+              <span className="font-bold text-xl">PetConnect</span>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              What your pet needs, when they need it. Premium products for cats and dogs with same-day delivery.
+              Mạng xã hội kết nối cộng đồng cứu hộ động vật, giúp tìm thú cưng thất lạc và tìm nhà cho những bé cần nhận nuôi.
             </p>
             <div className="flex mt-6 space-x-4">
               <Link href="#" className="text-muted-foreground hover:text-primary">
@@ -42,96 +42,66 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <h3 className="text-sm font-semibold">Shop</h3>
+            <h3 className="text-sm font-semibold">Danh sách</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/shop?category=toys" className="text-sm text-muted-foreground hover:text-primary">
-                  Pet Toys
+                <Link href="/shop?status=lost" className="text-sm text-muted-foreground hover:text-primary">
+                  Thú cưng thất lạc
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=food" className="text-sm text-muted-foreground hover:text-primary">
-                  Pet Food
+                <Link href="/shop?status=found" className="text-sm text-muted-foreground hover:text-primary">
+                  Thú cưng tìm thấy
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=supplements" className="text-sm text-muted-foreground hover:text-primary">
-                  Supplements
+                <Link href="/shop?status=for-adoption" className="text-sm text-muted-foreground hover:text-primary">
+                  Cần nhà
                 </Link>
               </li>
               <li>
-                <Link href="/shop?category=cat" className="text-sm text-muted-foreground hover:text-primary">
-                  Cat Products
-                </Link>
-              </li>
-              <li>
-                <Link href="/shop?category=dog" className="text-sm text-muted-foreground hover:text-primary">
-                  Dog Products
+                <Link href="/shop?status=rescue" className="text-sm text-muted-foreground hover:text-primary">
+                  Cứu hộ động vật
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold">Company</h3>
+            <h3 className="text-sm font-semibold">Công ty</h3>
             <ul className="mt-4 space-y-2">
               <li>
                 <Link href="/about" className="text-sm text-muted-foreground hover:text-primary">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/careers" className="text-sm text-muted-foreground hover:text-primary">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="text-sm text-muted-foreground hover:text-primary">
-                  Blog
+                  Về chúng tôi
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary">
-                  Contact
+                  Liên hệ
+                </Link>
+              </li>
+              <li>
+                <Link href="/post/new" className="text-sm text-muted-foreground hover:text-primary">
+                  Đăng bài mới
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="text-sm font-semibold">Customer Service</h3>
+            <h3 className="text-sm font-semibold">Hỗ trợ</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/help" className="text-sm text-muted-foreground hover:text-primary">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link href="/shipping" className="text-sm text-muted-foreground hover:text-primary">
-                  Shipping & Delivery
-                </Link>
-              </li>
-              <li>
-                <Link href="/returns" className="text-sm text-muted-foreground hover:text-primary">
-                  Returns & Refunds
-                </Link>
-              </li>
-              <li>
                 <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/wishlist" className="text-sm text-muted-foreground hover:text-primary">
-                  Wishlist
+                  Liên hệ hỗ trợ
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">
-                  Privacy Policy
+                  Chính sách bảo mật
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary">
-                  Terms & Conditions
+                  Điều khoản & Điều kiện
                 </Link>
               </li>
             </ul>
@@ -139,7 +109,7 @@ export default function Footer() {
         </div>
         <div className="pt-8 mt-8 border-t">
             <p className="text-xs text-muted-foreground">
-            &copy; {year ?? "—"} PetPals. All rights reserved.
+            &copy; {year ?? "—"} PetConnect. Tất cả các quyền được bảo lưu.
           </p>
         </div>
       </div>

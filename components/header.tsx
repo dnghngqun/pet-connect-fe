@@ -4,16 +4,12 @@ import Link from "next/link"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ShoppingCart, Search, Menu, X, User, Heart, PawPrint, Cat, Dog } from "lucide-react"
-import { useCart } from "@/components/cart-provider"
+import { Search, Menu, X, User, PawPrint, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const { cartItems } = useCart()
-
-  const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -28,31 +24,22 @@ export default function Header() {
         <div className="flex items-center">
           <Link href="/" className="flex items-center space-x-2">
             <PawPrint className="h-6 w-6 text-primary" />
-            <span className="hidden font-bold sm:inline-block text-xl">PetPals</span>
+            <span className="hidden font-bold sm:inline-block text-xl">PetConnect</span>
           </Link>
         </div>
 
         <nav className="hidden md:flex mx-6 items-center space-x-4 lg:space-x-6">
           <Link href="/" className="text-sm font-medium transition-colors hover:text-primary">
-            Home
+            Trang chủ
           </Link>
           <Link href="/shop" className="text-sm font-medium transition-colors hover:text-primary">
-            Shop
-          </Link>
-          <Link
-            href="/shop?category=cat"
-            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
-          >
-            <Cat className="mr-1 h-4 w-4" /> Cats
-          </Link>
-          <Link
-            href="/shop?category=dog"
-            className="text-sm font-medium transition-colors hover:text-primary flex items-center"
-          >
-            <Dog className="mr-1 h-4 w-4" /> Dogs
+            Danh sách bài đăng
           </Link>
           <Link href="/about" className="text-sm font-medium transition-colors hover:text-primary">
-            About Us
+            Giới thiệu
+          </Link>
+          <Link href="/contact" className="text-sm font-medium transition-colors hover:text-primary">
+            Liên hệ
           </Link>
         </nav>
 
@@ -60,7 +47,7 @@ export default function Header() {
           {isSearchOpen && (
             <div className="relative w-full max-w-md mx-auto">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input type="search" placeholder="Search products..." className="w-full pl-8 rounded-full" />
+              <Input type="search" placeholder="Tìm kiếm bài đăng..." className="w-full pl-8 rounded-full" />
               <Button
                 variant="ghost"
                 size="icon"
@@ -68,7 +55,7 @@ export default function Header() {
                 onClick={() => setIsSearchOpen(false)}
               >
                 <X className="h-4 w-4" />
-                <span className="sr-only">Close search</span>
+                <span className="sr-only">Đóng tìm kiếm</span>
               </Button>
             </div>
           )}
@@ -78,26 +65,26 @@ export default function Header() {
           {!isSearchOpen && (
             <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(true)}>
               <Search className="h-5 w-5" />
-              <span className="sr-only">Search</span>
+              <span className="sr-only">Tìm kiếm</span>
             </Button>
           )}
 
-          <Link href="/wishlist">
-            <Button variant="ghost" size="icon">
-              <Heart className="h-5 w-5" />
-              <span className="sr-only">Wishlist</span>
+          <Link href="/post/new">
+            <Button variant="default" size="sm" className="hidden md:flex">
+              <Plus className="h-4 w-4 mr-2" />
+              Đăng bài
             </Button>
           </Link>
 
           <div className="hidden md:flex">
             <Link href="/sign-in">
               <Button variant="ghost" size="sm" className="mr-1">
-                Sign In
+                Đăng nhập
               </Button>
             </Link>
             <Link href="/sign-up">
               <Button variant="default" size="sm">
-                Sign Up
+                Đăng ký
               </Button>
             </Link>
           </div>
@@ -105,22 +92,10 @@ export default function Header() {
             <Link href="/sign-in">
               <Button variant="ghost" size="icon">
                 <User className="h-5 w-5" />
-                <span className="sr-only">Account</span>
+                <span className="sr-only">Tài khoản</span>
               </Button>
             </Link>
           </div>
-
-          <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
-                  {totalItems}
-                </span>
-              )}
-              <span className="sr-only">Cart</span>
-            </Button>
-          </Link>
         </div>
       </div>
 
@@ -133,49 +108,50 @@ export default function Header() {
               className="flex items-center gap-2 text-lg font-semibold"
               onClick={() => setIsMenuOpen(false)}
             >
-              Home
+              Trang chủ
             </Link>
             <Link
               href="/shop"
               className="flex items-center gap-2 text-lg font-semibold"
               onClick={() => setIsMenuOpen(false)}
             >
-              Shop
-            </Link>
-            <Link
-              href="/shop?category=cat"
-              className="flex items-center gap-2 text-lg font-semibold"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Cat className="h-5 w-5" /> Cats
-            </Link>
-            <Link
-              href="/shop?category=dog"
-              className="flex items-center gap-2 text-lg font-semibold"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Dog className="h-5 w-5" /> Dogs
+              Danh sách bài đăng
             </Link>
             <Link
               href="/about"
               className="flex items-center gap-2 text-lg font-semibold"
               onClick={() => setIsMenuOpen(false)}
             >
-              About Us
+              Giới thiệu
+            </Link>
+            <Link
+              href="/contact"
+              className="flex items-center gap-2 text-lg font-semibold"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Liên hệ
+            </Link>
+            <Link
+              href="/post/new"
+              className="flex items-center gap-2 text-lg font-semibold"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Plus className="h-5 w-5" />
+              Đăng bài
             </Link>
             <Link
               href="/sign-in"
               className="flex items-center gap-2 text-lg font-semibold"
               onClick={() => setIsMenuOpen(false)}
             >
-              Sign In
+              Đăng nhập
             </Link>
             <Link
               href="/sign-up"
               className="flex items-center gap-2 text-lg font-semibold"
               onClick={() => setIsMenuOpen(false)}
             >
-              Sign Up
+              Đăng ký
             </Link>
           </nav>
         </div>
