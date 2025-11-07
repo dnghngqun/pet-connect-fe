@@ -1,3 +1,42 @@
+export interface PetHealthRecord {
+  id: string
+  vaccinations: {
+    name: string
+    date: string
+    nextDue?: string
+  }[]
+  medicalHistory: {
+    date: string
+    condition: string
+    treatment: string
+    notes?: string
+  }[]
+  weight: {
+    date: string
+    value: number // kg
+  }[]
+  lastCheckup: string
+  allergies: string[]
+  notes?: string
+}
+
+export interface PetProfile {
+  id: string
+  name: string
+  type: string // Husky, Golden Retriever, etc.
+  breed?: string
+  age: number // months
+  gender: "male" | "female"
+  color?: string
+  size?: "small" | "medium" | "large"
+  weight?: number // kg
+  personality: string[] // friendly, playful, gentle, etc.
+  specialNeeds?: string
+  bio?: string
+  healthRecord: PetHealthRecord
+  photos: string[] // array of image URLs
+}
+
 export interface PetPost {
   id: string
   title: string
@@ -17,6 +56,7 @@ export interface PetPost {
   tags: string[]
   featured?: boolean
   views?: number
+  pet?: PetProfile // thông tin chi tiết pet liên quan
 }
 
 export interface Product {

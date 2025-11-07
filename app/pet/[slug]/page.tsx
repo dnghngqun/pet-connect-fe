@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Phone, Eye, MessageCircle, ArrowLeft, Share2, Flag } from 'lucide-react';
+import { MapPin, Phone, Eye, MessageCircle, ArrowLeft, Share2, Flag, Heart } from 'lucide-react';
 import { petPosts } from '@/lib/pet-posts';
+import PetHealthProfileDialog from '@/components/pet-health-profile-dialog';
+import PetInfoCard from '@/components/pet-info-card';
 
 interface PetDetailPageProps {
   params: {
@@ -105,6 +107,9 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
             </CardContent>
           </Card>
 
+          {/* Pet Info Card */}
+          {post.pet && <PetInfoCard pet={post.pet} />}
+
           {/* Tags */}
           {post.tags.length > 0 && (
             <Card>
@@ -123,6 +128,113 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Pet Info Card - New */}
+          {post.pet && (
+            <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Heart className="h-5 w-5 text-red-500" />
+                  Thông tin thú cưng
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Pet Image */}
+                {post.pet.photos && post.pet.photos.length > 0 && (
+                  <div className="relative rounded-lg overflow-hidden h-40 bg-muted">
+                    <Image
+                      src={post.pet.photos[0]}
+                      alt={post.pet.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Pet Basic Info */}
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Tên</p>
+                    <p className="text-lg font-bold">{post.pet.name}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Tuổi</p>
+                      <p className="font-semibold">
+                        {Math.floor(post.pet.age / 12)} năm {post.pet.age % 12} tháng
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Giới tính</p>
+                      <p className="font-semibold">
+                        {post.pet.gender === 'male' ? '🐾 Đực' : '🐾 Cái'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Cân nặng</p>
+                      <p className="font-semibold">{post.pet.weight} kg</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Loài</p>
+                      <p className="font-semibold text-sm">{post.pet.breed || post.pet.type}</p>
+                    </div>
+                  </div>
+
+                  {post.pet.personality && post.pet.personality.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Tính cách</p>
+                      <div className="flex flex-wrap gap-1">
+                        {post.pet.personality.slice(0, 3).map((trait) => (
+                          <Badge key={trait} variant="secondary" className="text-xs">
+                            {trait}
+                          </Badge>
+                        ))}
+                        {post.pet.personality.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{post.pet.personality.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {post.pet.color && (
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground">Màu sắc</p>
+                      <p className="font-semibold text-sm">{post.pet.color}</p>
+                    </div>
+                  )}
+
+                  {post.pet.bio && (
+                    <div className="bg-white/50 rounded-lg p-3">
+                      <p className="text-xs leading-relaxed text-muted-foreground italic">
+                        "{post.pet.bio}"
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Health Status Quick View */}
+                <div className="border-t pt-3 space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">Trạng thái sức khỏe</p>
+                  <div className="flex items-center gap-2 text-xs p-2 bg-green-100/50 rounded">
+                    <div className="h-2 w-2 bg-green-600 rounded-full"></div>
+                    <span className="font-semibold">Tiêm chủng cập nhật</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs p-2 bg-blue-100/50 rounded">
+                    <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+                    <span className="font-semibold">
+                      Kiểm tra: {new Date(post.pet.healthRecord.lastCheckup).toLocaleDateString('vi-VN')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* View Health Profile Button */}
+                <PetHealthProfileDialog pet={post.pet} />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Poster Info */}
           <Card>
             <CardHeader>
