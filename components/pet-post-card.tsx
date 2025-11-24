@@ -1,18 +1,39 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, Phone, Eye, MessageCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MapPin, Phone, MessageCircle, Heart, MoreVertical, Flag } from 'lucide-react';
+import ReportDialog from '@/components/report-dialog';
 import type { PetPost } from '@/lib/types';
 
 interface PetPostCardProps {
   post: PetPost;
+  onFavoriteToggle?: (postId: string, isFavorited: boolean) => void;
+  isFavorited?: boolean;
 }
 
-export default function PetPostCard({ post }: PetPostCardProps) {
+export default function PetPostCard({ post, onFavoriteToggle, isFavorited = false }: PetPostCardProps) {
+  const [favorite, setFavorite] = useState(isFavorited);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+
+  const handleFavoriteToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newState = !favorite;
+    setFavorite(newState);
+    onFavoriteToggle?.(post.id || '', newState);
+  };
+
   const statusConfig = {
     lost: { label: 'Thất lạc', color: 'bg-red-500' },
     found: { label: 'Tìm thấy', color: 'bg-blue-500' },
@@ -23,7 +44,15 @@ export default function PetPostCard({ post }: PetPostCardProps) {
   const config = statusConfig[post.status];
 
   return (
-    <Link href={`/pet/${post.slug}`}>
+    <Link
+      href={`/pet/${post.slug}`}
+      onClick={(e) => {
+        if (reportDialogOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
+    >
       <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:translate-y-[-4px] cursor-pointer h-full">
         {/* Image Section */}
         <div className="relative">
@@ -37,12 +66,46 @@ export default function PetPostCard({ post }: PetPostCardProps) {
           <Badge className={`${config.color} absolute top-2 left-2`}>
             {config.label}
           </Badge>
-          {post.views && (
-            <div className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-              <Eye className="h-3 w-3" />
-              {post.views}
-            </div>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute bottom-2 right-2 bg-white/90 hover:bg-white"
+            onClick={handleFavoriteToggle}
+          >
+            <Heart
+              className={`h-5 w-5 transition-colors ${
+                favorite ? 'fill-red-500 text-red-500' : 'text-gray-600'
+              }`}
+            />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 bg-white/90 hover:bg-white"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setReportDialogOpen(true);
+                }}
+                className="text-red-600 cursor-pointer"
+              >
+                <Flag className="h-4 w-4 mr-2" />
+                Báo cáo
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Content Section */}
@@ -97,7 +160,7 @@ export default function PetPostCard({ post }: PetPostCardProps) {
               }}
             >
               <Phone className="h-4 w-4 mr-1" />
-              Gọi
+              Goi
             </Button>
             <Button
               variant="default"
@@ -114,6 +177,15 @@ export default function PetPostCard({ post }: PetPostCardProps) {
           </div>
         </CardContent>
       </Card>
+
+      <ReportDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        postId={post.id}
+        userId={post.postedBy?.id}
+        postTitle={post.title}
+        userName={post.postedBy?.name}
+      />
     </Link>
   );
 }

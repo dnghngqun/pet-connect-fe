@@ -1,15 +1,26 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Menu, X, User, PawPrint, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import UserDropdown from "@/components/user-dropdown"
+import authService from "@/services/authService"
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    // Check if user is logged in on mount
+    const user = authService.getCurrentUser()
+    setIsLoggedIn(!!user)
+    setIsLoading(false)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -76,25 +87,35 @@ export default function Header() {
             </Button>
           </Link>
 
-          <div className="hidden md:flex">
-            <Link href="/sign-in">
-              <Button variant="ghost" size="sm" className="mr-1">
-                Đăng nhập
-              </Button>
-            </Link>
-            <Link href="/sign-up">
-              <Button variant="default" size="sm">
-                Đăng ký
-              </Button>
-            </Link>
+          <div className="hidden md:flex gap-2">
+            {!isLoading && !isLoggedIn ? (
+              <>
+                <Link href="/sign-in">
+                  <Button variant="ghost" size="sm" className="mr-1">
+                    Đăng nhập
+                  </Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button variant="default" size="sm">
+                    Đăng ký
+                  </Button>
+                </Link>
+              </>
+            ) : !isLoading ? (
+              <UserDropdown />
+            ) : null}
           </div>
           <div className="md:hidden">
-            <Link href="/sign-in">
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-                <span className="sr-only">Tài khoản</span>
-              </Button>
-            </Link>
+            {!isLoading && !isLoggedIn ? (
+              <Link href="/sign-in">
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">Tài khoản</span>
+                </Button>
+              </Link>
+            ) : !isLoading ? (
+              <UserDropdown />
+            ) : null}
           </div>
         </div>
       </div>

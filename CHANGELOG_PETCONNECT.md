@@ -1,4 +1,85 @@
-# PetConnect - Chuyển đổi từ Pet Shop sang Mạng xã hội Cứu hộ
+# PetConnect - Changelog
+
+---
+
+## 📅 Version 1.0.0 - November 21, 2025
+
+### ✨ Features Added
+
+#### 1. Authentication System
+- ✅ **Login Integration**
+  - API Endpoint: `POST /api/auth/login`
+  - Email & password validation
+  - JWT token management
+  - Error handling with toast notifications
+
+- ✅ **Registration System**
+  - API Endpoint: `POST /api/auth/register`
+  - Full form validation (name, email, phone, password)
+  - Auto-login after successful registration
+  - Password strength requirements
+  - Phone number validation (Vietnam & International)
+
+#### 2. Avatar & User Profile System
+- ✅ **Default Avatar System**
+  - 8 DiceBear Avatars (avataaars style)
+  - Random avatar assignment for new users
+  - Automatic fallback to initials if avatar fails to load
+  - Consistent avatar URL storage in localStorage
+
+- ✅ **User Dropdown Menu**
+  - Avatar display in header (32x32px)
+  - User info dropdown (name, email)
+  - Links: Profile, Logout
+  - Responsive design (desktop & mobile)
+  - Smooth dropdown animation
+
+#### 3. Header Integration
+- ✅ **Dynamic Authentication UI**
+  - Login check on component mount
+  - Conditional rendering: Login/Register buttons vs Avatar dropdown
+  - Loading state handling
+  - Mobile & Desktop responsive layouts
+  - Integration with UserDropdown component
+
+#### 4. LocalStorage Management
+- ✅ **Pet-Connect-User Key**
+  - Structured user data storage
+  - Token persistence
+  - Avatar URL caching
+  - Auto-clear on logout
+
+#### 5. Documentation
+- ✅ **IMPLEMENTATION_SUMMARY.md** - Feature overview
+- ✅ **AVATAR_SYSTEM.md** - Detailed avatar documentation
+- ✅ **QUICK_REFERENCE.md** - Quick start guide
+- ✅ **RESPONSES_DETAIL.md** - API response formats
+
+### 📁 Files Created
+- `components/user-dropdown.tsx` - User avatar dropdown component
+- `IMPLEMENTATION_SUMMARY.md` - Complete feature summary
+- `AVATAR_SYSTEM.md` - Avatar system documentation
+- `QUICK_REFERENCE.md` - Quick reference guide
+
+### 🔧 Files Modified
+- `services/authService.tsx` - Added default avatars & localStorage key
+- `components/header.tsx` - Added auth logic & UserDropdown integration
+- `RESPONSES_DETAIL.md` - Added login/register response examples
+
+### 🎨 UI Components Used
+- Shadcn UI Avatar
+- Shadcn UI Dropdown Menu
+- Shadcn UI Button
+- Shadcn UI Input
+- Lucide Icons (User, LogOut, Search, Menu, etc.)
+
+### 🌐 API Integration
+- Login endpoint: `POST /api/auth/login`
+- Register endpoint: `POST /api/auth/register`
+- Response structure with JWT tokens
+- Error handling (401, 400, 409)
+
+---
 
 ## 📋 Tóm tắt thay đổi
 
@@ -113,4 +194,3 @@ Dự án PetConnect bây giờ đã sẵn sàng:
 2. Thêm chức năng upload ảnh
 3. Tích hợp chat realtime
 4. Triển khai bản đồ vị trí
-
