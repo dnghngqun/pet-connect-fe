@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,33 @@ import { MapPin, Phone, Eye, MessageCircle, ArrowLeft, Share2, Flag, Heart } fro
 import { petPosts } from '@/lib/pet-posts';
 import PetHealthProfileDialog from '@/components/pet-health-profile-dialog';
 import PetInfoCard from '@/components/pet-info-card';
+
+function ChatButton({ postedBy }: { postedBy: { id?: string; _id?: string; name?: string; phone?: string } }) {
+  const router = useRouter();
+
+  const handleChat = () => {
+    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    if (!user) {
+      router.push('/sign-in');
+      return;
+    }
+
+    const participantId = postedBy?.id || postedBy?._id;
+    if (!participantId) {
+      router.push('/chat');
+      return;
+    }
+
+    router.push(`/chat?participantId=${encodeURIComponent(participantId)}`);
+  };
+
+  return (
+    <Button variant="outline" className="w-full" onClick={handleChat}>
+      <MessageCircle className="h-4 w-4 mr-2" />
+      Gửi tin nhắn
+    </Button>
+  );
+}
 
 interface PetDetailPageProps {
   params: {
@@ -268,17 +296,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                   <Phone className="h-4 w-4 mr-2" />
                   Gọi: {post.postedBy.phone}
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    // TODO: Implement chat
-                    alert('Chức năng chat sẽ được triển khai');
-                  }}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Gửi tin nhắn
-                </Button>
+                  <ChatButton postedBy={post.postedBy} />
               </div>
             </CardContent>
           </Card>

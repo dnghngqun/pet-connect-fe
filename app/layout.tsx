@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Inter } from "next/font/google";
 import type React from "react";
 import "./globals.css";
+import { RootLayoutClient } from "./root-layout-client";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,6 +33,7 @@ export default function RootLayout({
           </div>
           <Toaster />
         </CartProvider>
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   );
