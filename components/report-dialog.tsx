@@ -27,7 +27,7 @@ interface ReportDialogProps {
 const POST_REPORT_REASONS = [
   { id: 'spam', label: 'Spam hoặc quảng cáo' },
   { id: 'inappropriate', label: 'Nội dung không phù hợp' },
-  { id: 'harassment', label: 'Qu騷rão hoặc bắt nạt' },
+  { id: 'harassment', label: 'Quấy rối hoặc bắt nạt' },
   { id: 'scam', label: 'Lừa đảo hoặc gian dối' },
   { id: 'animal_abuse', label: 'Hành hạ động vật' },
   { id: 'misleading', label: 'Thông tin sai lệch' },

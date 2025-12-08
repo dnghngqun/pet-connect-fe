@@ -35,6 +35,7 @@ export interface PetProfile {
   bio?: string
   healthRecord: PetHealthRecord
   photos: string[] // array of image URLs
+  qrCodeUrl?: string // URL để fetch QR code từ backend (trả về binary data)
 }
 
 export interface PetPost {
@@ -54,8 +55,6 @@ export interface PetPost {
   }
   createdAt: string
   tags: string[]
-  featured?: boolean
-  views?: number
   pet?: PetProfile // thông tin chi tiết pet liên quan
 }
 

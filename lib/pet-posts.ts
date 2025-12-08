@@ -214,7 +214,8 @@ export const petPosts: PetPost[] = [
       },
       photos: [
         "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?q=80&w=800&auto=format&fit=crop"
-      ]
+      ],
+      qrCodeUrl: "http://localhost:8080/api/pets/pet4/qr-code"
     }
   },
   {
@@ -234,8 +235,6 @@ export const petPosts: PetPost[] = [
     },
     createdAt: "2024-11-01T11:20:00Z",
     tags: ["adoption", "cat", "cute"],
-    featured: false,
-    views: 2100,
     pet: {
       id: "pet5",
       name: "Miu",
@@ -267,8 +266,8 @@ export const petPosts: PetPost[] = [
       },
       photos: [
         "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop"
-      ]
-    }
+      ],
+      qrCodeUrl: "http://localhost:8080/api/pets/pet5/qr-code"
+    },
   },
 ]
-
