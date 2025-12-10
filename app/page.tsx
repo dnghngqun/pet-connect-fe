@@ -7,8 +7,8 @@ import { petPosts } from '@/lib/pet-posts';
 import HeroSlider from '@/components/hero-slider';
 
 export default function Home() {
-  const featuredPosts = petPosts.slice(0, 8); // Hiển thị 8 bài đăng đầu tiên
-  const recentPosts = petPosts.slice(0, 6);
+  const featuredPosts = petPosts.filter(post => post.featured).slice(0, 8); // Bài đăng nổi bật
+  const recentPosts = petPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6); // 6 bài gần đây nhất
 
   return (
     <div className="flex flex-col min-h-screen">

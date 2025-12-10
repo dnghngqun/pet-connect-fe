@@ -1,36 +1,13 @@
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, Eye, MapPin, Heart, QrCode } from 'lucide-react';
 import { petPosts } from '@/lib/pet-posts';
-import PetDetailClient from '@/components/pet-detail-client';
-
-function ChatButton({ postedBy }: { postedBy: { id?: string; _id?: string; name?: string; phone?: string } }) {
-  const router = useRouter();
-
-  const handleChat = () => {
-    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
-    if (!user) {
-      router.push('/sign-in');
-      return;
-    }
-
-    const participantId = postedBy?.id || postedBy?._id;
-    if (!participantId) {
-      router.push('/chat');
-      return;
-    }
-
-    router.push(`/chat?participantId=${encodeURIComponent(participantId)}`);
-  };
-
-  return (
-    <Button variant="outline" className="w-full" onClick={handleChat}>
-      <MessageCircle className="h-4 w-4 mr-2" />
-      Gửi tin nhắn
-    </Button>
-  );
-}
+import PetHealthProfileDialog from '@/components/pet-health-profile-dialog';
+import PetContactButtons from '@/components/pet-contact-buttons';
+import PetQRImage from '@/components/pet-qr-image';
 
 interface PetDetailPageProps {
   params: Promise<{
@@ -138,8 +115,6 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
             </CardContent>
           </Card>
 
-          {/* Pet Info Card */}
-          {post.pet && <PetInfoCard pet={post.pet} />}
 
           {/* Tags */}
           {post.tags.length > 0 && (
@@ -262,6 +237,28 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
 
                 {/* View Health Profile Button */}
                 <PetHealthProfileDialog pet={post.pet} />
+
+                {/* QR Code Section */}
+                {post.pet.qrCodeUrl && (
+                  <div className="border-t pt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <QrCode className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-semibold">Mã QR thú cưng</p>
+                    </div>
+                    <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
+                      <PetQRImage
+                        src={post.pet.qrCodeUrl}
+                        alt={`QR Code for ${post.pet.name}`}
+                        width={160}
+                        height={160}
+                        className="border border-border rounded"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Quét mã QR để xem thông tin chi tiết về {post.pet.name}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -291,30 +288,9 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
               </div>
 
               {/* Contact Buttons */}
-              <div className="space-y-2 pt-4 border-t">
-                <Button
-                  className="w-full"
-                  onClick={() => window.location.href = `tel:${post.postedBy.phone}`}
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  Gọi: {post.postedBy.phone}
-                </Button>
-                  <ChatButton postedBy={post.postedBy} />
-              </div>
+              <PetContactButtons postedBy={post.postedBy} />
             </CardContent>
           </Card>
-
-          {/* Actions */}
-          <div className="space-y-2">
-            <Button variant="outline" className="w-full">
-              <Share2 className="h-4 w-4 mr-2" />
-              Chia sẻ
-            </Button>
-            <Button variant="outline" className="w-full text-red-600">
-              <Flag className="h-4 w-4 mr-2" />
-              Báo cáo
-            </Button>
-          </div>
 
           {/* Related Info */}
           <Card>

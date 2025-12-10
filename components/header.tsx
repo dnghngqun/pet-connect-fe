@@ -4,9 +4,10 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Menu, X, User, PawPrint, Plus } from "lucide-react"
+import { Search, Menu, X, User, PawPrint, Plus, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import UserDropdown from "@/components/user-dropdown"
+import NotificationCenter from "@/components/notification-center"
 import authService from "@/services/authService"
 
 export default function Header() {
@@ -46,6 +47,15 @@ export default function Header() {
           <Link href="/shop" className="text-sm font-medium transition-colors hover:text-primary">
             Danh sách bài đăng
           </Link>
+          <Link href="/nearby" className="text-sm font-medium transition-colors hover:text-primary">
+            Gần bạn
+          </Link>
+          <Link href="/fundraising" className="text-sm font-medium transition-colors hover:text-primary">
+            Gây quỹ
+          </Link>
+          <Link href="/rescue-centers" className="text-sm font-medium transition-colors hover:text-primary">
+            Cứu hộ
+          </Link>
           <Link href="/about" className="text-sm font-medium transition-colors hover:text-primary">
             Giới thiệu
           </Link>
@@ -78,6 +88,16 @@ export default function Header() {
               <Search className="h-5 w-5" />
               <span className="sr-only">Tìm kiếm</span>
             </Button>
+          )}
+
+          <Link href="/nearby">
+            <Button variant="ghost" size="icon" title="Khám phá gần bạn">
+              <MapPin className="h-5 w-5" />
+            </Button>
+          </Link>
+
+          {!isLoading && isLoggedIn && (
+            <NotificationCenter userId={authService.getCurrentUser()?.id} />
           )}
 
           <Link href="/post/new">
@@ -137,6 +157,27 @@ export default function Header() {
               onClick={() => setIsMenuOpen(false)}
             >
               Danh sách bài đăng
+            </Link>
+            <Link
+              href="/nearby"
+              className="flex items-center gap-2 text-lg font-semibold"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Gần bạn
+            </Link>
+            <Link
+              href="/fundraising"
+              className="flex items-center gap-2 text-lg font-semibold"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Gây quỹ
+            </Link>
+            <Link
+              href="/rescue-centers"
+              className="flex items-center gap-2 text-lg font-semibold"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Cứu hộ
             </Link>
             <Link
               href="/about"
