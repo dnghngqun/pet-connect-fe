@@ -59,7 +59,9 @@ export default function ProductCard({ product, compact = false }: ProductCardPro
 
           {product.isNew && <Badge className="absolute top-2 left-2 bg-primary">New</Badge>}
 
-          {product.discount > 0 && <Badge className="absolute top-2 right-2 bg-green-600">{product.discount}% OFF</Badge>}
+          {typeof product.discount === 'number' && product.discount > 0 && (
+            <Badge className="absolute top-2 right-2 bg-green-600">{product.discount}% OFF</Badge>
+          )}
 
           {!compact && (
             <div className={cn('absolute bottom-0 right-0  p-2 transform transition-transform duration-300', isHovered ? 'translate-y-0' : 'translate-y-0')}>

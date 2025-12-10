@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ interface PetPostCardProps {
 export default function PetPostCard({ post, onFavoriteToggle, isFavorited = false }: PetPostCardProps) {
   const [favorite, setFavorite] = useState(isFavorited);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const router = useRouter();
 
   const handleFavoriteToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -168,7 +170,24 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
               className="flex-1"
               onClick={(e) => {
                 e.preventDefault();
-                // TODO: Implement chat functionality
+                e.stopPropagation();
+
+                const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+                if (!user) {
+                  // redirect to sign-in if not logged in
+                  router.push('/sign-in');
+                  return;
+                }
+
+                const participantId = post.postedBy?.id;
+                if (!participantId) {
+                  // fallback: open chat list
+                  router.push('/chat');
+                  return;
+                }
+
+                // Navigate to chat and let chat page create/select the conversation
+                router.push(`/chat?participantId=${encodeURIComponent(participantId)}`);
               }}
             >
               <MessageCircle className="h-4 w-4 mr-1" />
