@@ -63,7 +63,7 @@ export function ChatFooter({ onReplyCancel, replyTo }: Props) {
   };
 
   return (
-    <div className="border-t bg-white p-4 space-y-3">
+    <div className="absolute bottom-0 left-0 right-0 z-10 border-t bg-white p-4 space-y-3">
       {replyTo && (
         <div className="flex items-center justify-between bg-gray-100 p-3 rounded border-l-4 border-blue-500">
           <div className="text-sm">

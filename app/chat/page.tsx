@@ -7,8 +7,9 @@ import { useSearchParams } from 'next/navigation';
 export default function ChatPage() {
   const params = useSearchParams();
   const participantId = params?.get('participantId') || undefined;
+  const demo = params?.get('demo') === '1';
   return (
-    <ChatProvider>
+    <ChatProvider demo={demo}>
       <ChatContainer initialParticipantId={participantId} />
     </ChatProvider>
   );

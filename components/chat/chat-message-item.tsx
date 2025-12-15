@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useChat } from "@/hooks/useChat";
 import type { MessageType } from "@/lib/chat.types";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -13,8 +13,8 @@ interface Props {
 }
 
 export default function ChatMessageItem({ message, onReply }: Props) {
-  const { user } = useAuth();
-  const isCurrentUser = user?._id === message.sender._id;
+  const { currentUser } = useChat();
+  const isCurrentUser = currentUser?._id === message.sender._id;
 
   return (
     <div className={`flex gap-3 ${isCurrentUser ? "justify-end" : "justify-start"}`}>

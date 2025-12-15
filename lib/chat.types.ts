@@ -42,3 +42,11 @@ export type CreateMessagePayload = {
   image?: string;
   replyToId?: string;
 };
+
+export type ConversationRow = {
+  id: number | string;
+  user_one_id: number | string;
+  user_two_id: number | string;
+  last_message_id: number | string | null;
+  updated_at: string;
+};

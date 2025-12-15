@@ -33,7 +33,7 @@ export default function RootLayout({
           </div>
           <Toaster />
         </CartProvider>
-        <RootLayoutClient>{children}</RootLayoutClient>
+        <RootLayoutClient children={undefined} />
       </body>
     </html>
   );

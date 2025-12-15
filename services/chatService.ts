@@ -16,9 +16,20 @@ export const chatAPI = {
 
   getSingleChat: async (chatId: string) => {
     const response = await apiClient.get(`/chat/${chatId}`);
+    const rawMessages = response.data.messages;
+    let messages: MessageType[] = [];
+    let pagination: any = response.data.pagination ?? rawMessages?.pagination ?? null;
+
+    if (Array.isArray(rawMessages)) {
+      messages = rawMessages as MessageType[];
+    } else if (rawMessages && rawMessages.items) {
+      messages = rawMessages.items as MessageType[];
+    }
+
     return {
       chat: response.data.chat as ChatType,
-      messages: response.data.messages as MessageType[],
+      messages,
+      pagination,
     };
   },
 

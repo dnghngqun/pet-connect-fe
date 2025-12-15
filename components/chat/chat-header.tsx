@@ -1,7 +1,6 @@
 "use client";
 
 import { useChat } from "@/hooks/useChat";
-import { useAuth } from "@/hooks/useAuth";
 import type { ChatType } from "@/lib/chat.types";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
@@ -23,8 +22,7 @@ function getChatDisplayName(
 }
 
 export function ChatHeader() {
-  const { currentChat, isMessagesLoading } = useChat();
-  const { user } = useAuth();
+  const { currentChat, isMessagesLoading, currentUser } = useChat();
 
   if (!currentChat) {
     return (
@@ -34,8 +32,8 @@ export function ChatHeader() {
     );
   }
 
-  const displayName = getChatDisplayName(currentChat, user?._id);
-  const otherUser = getOtherParticipant(currentChat, user?._id);
+  const displayName = getChatDisplayName(currentChat, currentUser?._id);
+  const otherUser = getOtherParticipant(currentChat, currentUser?._id);
 
   return (
     <div className="border-b bg-white p-4 flex items-center justify-between h-20">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useChat } from "@/hooks/useChat";
-import { useAuth } from "@/hooks/useAuth";
 import type { ChatType } from "@/lib/chat.types";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
@@ -50,8 +49,7 @@ function getLastMessagePreview(chat: ChatType, currentUserId: string | undefined
 }
 
 export function ChatList({ selectedChatId, onSelectChat }: Props) {
-  const { chats, isChatsLoading, selectChat } = useChat();
-  const { user } = useAuth();
+  const { chats, isChatsLoading, selectChat, currentUser } = useChat();
 
   const handleSelectChat = async (chatId: string) => {
     await selectChat(chatId);
@@ -77,9 +75,9 @@ export function ChatList({ selectedChatId, onSelectChat }: Props) {
   return (
     <div className="space-y-2 p-2">
       {chats.map((chat) => {
-        const displayName = getChatDisplayName(chat, user?._id);
-        const otherUser = getOtherParticipant(chat, user?._id);
-        const lastMessagePreview = getLastMessagePreview(chat, user?._id);
+        const displayName = getChatDisplayName(chat, currentUser?._id);
+        const otherUser = getOtherParticipant(chat, currentUser?._id);
+        const lastMessagePreview = getLastMessagePreview(chat, currentUser?._id);
         const lastMessageTime = chat.lastMessage
           ? formatDistanceToNow(new Date(chat.lastMessage.createdAt), {
               addSuffix: false,

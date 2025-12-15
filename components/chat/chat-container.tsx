@@ -33,6 +33,15 @@ export function ChatContainer({ initialParticipantId }: { initialParticipantId?:
     })();
   }, [initialParticipantId, createChat, selectChat]);
 
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.debug("ChatContainer mounted", { initialParticipantId });
+    return () => {
+      // eslint-disable-next-line no-console
+      console.debug("ChatContainer unmounted");
+    };
+  }, [initialParticipantId]);
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Chat List Sidebar */}
@@ -50,7 +59,7 @@ export function ChatContainer({ initialParticipantId }: { initialParticipantId?:
       </div>
 
       {/* Chat Main Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col relative">
         <ChatHeader />
         <ChatBody onReply={setReplyTo} />
         <ChatFooter onReplyCancel={() => setReplyTo(null)} replyTo={replyTo} />
