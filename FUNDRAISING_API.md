@@ -72,7 +72,8 @@ GET /fundraising/campaigns
         "relatedPet": {
           "id": "pet-1",
           "name": "Max",
-          "image": "https://..."
+          "image": "https://...",
+          "qrCodeUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAeFBMVEX..."
         },
         "totalDonors": 45,
         "createdAt": "2024-11-01T00:00:00Z",
@@ -126,7 +127,8 @@ GET /fundraising/campaigns/{campaignId}
       "type": "Husky",
       "breed": "Siberian Husky",
       "age": 36,
-      "image": "https://..."
+      "image": "https://...",
+      "qrCodeUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAeFBMVEX..."
     },
     "updates": [
       {
@@ -431,6 +433,104 @@ X-Signature: {signature}
 
 ---
 
+### 5. Pet QR Code (Mã QR thú cưng)
+
+#### 5.1 Get Pet QR Code
+```
+GET /fundraising/campaigns/{campaignId}/pet/qr-code
+```
+
+**Response:** `200 OK`
+```json
+{
+  "code": "0000",
+  "message": "Thành công",
+  "data": {
+    "petId": "pet-1",
+    "petName": "Max",
+    "qrCodeData": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAeFBMVEX...",
+    "encodedUrl": "https://petconnect.vn/pet/cho-husky-mat-tich-quan-1",
+    "format": "png",
+    "size": "300x300",
+    "generatedAt": "2024-12-10T10:00:00Z"
+  }
+}
+```
+
+#### 5.2 Download Pet QR Code
+```
+GET /fundraising/campaigns/{campaignId}/pet/qr-code/download
+```
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| format | string | `png`, `jpg`, `svg` (default: `png`) |
+| size | number | `100`, `200`, `300`, `500` (default: `300`) |
+
+**Response:** `200 OK` (Binary image file)
+
+#### 5.3 Get Pet Details with QR
+```
+GET /fundraising/campaigns/{campaignId}/pet
+```
+
+**Response:** `200 OK`
+```json
+{
+  "code": "0000",
+  "message": "Thành công",
+  "data": {
+    "id": "pet-1",
+    "name": "Max",
+    "type": "Husky",
+    "breed": "Siberian Husky",
+    "age": 36,
+    "gender": "male",
+    "color": "Trắng xám",
+    "weight": 28,
+    "size": "large",
+    "personality": ["hiếu kỳ", "năng động", "thân thiện", "thông minh"],
+    "specialNeeds": "Không có",
+    "bio": "Max là một chú Husky 3 tuổi...",
+    "photos": [
+      "https://images.unsplash.com/photo-1574158622682...",
+      "https://..."
+    ],
+    "qrCodeUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJI...",
+    "healthRecord": {
+      "id": "health-1",
+      "lastCheckup": "2024-09-15",
+      "vaccinations": [
+        {
+          "name": "Rabies",
+          "date": "2024-09-15",
+          "nextDue": "2025-09-15"
+        }
+      ],
+      "medicalHistory": [
+        {
+          "date": "2024-09-15",
+          "condition": "Khám sức khỏe thường niên",
+          "treatment": "Kiểm tra toàn thân, Tiêm vaccine",
+          "notes": "Tình trạng tốt"
+        }
+      ],
+      "weight": [
+        {
+          "date": "2024-09-15",
+          "value": 28
+        }
+      ],
+      "allergies": ["Thịt gà"],
+      "notes": "Cần tập thể dục thường xuyên"
+    }
+  }
+}
+```
+
+---
+
 ### 4. Dashboard (Authenticated - Creator)
 
 #### 4.1 Get My Campaigns
@@ -578,6 +678,7 @@ curl -X POST http://localhost:8080/api/fundraising/donations \
 - User scans QR code hoặc nhập số điện thoại
 - Xác nhận và thanh toán
 - Payment Gateway gọi callback
+- **Note:** Người quyên góp cũng có thể quét mã QR của thú cưng để xem chi tiết hồ sơ sức khỏe
 
 **Step 3: Backend Webhook Callback**
 ```bash

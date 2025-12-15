@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { fundraisingCampaigns, donations } from '@/lib/fundraising'
-import { Heart, Share2, ArrowLeft, User } from 'lucide-react'
+import { Heart, Share2, ArrowLeft, User, QrCode } from 'lucide-react'
+import PetQRImage from '@/components/pet-qr-image'
 
 interface FundraisingDetailPageProps {
   params: {
@@ -380,9 +381,9 @@ export default function FundraisingDetailPage({
                   Thú cưng liên quan
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {campaign.relatedPet.image && (
-                  <div className="relative h-32 rounded-lg overflow-hidden mb-3">
+                  <div className="relative h-32 rounded-lg overflow-hidden">
                     <Image
                       src={campaign.relatedPet.image}
                       alt={campaign.relatedPet.name}
@@ -392,6 +393,28 @@ export default function FundraisingDetailPage({
                   </div>
                 )}
                 <p className="font-semibold text-lg">{campaign.relatedPet.name}</p>
+
+                {/* QR Code Section */}
+                {campaign.relatedPet.qrCodeUrl && (
+                  <div className="border-t pt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <QrCode className="h-4 w-4 text-primary" />
+                      <p className="text-sm font-semibold">Mã QR thú cưng</p>
+                    </div>
+                    <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
+                      <PetQRImage
+                        src={campaign.relatedPet.qrCodeUrl}
+                        alt={`QR Code for ${campaign.relatedPet.name}`}
+                        width={140}
+                        height={140}
+                        className="border border-border rounded"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Quét mã QR để xem hồ sơ sức khỏe của {campaign.relatedPet.name}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
