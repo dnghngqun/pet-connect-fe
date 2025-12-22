@@ -104,6 +104,11 @@ export default function Footer() {
                   Điều khoản & Điều kiện
                 </Link>
               </li>
+              <li>
+                <Link href="/organization-reports" className="text-sm text-muted-foreground hover:text-primary">
+                  Báo cáo tổ chức
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
