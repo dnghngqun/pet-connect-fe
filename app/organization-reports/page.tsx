@@ -41,8 +41,7 @@ type FilterTab = 'all' | ReportStatus;
 
 const FILTER_TABS: { id: FilterTab; label: string; icon: React.ElementType }[] = [
   { id: 'all', label: 'Tất cả', icon: FileText },
-  { id: 'DRAFT', label: 'Lưu nháp', icon: FileText },
-  { id: 'PENDING', label: 'Chờ xử lý', icon: Clock },
+  { id: 'RECEIVED', label: 'Chờ xử lý', icon: Clock },
   { id: 'RESOLVED', label: 'Đã xử lý', icon: CheckCircle },
   { id: 'REFUSED', label: 'Từ chối', icon: XCircle },
 ];
@@ -117,9 +116,8 @@ export default function OrganizationReportsPage() {
 
   const getStatusIcon = (status: ReportStatus) => {
     switch (status) {
-      case 'DRAFT':
-        return <FileText className="h-3.5 w-3.5" />;
-      case 'PENDING':
+      case 'CREATED':
+      case 'RECEIVED':
         return <Clock className="h-3.5 w-3.5" />;
       case 'RESOLVED':
         return <CheckCircle className="h-3.5 w-3.5" />;
@@ -328,8 +326,7 @@ export default function OrganizationReportsPage() {
                     {config.label}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {status === 'DRAFT' && '- Có thể chỉnh sửa'}
-                    {status === 'PENDING' && '- Đang chờ Admin'}
+                    {(status === 'CREATED' || status === 'RECEIVED') && '- Đang chờ Admin'}
                     {status === 'RESOLVED' && '- Đã hoàn tất'}
                     {status === 'REFUSED' && '- Có thể gửi lại'}
                   </span>

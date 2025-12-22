@@ -8,7 +8,12 @@ Database Tables Used:
 - organizations (for organization info)
 - users (for reporter info)
 
-Status Flow: CREATED (Lưu nháp) -> RECEIVED (Chờ xử lý) -> RESOLVED/REFUSED
+Status Flow (theo DB): RECEIVED -> RESOLVED/REFUSED
+
+Lưu ý:
+- KHÔNG có tính năng lưu nháp (draft)
+- User gửi báo cáo -> status = RECEIVED (chờ xử lý)
+- Admin xử lý -> status = RESOLVED hoặc REFUSED
 
 ================================================================================
                               1. GET MY REPORTS
@@ -19,7 +24,7 @@ Endpoint: GET /api/v1/reports/my-reports
 Auth: Required (Bearer Token)
 
 Query Parameters:
-  - status (optional): CREATED | RECEIVED | RESOLVED | REFUSED
+  - status (optional): RECEIVED | RESOLVED | REFUSED
   - page (optional): number, default 0
   - size (optional): number, default 10
   - sort (optional): string, default "createdAt,desc"
@@ -140,12 +145,13 @@ Create a new organization report
 Endpoint: POST /api/v1/reports
 Auth: Required (Bearer Token)
 
+Lưu ý: KHÔNG có isDraft - báo cáo được gửi trực tiếp với status = RECEIVED (chờ xử lý)
+
 Request Body:
 {
   "targetId": 5,                      // organization.id (required)
   "targetType": "ORGANIZATION",       // always "ORGANIZATION" for this feature
-  "content": "Mô tả chi tiết vấn đề...", // required, min 20 chars
-  "isDraft": false                    // true = CREATED, false = RECEIVED
+  "content": "Mô tả chi tiết vấn đề..." // required, min 20 chars
 }
 
 Response 201 Created:
@@ -154,7 +160,7 @@ Response 201 Created:
   "data": {
     "id": 15,
     "content": "Mô tả chi tiết vấn đề...",
-    "status": "RECEIVED",             // or "CREATED" if isDraft=true
+    "status": "RECEIVED",
     "targetId": 5,
     "targetType": "ORGANIZATION",
     "reporterId": 10,
@@ -172,7 +178,7 @@ Response 201 Created:
       "isVerified": true
     }
   },
-  "message": "Tạo báo cáo thành công"
+  "message": "Gửi báo cáo thành công"
 }
 
 Response 400 Bad Request:
@@ -194,21 +200,22 @@ Response 404 Not Found:
 
 
 ================================================================================
-                           4. UPDATE REPORT
+                           4. UPDATE REPORT (khi bị từ chối)
 ================================================================================
-Update an existing report (only allowed for CREATED or REFUSED status)
+Update an existing report (only allowed for REFUSED status)
 
 Endpoint: PUT /api/v1/reports/{id}
 Auth: Required (Bearer Token)
-Note: Only reporter can update. Only when status = CREATED or REFUSED
+Note: Only reporter can update. Only when status = REFUSED
+
+Khi bài báo cáo bị từ chối, user có thể chỉnh sửa và gửi lại.
 
 Path Parameters:
   - id: report ID
 
 Request Body:
 {
-  "content": "Nội dung báo cáo đã cập nhật...", // required, min 20 chars
-  "isDraft": false                              // true = keep CREATED, false = change to RECEIVED
+  "content": "Nội dung báo cáo đã cập nhật..." // required, min 20 chars
 }
 
 Response 200 OK:
@@ -217,23 +224,23 @@ Response 200 OK:
   "data": {
     "id": 1,
     "content": "Nội dung báo cáo đã cập nhật...",
-    "status": "RECEIVED",
+    "status": "RECEIVED",     // chờ xử lý lại
     "targetId": 5,
     "targetType": "ORGANIZATION",
     "reporterId": 10,
     "createdAt": "2024-12-15T08:30:00Z",
     "updatedAt": "2024-12-22T11:00:00Z",
     "organization": { ... },
-    "adminResponse": null   // cleared when resubmitting from REFUSED
+    "adminResponse": null   // cleared when resubmitting
   },
-  "message": "Cập nhật báo cáo thành công"
+  "message": "Gửi lại báo cáo thành công"
 }
 
 Response 400 Bad Request:
 {
   "success": false,
   "error": "INVALID_STATUS",
-  "message": "Không thể chỉnh sửa báo cáo với trạng thái hiện tại"
+  "message": "Chỉ có thể chỉnh sửa báo cáo bị từ chối"
 }
 
 Response 403 Forbidden:
@@ -245,44 +252,7 @@ Response 403 Forbidden:
 
 
 ================================================================================
-                        5. SUBMIT DRAFT REPORT
-================================================================================
-Submit a draft report (change status from CREATED to RECEIVED)
-
-Endpoint: POST /api/v1/reports/{id}/submit
-Auth: Required (Bearer Token)
-Note: Only works when status = CREATED
-
-Path Parameters:
-  - id: report ID
-
-Response 200 OK:
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "content": "...",
-    "status": "RECEIVED",
-    "targetId": 5,
-    "targetType": "ORGANIZATION",
-    "reporterId": 10,
-    "createdAt": "2024-12-15T08:30:00Z",
-    "updatedAt": "2024-12-22T11:00:00Z",
-    "organization": { ... }
-  },
-  "message": "Gửi báo cáo thành công"
-}
-
-Response 400 Bad Request:
-{
-  "success": false,
-  "error": "INVALID_STATUS",
-  "message": "Chỉ có thể gửi báo cáo ở trạng thái lưu nháp"
-}
-
-
-================================================================================
-                        6. GET ORGANIZATIONS LIST
+                        5. GET ORGANIZATIONS LIST
 ================================================================================
 Get list of organizations for selection in report form
 
@@ -323,7 +293,7 @@ Response 200 OK:
 
 
 ================================================================================
-                        7. GET ORGANIZATION DETAIL
+                        6. GET ORGANIZATION DETAIL
 ================================================================================
 Get detail of a specific organization
 
@@ -366,12 +336,11 @@ Response 404 Not Found:
                          STATUS MAPPING (DB -> UI)
 ================================================================================
 
-Database Status  |  Frontend Status  |  UI Label         |  Can Edit?
------------------|-------------------|-------------------|------------
-CREATED          |  DRAFT            |  Lưu nháp         |  YES
-RECEIVED         |  PENDING          |  Chờ xử lý        |  NO
-RESOLVED         |  RESOLVED         |  Đã xử lý         |  NO
-REFUSED          |  REFUSED          |  Từ chối xử lý    |  YES
+Database Status  |  UI Label         |  Mô tả                    |  Can Edit?
+-----------------|-------------------|---------------------------|------------
+RECEIVED         |  Chờ xử lý        |  Báo cáo đang chờ Admin   |  NO
+RESOLVED         |  Đã xử lý         |  Admin đã xử lý           |  NO
+REFUSED          |  Từ chối          |  Admin từ chối, có thể sửa |  YES
 
 
 ================================================================================
@@ -406,17 +375,17 @@ CREATE TABLE public.report_responses (
 
 1. Users can only view/edit their own reports (where reporter_id = current_user.id)
 
-2. Reports can only be edited when:
-   - status = CREATED (draft)
-   - status = REFUSED (rejected, user can modify and resubmit)
+2. Luồng báo cáo đơn giản:
+   - User gửi báo cáo -> status = RECEIVED (chờ xử lý)
+   - KHÔNG có tính năng lưu nháp
+   - Admin duyệt hoặc từ chối
 
-3. When updating a REFUSED report with isDraft=false:
-   - Clear the adminResponse (so admin reviews again)
-   - Change status to RECEIVED
+3. Reports can only be edited when:
+   - status = REFUSED (bị từ chối, user có thể sửa và gửi lại)
 
-4. When updating a REFUSED report with isDraft=true:
-   - Keep the adminResponse (for reference)
-   - Change status to CREATED
+4. When updating a REFUSED report:
+   - Clear the adminResponse
+   - Change status to RECEIVED (gửi lại để chờ xử lý)
 
 5. Pagination: Use Spring Data JPA Pageable pattern
 

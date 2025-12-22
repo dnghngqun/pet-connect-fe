@@ -55,8 +55,8 @@ const organizationReportService = {
     return report || null;
   },
 
-  // Create new report
-  async createReport(data: CreateReportData, isDraft: boolean = false): Promise<OrganizationReport> {
+  // Create new report - always CREATED status, no draft
+  async createReport(data: CreateReportData): Promise<OrganizationReport> {
     await delay(500);
     
     const organization = mockOrganizations.find(o => o.id === data.organizationId);
@@ -64,6 +64,7 @@ const organizationReportService = {
       throw new Error('Organization not found');
     }
 
+    // Status = RECEIVED (chờ xử lý) - gửi là vào trạng thái chờ Admin duyệt luôn
     const newReport = addReport({
       organizationId: data.organizationId,
       organization,
@@ -72,17 +73,16 @@ const organizationReportService = {
       reasonLabel: data.reasonLabel,
       content: data.content,
       evidence: data.evidence,
-      status: isDraft ? 'DRAFT' : 'PENDING',
+      status: 'RECEIVED',
     });
 
     return newReport;
   },
 
-  // Update existing report
+  // Update existing report - only when REFUSED
   async updateReport(
     id: string,
-    data: UpdateReportData,
-    isDraft: boolean = false
+    data: UpdateReportData
   ): Promise<OrganizationReport> {
     await delay(400);
     
@@ -91,16 +91,17 @@ const organizationReportService = {
       throw new Error('Report not found');
     }
 
-    // Only allow editing DRAFT or REFUSED reports
-    if (!['DRAFT', 'REFUSED'].includes(existingReport.status)) {
-      throw new Error('Cannot edit report with current status');
+    // Only allow editing REFUSED reports
+    if (existingReport.status !== 'REFUSED') {
+      throw new Error('Chỉ có thể chỉnh sửa báo cáo bị từ chối');
     }
 
+    // Reset to RECEIVED when resubmitting (chờ xử lý lại)
     const updated = updateReportLocal(id, {
       ...data,
-      status: isDraft ? 'DRAFT' : 'PENDING',
+      status: 'RECEIVED',
       // Clear admin response when resubmitting
-      adminResponse: isDraft ? existingReport.adminResponse : undefined,
+      adminResponse: undefined,
     });
 
     if (!updated) {
@@ -110,33 +111,9 @@ const organizationReportService = {
     return updated;
   },
 
-  // Submit draft report
-  async submitReport(id: string): Promise<OrganizationReport> {
-    await delay(300);
-    
-    const existingReport = getReportByIdMock(id);
-    if (!existingReport) {
-      throw new Error('Report not found');
-    }
-
-    if (existingReport.status !== 'DRAFT') {
-      throw new Error('Only draft reports can be submitted');
-    }
-
-    const updated = updateReportLocal(id, {
-      status: 'PENDING',
-    });
-
-    if (!updated) {
-      throw new Error('Failed to submit report');
-    }
-
-    return updated;
-  },
-
-  // Check if report can be edited
+  // Check if report can be edited (only REFUSED)
   canEditReport(report: OrganizationReport): boolean {
-    return ['DRAFT', 'REFUSED'].includes(report.status);
+    return report.status === 'REFUSED';
   },
 
   // Get organization by ID

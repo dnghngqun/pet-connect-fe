@@ -28,7 +28,6 @@ import {
   Building2,
   FileText,
   Send,
-  Save,
   Loader2,
   MapPin,
   Phone,
@@ -143,7 +142,7 @@ export default function OrganizationReportForm({
     }
   };
 
-  const handleSubmit = async (isDraft: boolean) => {
+  const handleSubmit = async () => {
     if (!selectedOrg) return;
 
     setIsSubmitting(true);
@@ -153,27 +152,21 @@ export default function OrganizationReportForm({
       if (editReport) {
         await organizationReportService.updateReport(
           editReport.id,
-          { reason, reasonLabel, content, evidence },
-          isDraft
+          { reason, reasonLabel, content, evidence }
         );
       } else {
-        await organizationReportService.createReport(
-          {
-            organizationId: selectedOrg.id,
-            reason,
-            reasonLabel,
-            content,
-            evidence,
-          },
-          isDraft
-        );
+        await organizationReportService.createReport({
+          organizationId: selectedOrg.id,
+          reason,
+          reasonLabel,
+          content,
+          evidence,
+        });
       }
 
       toast({
         title: 'Thành công',
-        description: isDraft
-          ? 'Đã lưu báo cáo vào nháp'
-          : 'Đã gửi báo cáo thành công',
+        description: 'Đã gửi báo cáo thành công',
       });
 
       handleClose();
@@ -486,21 +479,6 @@ export default function OrganizationReportForm({
           </Button>
 
           <div className="flex gap-2">
-            {currentStep === 3 && (
-              <Button
-                variant="outline"
-                onClick={() => handleSubmit(true)}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-1" />
-                )}
-                Lưu nháp
-              </Button>
-            )}
-            
             {currentStep < 3 ? (
               <Button onClick={goToNextStep} disabled={!canGoNext()}>
                 Tiếp theo
@@ -508,7 +486,7 @@ export default function OrganizationReportForm({
               </Button>
             ) : (
               <Button
-                onClick={() => handleSubmit(false)}
+                onClick={handleSubmit}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

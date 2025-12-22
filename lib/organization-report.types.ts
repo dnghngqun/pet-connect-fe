@@ -1,6 +1,7 @@
 // Organization Report Types
 
-export type ReportStatus = 'DRAFT' | 'PENDING' | 'RESOLVED' | 'REFUSED';
+// Matching DB: reports.status CHECK (CREATED, RECEIVED, RESOLVED, REFUSED)
+export type ReportStatus = 'CREATED' | 'RECEIVED' | 'RESOLVED' | 'REFUSED';
 
 export interface Organization {
   id: string;
@@ -47,9 +48,11 @@ export const REPORT_REASONS = [
   { id: 'other', label: 'Lý do khác' },
 ] as const;
 
+// Matching DB status values
+// Note: CREATED is kept for DB compatibility but treated same as RECEIVED in UI
 export const STATUS_CONFIG: Record<ReportStatus, { label: string; color: string; bgColor: string }> = {
-  DRAFT: { label: 'Lưu nháp', color: 'text-gray-700', bgColor: 'bg-gray-100' },
-  PENDING: { label: 'Chờ xử lý', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
+  CREATED: { label: 'Chờ xử lý', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
+  RECEIVED: { label: 'Chờ xử lý', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
   RESOLVED: { label: 'Đã xử lý', color: 'text-green-700', bgColor: 'bg-green-100' },
-  REFUSED: { label: 'Từ chối xử lý', color: 'text-red-700', bgColor: 'bg-red-100' },
+  REFUSED: { label: 'Từ chối', color: 'text-red-700', bgColor: 'bg-red-100' },
 };
