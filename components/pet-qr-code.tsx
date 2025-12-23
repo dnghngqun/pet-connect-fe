@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, AlertCircle } from 'lucide-react';
@@ -37,12 +38,17 @@ export default function PetQRCode({ petId, petName, qrCodeUrl }: PetQRCodeProps)
       </CardHeader>
       <CardContent className="space-y-4">
         {/* QR Code Image */}
-        <div className="flex justify-center bg-white p-4 rounded-lg border">
           <img
             src={displayQrUrl}
             alt={`QR code cho ${petName}`}
             className="w-40 h-40 object-contain"
           />
+              fill
+              className="object-contain"
+              priority
+              unoptimized
+            />
+          </div>
         </div>
 
         {/* Sample Data Warning */}

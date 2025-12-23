@@ -7,37 +7,39 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 interface ShopPageProps {
-  searchParams: {
+  searchParams: Promise<{
     status?: string
     petType?: string
     location?: string
     sort?: string
-  }
+  }>
 }
 
-export default function ShopPage({ searchParams }: ShopPageProps) {
+export default async function ShopPage({ searchParams }: ShopPageProps) {
+  const params = await searchParams
+
   // Filter posts based on search params
   let filteredPosts = [...petPosts]
 
   // Filter by status
-  if (searchParams.status) {
-    const statuses = searchParams.status.split(',')
+  if (params.status) {
+    const statuses = params.status.split(',')
     filteredPosts = filteredPosts.filter((post) => statuses.includes(post.status))
   }
 
   // Filter by pet type
-  if (searchParams.petType) {
-    filteredPosts = filteredPosts.filter((post) => post.petType.toLowerCase().includes(searchParams.petType!.toLowerCase()))
+  if (params.petType) {
+    filteredPosts = filteredPosts.filter((post) => post.petType.toLowerCase().includes(params.petType!.toLowerCase()))
   }
 
   // Filter by location
-  if (searchParams.location) {
-    filteredPosts = filteredPosts.filter((post) => post.location.toLowerCase().includes(searchParams.location!.toLowerCase()))
+  if (params.location) {
+    filteredPosts = filteredPosts.filter((post) => post.location.toLowerCase().includes(params.location!.toLowerCase()))
   }
 
   // Sort posts
-  if (searchParams.sort) {
-    switch (searchParams.sort) {
+  if (params.sort) {
+    switch (params.sort) {
       case "newest":
         filteredPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         break
