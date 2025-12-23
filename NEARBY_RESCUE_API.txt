@@ -1,0 +1,336 @@
+================================================================================
+                    API SPECIFICATION - NEARBY & RESCUE CENTERS
+                        (Gần bạn & Trung tâm cứu hộ)
+================================================================================
+
+Database Tables Used:
+- pet_posts (bài đăng thú cưng)
+- rescue_centers (trung tâm cứu hộ - cần tạo mới)
+- users (thông tin người dùng)
+
+================================================================================
+                         1. GET NEARBY POSTS
+================================================================================
+Get pet posts near user's location
+
+Endpoint: GET /api/v1/posts/nearby
+Auth: Optional
+
+Query Parameters:
+  - latitude (required): number
+  - longitude (required): number
+  - radiusKm (optional): number, default 10
+  - status (optional): LOST | FOUND | FOR_ADOPTION | RESCUE
+  - petType (optional): string
+  - page (optional): number, default 0
+  - size (optional): number, default 10
+
+Response 200 OK:
+{
+  "success": true,
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "title": "Chó Husky mất tích tại Q.1",
+        "slug": "cho-husky-mat-tich-q1",
+        "description": "Mô tả...",
+        "image": "https://...",
+        "petType": "Husky",
+        "status": "LOST",
+        "location": {
+          "address": "Gần công viên Tao Đàn",
+          "district": "Quận 1",
+          "city": "TP. Hồ Chí Minh",
+          "latitude": 10.7769,
+          "longitude": 106.7009
+        },
+        "distance": 1.5,  // km từ vị trí user
+        "createdAt": "2024-12-15T08:30:00Z",
+        "user": {
+          "id": 1,
+          "fullName": "Nguyễn Văn A",
+          "avatarUrl": "https://...",
+          "phoneNumber": "0912345678"
+        }
+      }
+    ],
+    "totalElements": 12,
+    "userLocation": {
+      "latitude": 10.7769,
+      "longitude": 106.7009
+    },
+    "radiusKm": 10
+  }
+}
+
+
+================================================================================
+                         2. GET RESCUE CENTERS LIST
+================================================================================
+Get list of rescue centers/shelters
+
+Endpoint: GET /api/v1/rescue-centers
+Auth: Optional (public endpoint)
+
+Query Parameters:
+  - latitude (optional): number (for distance calculation)
+  - longitude (optional): number
+  - radiusKm (optional): number, default 15
+  - city (optional): string
+  - specialty (optional): DOG | CAT | BIRD | RABBIT | OTHER
+  - page (optional): number, default 0
+  - size (optional): number, default 10
+  - sort (optional): distance | rating, default "distance"
+
+Response 200 OK:
+{
+  "success": true,
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "name": "Trung Tâm Cứu Hộ Động Vật HCM",
+        "location": {
+          "address": "123 Đường Lê Lợi, Quận 1, TP.HCM",
+          "district": "Quận 1",
+          "city": "TP.HCM",
+          "latitude": 10.7769,
+          "longitude": 106.7009
+        },
+        "phone": "0283456789",
+        "email": "contact@rescuehcm.org",
+        "website": "www.rescuehcm.org",
+        "hours": "7:00 - 19:00 (Thứ 2 - Chủ nhật)",
+        "specialties": ["DOG", "CAT", "BIRD"],
+        "rating": 4.8,
+        "reviewCount": 156,
+        "distance": 2.3,  // km (only if lat/lon provided)
+        "isVerified": true
+      }
+    ],
+    "totalElements": 15,
+    "totalPages": 2
+  }
+}
+
+
+================================================================================
+                         3. GET RESCUE CENTER DETAIL
+================================================================================
+Get detail of a specific rescue center
+
+Endpoint: GET /api/v1/rescue-centers/{id}
+Auth: Optional
+
+Response 200 OK:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Trung Tâm Cứu Hộ Động Vật HCM",
+    "location": {
+      "address": "123 Đường Lê Lợi, Quận 1, TP.HCM",
+      "district": "Quận 1",
+      "city": "TP.HCM",
+      "latitude": 10.7769,
+      "longitude": 106.7009
+    },
+    "phone": "0283456789",
+    "email": "contact@rescuehcm.org",
+    "website": "www.rescuehcm.org",
+    "hours": "7:00 - 19:00 (Thứ 2 - Chủ nhật)",
+    "specialties": ["DOG", "CAT", "BIRD"],
+    "description": "Trung tâm cứu hộ và chăm sóc động vật...",
+    "services": [
+      "Cứu hộ động vật",
+      "Tiêm phòng",
+      "Nhận nuôi thú cưng",
+      "Chăm sóc y tế"
+    ],
+    "rating": 4.8,
+    "reviewCount": 156,
+    "isVerified": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "photos": [
+      "https://...",
+      "https://..."
+    ],
+    "recentPets": [
+      {
+        "id": 1,
+        "name": "Max",
+        "type": "Husky",
+        "image": "https://...",
+        "status": "FOR_ADOPTION"
+      }
+    ]
+  }
+}
+
+
+================================================================================
+                         4. GET MAP DATA
+================================================================================
+Get all locations for map display
+
+Endpoint: GET /api/v1/map/locations
+Auth: Optional
+
+Query Parameters:
+  - latitude (required): number
+  - longitude (required): number
+  - radiusKm (optional): number, default 20
+  - types (optional): posts | rescue-centers | all (default "all")
+
+Response 200 OK:
+{
+  "success": true,
+  "data": {
+    "posts": [
+      {
+        "id": 1,
+        "title": "Chó Husky mất tích",
+        "status": "LOST",
+        "latitude": 10.7769,
+        "longitude": 106.7009,
+        "image": "https://...",
+        "petType": "Husky"
+      }
+    ],
+    "rescueCenters": [
+      {
+        "id": 1,
+        "name": "Trung Tâm Cứu Hộ HCM",
+        "latitude": 10.7769,
+        "longitude": 106.7009,
+        "phone": "0283456789"
+      }
+    ],
+    "userLocation": {
+      "latitude": 10.7769,
+      "longitude": 106.7009
+    }
+  }
+}
+
+
+================================================================================
+                         5. REVIEW RESCUE CENTER
+================================================================================
+Add a review for a rescue center
+
+Endpoint: POST /api/v1/rescue-centers/{id}/reviews
+Auth: Required
+
+Request Body:
+{
+  "rating": 5,           // required, 1-5
+  "comment": "Dịch vụ rất tốt..."  // optional
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "rating": 5,
+    "comment": "Dịch vụ rất tốt...",
+    "createdAt": "2024-12-22T10:00:00Z",
+    "user": {
+      "id": 1,
+      "fullName": "Nguyễn Văn A"
+    }
+  },
+  "message": "Đã thêm đánh giá"
+}
+
+
+================================================================================
+                         DATABASE SCHEMA
+================================================================================
+
+-- rescue_centers table (cần tạo mới)
+CREATE TABLE public.rescue_centers (
+  id int8 GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  name varchar(255) NOT NULL,
+  address varchar(255) NOT NULL,
+  district varchar(100),
+  city varchar(100) NOT NULL,
+  latitude float8 NOT NULL,
+  longitude float8 NOT NULL,
+  phone varchar(20) NOT NULL,
+  email varchar(255),
+  website varchar(255),
+  hours varchar(100),
+  description text,
+  services jsonb,
+  specialties jsonb,
+  photos jsonb,
+  rating float8 DEFAULT 0,
+  review_count int4 DEFAULT 0,
+  is_verified bool DEFAULT false,
+  created_at timestamp NOT NULL DEFAULT NOW(),
+  updated_at timestamp NOT NULL DEFAULT NOW(),
+  user_id int8 REFERENCES public.users(id)
+);
+
+-- rescue_center_reviews table
+CREATE TABLE public.rescue_center_reviews (
+  id int8 GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  rescue_center_id int8 NOT NULL REFERENCES public.rescue_centers(id),
+  user_id int8 NOT NULL REFERENCES public.users(id),
+  rating int4 NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  created_at timestamp NOT NULL DEFAULT NOW(),
+  CONSTRAINT uk_rescue_review UNIQUE (rescue_center_id, user_id)
+);
+
+
+================================================================================
+                         BUSINESS RULES
+================================================================================
+
+1. Distance calculation:
+   - Use Haversine formula for calculating distance
+   - Return distance in kilometers
+
+2. Nearby search:
+   - Default radius: 10km for posts, 15km for rescue centers
+   - Sort by distance (nearest first)
+
+3. Rescue centers:
+   - Can be registered by organization owners
+   - Verified status granted by admin
+   - Rating calculated from user reviews
+
+4. Reviews:
+   - One review per user per rescue center
+   - User can update their review
+   - Rating auto-recalculated on new review
+
+5. Map data:
+   - Only return items with valid coordinates
+   - Limit to reasonable radius (max 50km)
+
+
+================================================================================
+                         GEOLOCATION NOTES
+================================================================================
+
+For frontend:
+- Use browser Geolocation API to get user's coordinates
+- Request permission before accessing location
+- Handle permission denied gracefully
+- Cache location for performance
+
+For backend:
+- Store coordinates as float8 (double precision)
+- Create spatial index for performance:
+  CREATE INDEX idx_posts_location ON pet_posts(latitude, longitude);
+  CREATE INDEX idx_rescue_location ON rescue_centers(latitude, longitude);
+
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================

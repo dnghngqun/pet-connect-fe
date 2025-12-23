@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Menu, X, User, PawPrint, Plus, MapPin } from "lucide-react"
+import { Search, Menu, X, User, PawPrint, Plus, MapPin, Flag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import UserDropdown from "@/components/user-dropdown"
 import NotificationCenter from "@/components/notification-center"
@@ -87,6 +87,12 @@ export default function Header() {
           >
             Liên hệ
           </Link>
+          {!isLoading && isLoggedIn && (
+            <Link href="/organization-reports" className="text-sm font-medium transition-colors hover:text-primary flex items-center gap-1">
+              <Flag className="h-3.5 w-3.5" />
+              Báo cáo tổ chức
+            </Link>
+          )}
         </nav>
 
         <div
@@ -237,6 +243,16 @@ export default function Header() {
             >
               Liên hệ
             </Link>
+            {isLoggedIn && (
+              <Link
+                href="/organization-reports"
+                className="flex items-center gap-2 text-lg font-semibold"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Flag className="h-5 w-5" />
+                Báo cáo tổ chức
+              </Link>
+            )}
             <Link
               href="/post/new"
               className="flex items-center gap-2 text-lg font-semibold"
