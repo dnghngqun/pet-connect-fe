@@ -1,126 +1,202 @@
-// Organization Report Service - Fake API with mock data
+// Organization Report Service - Real API calls
+// Based on ReportController.java endpoints
 
+import { COMMON_API } from '@/common/Constant/COMMON_API';
+import apiClient from '@/common/apiClient';
+
+// ============ Types based on backend DTOs ============
+
+// API Response wrapper
+export interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: T;
+}
+
+// Paginated response
+export interface PaginatedResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+}
+
+// OrganizationListItemDTO
+export interface Organization {
+  id: number;
+  name: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // UI fields (may be populated from other sources)
+  logo?: string;
+  city?: string;
+  district?: string;
+  address?: string;
+  followerCount?: number;
+}
+
+// AdminResponseDTO
+export interface AdminResponse {
+  content: string;
+  respondedAt: string;
+  respondedBy: string;
+}
+
+// ReportListItemDTO
+export interface ReportListItem {
+  id: number;
+  content: string;
+  status: string; // 'CREATED' | 'RECEIVED' | 'RESOLVED' | 'REFUSED'
+  targetType: string;
+  createdAt: string;
+  updatedAt: string;
+  organization: Organization;
+  adminResponse: AdminResponse | null;
+}
+
+// ReportDetailDTO
+export interface ReportDetail {
+  id: number;
+  content: string;
+  status: string;
+  targetId: number;
+  targetType: string;
+  reporterId: number;
+  createdAt: string;
+  updatedAt: string;
+  organization: Organization;
+  adminResponse: AdminResponse | null;
+}
+
+// ============ Request Types ============
+
+export interface CreateReportRequest {
+  content: string;
+  targetId: number;
+  targetType: string;
+}
+
+export interface UpdateReportRequest {
+  content: string;
+}
+
+// ============ For Frontend Compatibility ============
+
+// Frontend types (from lib/organization-report.types.ts)
 import {
   OrganizationReport,
-  Organization,
   ReportStatus,
 } from '@/lib/organization-report.types';
-import {
-  mockOrganizations,
-  getAllReports,
-  getReportById as getReportByIdMock,
-  addReport,
-  updateReportLocal,
-} from '@/lib/organization-report.mock';
 
-// Simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-interface CreateReportData {
-  organizationId: string;
-  reason: string;
-  reasonLabel: string;
-  content: string;
-  evidence?: string[];
+// Transform backend response to frontend format
+function transformToFrontendReport(item: ReportListItem | ReportDetail): OrganizationReport {
+  return {
+    id: String(item.id),
+    organizationId: String(item.organization.id),
+    organization: {
+      id: String(item.organization.id),
+      name: item.organization.name,
+      logo: '',
+      email: item.organization.email || '',
+      phone: item.organization.phone || '',
+      address: '',
+      city: '',
+      district: '',
+      isVerified: item.organization.isVerified || false,
+      followerCount: 0,
+    },
+    reporterId: 'targetId' in item ? String(item.reporterId) : '',
+    reason: 'other',
+    reasonLabel: 'Khác',
+    content: item.content,
+    status: item.status as ReportStatus,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    adminResponse: item.adminResponse ? {
+      content: item.adminResponse.content,
+      respondedAt: item.adminResponse.respondedAt,
+      respondedBy: item.adminResponse.respondedBy,
+    } : undefined,
+  };
 }
 
-interface UpdateReportData {
-  reason?: string;
-  reasonLabel?: string;
-  content?: string;
-  evidence?: string[];
-}
+// ============ Service Functions ============
 
 const organizationReportService = {
-  // Get all organizations for selection
-  async getOrganizations(): Promise<Organization[]> {
-    await delay(300);
-    return mockOrganizations;
-  },
-
-  // Get user's reports
-  async getMyReports(status?: ReportStatus): Promise<OrganizationReport[]> {
-    await delay(400);
-    const reports = getAllReports();
-    if (status) {
-      return reports.filter(r => r.status === status);
-    }
-    return reports;
-  },
-
-  // Get report by ID
-  async getReportById(id: string): Promise<OrganizationReport | null> {
-    await delay(200);
-    const report = getReportByIdMock(id);
-    return report || null;
-  },
-
-  // Create new report - always CREATED status, no draft
-  async createReport(data: CreateReportData): Promise<OrganizationReport> {
-    await delay(500);
-    
-    const organization = mockOrganizations.find(o => o.id === data.organizationId);
-    if (!organization) {
-      throw new Error('Organization not found');
-    }
-
-    // Status = RECEIVED (chờ xử lý) - gửi là vào trạng thái chờ Admin duyệt luôn
-    const newReport = addReport({
-      organizationId: data.organizationId,
-      organization,
-      reporterId: 'user-001', // Mock current user
-      reason: data.reason,
-      reasonLabel: data.reasonLabel,
-      content: data.content,
-      evidence: data.evidence,
-      status: 'RECEIVED',
+  /**
+   * API 1: Get user's reports
+   * GET /api/v1/reports/my-reports
+   */
+  async getMyReports(status?: string): Promise<OrganizationReport[]> {
+    const response = await apiClient.get<ApiResponse<PaginatedResponse<ReportListItem>>>(COMMON_API.myReports, {
+      params: {
+        status,
+        page: 0,
+        size: 100,
+        sort: 'createdAt,desc',
+      },
     });
-
-    return newReport;
-  },
-
-  // Update existing report - only when REFUSED
-  async updateReport(
-    id: string,
-    data: UpdateReportData
-  ): Promise<OrganizationReport> {
-    await delay(400);
     
-    const existingReport = getReportByIdMock(id);
-    if (!existingReport) {
-      throw new Error('Report not found');
-    }
-
-    // Only allow editing REFUSED reports
-    if (existingReport.status !== 'REFUSED') {
-      throw new Error('Chỉ có thể chỉnh sửa báo cáo bị từ chối');
-    }
-
-    // Reset to RECEIVED when resubmitting (chờ xử lý lại)
-    const updated = updateReportLocal(id, {
-      ...data,
-      status: 'RECEIVED',
-      // Clear admin response when resubmitting
-      adminResponse: undefined,
-    });
-
-    if (!updated) {
-      throw new Error('Failed to update report');
-    }
-
-    return updated;
+    const items = response.data.data?.content || [];
+    return items.map(transformToFrontendReport);
   },
 
-  // Check if report can be edited (only REFUSED)
+  /**
+   * API 2: Get report detail
+   * GET /api/v1/reports/{id}
+   */
+  async getReportDetail(id: number): Promise<OrganizationReport> {
+    const response = await apiClient.get<ApiResponse<ReportDetail>>(COMMON_API.reportDetail(id));
+    return transformToFrontendReport(response.data.data);
+  },
+
+  /**
+   * API 3: Create report
+   * POST /api/v1/reports
+   */
+  async createReport(data: CreateReportRequest): Promise<OrganizationReport> {
+    const response = await apiClient.post<ApiResponse<ReportDetail>>(COMMON_API.reports, data);
+    return transformToFrontendReport(response.data.data);
+  },
+
+  /**
+   * API 4: Update refused report
+   * PUT /api/v1/reports/{id}
+   */
+  async updateReport(id: number, data: UpdateReportRequest): Promise<OrganizationReport> {
+    const response = await apiClient.put<ApiResponse<ReportDetail>>(COMMON_API.reportDetail(id), data);
+    return transformToFrontendReport(response.data.data);
+  },
+
+  /**
+   * Check if report can be edited (only REFUSED status)
+   */
   canEditReport(report: OrganizationReport): boolean {
     return report.status === 'REFUSED';
   },
 
-  // Get organization by ID
-  async getOrganizationById(id: string): Promise<Organization | null> {
-    await delay(100);
-    const org = mockOrganizations.find(o => o.id === id);
-    return org || null;
+  /**
+   * Get organizations list for creating report
+   * GET /api/v1/organizations
+   */
+  async getOrganizations(search?: string, page = 0, size = 20): Promise<{ content: Organization[]; total: number }> {
+    const response = await apiClient.get(COMMON_API.organizations, {
+      params: { search, page, size },
+    });
+    // Response format: { success, statusCode, message, data: { content, page, limit, total } }
+    const data = response.data.data;
+    return {
+      content: data.content || [],
+      total: data.total || 0,
+    };
   },
 };
 

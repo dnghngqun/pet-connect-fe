@@ -16,11 +16,10 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import {
-  Organization,
   OrganizationReport,
   REPORT_REASONS,
 } from '@/lib/organization-report.types';
-import organizationReportService from '@/services/organizationReportService';
+import organizationReportService, { Organization } from '@/services/organizationReportService';
 import {
   Check,
   ChevronLeft,
@@ -76,7 +75,21 @@ export default function OrganizationReportForm({
     if (open) {
       loadOrganizations();
       if (editReport) {
-        setSelectedOrg(editReport.organization);
+        // Convert OrganizationReport organization to service Organization
+        const org: Organization = {
+          id: Number(editReport.organization.id),
+          name: editReport.organization.name,
+          contactPerson: '',
+          email: editReport.organization.email,
+          phone: editReport.organization.phone,
+          isVerified: editReport.organization.isVerified,
+          createdAt: '',
+          updatedAt: '',
+          logo: editReport.organization.logo,
+          city: editReport.organization.city,
+          district: editReport.organization.district,
+        };
+        setSelectedOrg(org);
         setReason(editReport.reason);
         setContent(editReport.content);
         setEvidence(editReport.evidence || []);
@@ -90,8 +103,8 @@ export default function OrganizationReportForm({
   const loadOrganizations = async () => {
     setIsLoading(true);
     try {
-      const orgs = await organizationReportService.getOrganizations();
-      setOrganizations(orgs);
+      const result = await organizationReportService.getOrganizations();
+      setOrganizations(result.content);
     } catch {
       toast({
         title: 'Lỗi',
@@ -151,16 +164,14 @@ export default function OrganizationReportForm({
       
       if (editReport) {
         await organizationReportService.updateReport(
-          editReport.id,
-          { reason, reasonLabel, content, evidence }
+          Number(editReport.id),
+          { content }
         );
       } else {
         await organizationReportService.createReport({
-          organizationId: selectedOrg.id,
-          reason,
-          reasonLabel,
           content,
-          evidence,
+          targetId: Number(selectedOrg.id),
+          targetType: 'ORGANIZATION',
         });
       }
 
@@ -201,7 +212,7 @@ export default function OrganizationReportForm({
 
   const filteredOrgs = organizations.filter(org =>
     org.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    org.city.toLowerCase().includes(searchQuery.toLowerCase())
+    (org.city?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
   );
 
   return (

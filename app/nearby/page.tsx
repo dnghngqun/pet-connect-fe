@@ -1,31 +1,107 @@
-
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import NearbyPets from '@/components/nearby-pets'
 import NearbyRescueCenters from '@/components/nearby-rescue-centers'
 import MapComponent from '@/components/map-component'
-import { petPosts } from '@/lib/pet-posts'
-import { rescueCenters } from '@/lib/rescue-centers'
 import { getUserLocation } from '@/lib/location-utils'
 import { Button } from '@/components/ui/button'
-import { MapPin, AlertCircle } from 'lucide-react'
+import { MapPin, AlertCircle, Loader2 } from 'lucide-react'
+import nearbyService from '@/services/nearbyService'
+import rescueCenterService from '@/services/rescueCenterService'
 
 export default function NearbyPage() {
   const [userLocation, setUserLocation] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [nearbyPosts, setNearbyPosts] = useState<any[]>([])
+  const [rescueCenters, setRescueCenters] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
 
   const handleEnableLocation = async () => {
     try {
+      setLoading(true)
       const location = await getUserLocation()
       setUserLocation(location)
       setError(null)
+      // Load data after getting location
+      await loadNearbyData(location.latitude, location.longitude)
     } catch (err: any) {
       setError(err.message || 'Không thể lấy vị trí của bạn')
+    } finally {
+      setLoading(false)
     }
   }
+
+  const loadNearbyData = async (lat: number, lon: number) => {
+    try {
+      const [postsRes, centersRes] = await Promise.all([
+        nearbyService.getNearbyPosts({
+          latitude: lat,
+          longitude: lon,
+          radiusKm: 10,
+          size: 20,
+        }),
+        rescueCenterService.getRescueCenters({
+          latitude: lat,
+          longitude: lon,
+          radiusKm: 15,
+          size: 20,
+        }),
+      ])
+
+      setNearbyPosts(postsRes.data?.content || [])
+      setRescueCenters(centersRes.data?.content || [])
+    } catch (err) {
+      console.error('Failed to load nearby data:', err)
+    }
+  }
+
+  // Transform API data to match component expected format
+  const transformedPosts = nearbyPosts.map((post: any) => ({
+    id: String(post.id),
+    title: post.title,
+    slug: post.slug,
+    description: post.description,
+    image: post.image || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
+    petType: post.petType,
+    status: post.status?.toLowerCase().replace('_', '-') || 'lost',
+    location: post.location || `${post.district || ''}, ${post.city || ''}`,
+    locationCoords: post.latitude && post.longitude ? {
+      latitude: post.latitude,
+      longitude: post.longitude,
+    } : undefined,
+    postedBy: {
+      id: String(post.postedBy?.id || ''),
+      name: post.postedBy?.name || 'Người dùng',
+      phone: post.postedBy?.phone || '',
+      avatar: post.postedBy?.avatar,
+    },
+    createdAt: post.createdAt,
+    tags: [],
+    distance: post.distance,
+  }))
+
+  const transformedCenters = rescueCenters.map((center: any) => ({
+    id: String(center.id),
+    name: center.name,
+    location: {
+      latitude: center.location?.latitude || 0,
+      longitude: center.location?.longitude || 0,
+      address: center.location?.address || '',
+      district: center.location?.district,
+      city: center.location?.city,
+    },
+    phone: center.phone,
+    email: center.email,
+    website: center.website,
+    hours: center.hours,
+    specialties: center.specialties,
+    distance: center.distance,
+    rating: center.rating,
+    reviewCount: center.reviewCount,
+  }))
 
   return (
     <div className="container px-4 py-8 md:py-12">
@@ -56,8 +132,10 @@ export default function NearbyPage() {
               </div>
               <Button
                 onClick={handleEnableLocation}
+                disabled={loading}
                 className="whitespace-nowrap"
               >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Bật định vị
               </Button>
             </div>
@@ -92,7 +170,7 @@ export default function NearbyPage() {
         {/* Nearby Pets Tab */}
         <TabsContent value="nearby-pets">
           <NearbyPets
-            pets={petPosts}
+            pets={transformedPosts}
             userLocation={userLocation}
             radiusKm={10}
             maxResults={10}
@@ -105,6 +183,7 @@ export default function NearbyPage() {
             userLocation={userLocation}
             radiusKm={15}
             limit={10}
+            rescueCentersData={transformedCenters}
           />
         </TabsContent>
 
@@ -117,8 +196,8 @@ export default function NearbyPage() {
             <CardContent>
               <MapComponent
                 userLocation={userLocation}
-                rescueCenters={rescueCenters}
-                pets={petPosts.filter((p) => p.location)}
+                rescueCenters={transformedCenters}
+                pets={transformedPosts.filter((p) => p.locationCoords)}
                 height="600px"
               />
             </CardContent>
@@ -183,4 +262,3 @@ export default function NearbyPage() {
     </div>
   )
 }
-

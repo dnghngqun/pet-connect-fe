@@ -7,6 +7,7 @@ import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import type React from "react";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 
 const inter = Inter({ subsets: ["latin"] });
 

@@ -1,13 +1,16 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Eye, MapPin, Heart, QrCode } from 'lucide-react';
-import { petPosts } from '@/lib/pet-posts';
+import { ArrowLeft, Eye, MapPin, Heart, Loader2 } from 'lucide-react';
 import PetHealthProfileDialog from '@/components/pet-health-profile-dialog';
 import PetContactButtons from '@/components/pet-contact-buttons';
-import PetQRImage from '@/components/pet-qr-image';
+import petPostService from '@/services/petPostService';
+import { use } from 'react';
 
 interface PetDetailPageProps {
   params: Promise<{
@@ -15,17 +18,140 @@ interface PetDetailPageProps {
   }>;
 }
 
-export const dynamicParams = false;
-
-export async function generateStaticParams() {
-  return petPosts.map((post) => ({
-    slug: post.slug,
-  }));
+interface PostData {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  image: string;
+  petType: string;
+  status: string;
+  location: string;
+  views?: number;
+  createdAt: string;
+  tags: string[];
+  postedBy: {
+    id: string;
+    name: string;
+    phone: string;
+    avatar?: string;
+  };
+  pet?: {
+    id: string;
+    name: string;
+    type: string;
+    breed?: string;
+    age: number;
+    gender: 'male' | 'female';
+    color?: string;
+    size?: 'small' | 'medium' | 'large';
+    weight?: number;
+    personality: string[];
+    specialNeeds?: string;
+    bio?: string;
+    photos: string[];
+    healthRecord: {
+      id: string;
+      vaccinations: { name: string; date: string; nextDue?: string }[];
+      medicalHistory: { date: string; condition: string; treatment: string; notes?: string }[];
+      weight: { date: string; value: number }[];
+      lastCheckup: string;
+      allergies: string[];
+      notes?: string;
+    };
+    qrCodeUrl?: string;
+  };
 }
 
-export default async function PetDetailPage({ params }: PetDetailPageProps) {
-  const { slug } = await params;
-  const post = petPosts.find(p => p.slug === slug);
+export default function PetDetailPage({ params }: PetDetailPageProps) {
+  const resolvedParams = use(params);
+  const [post, setPost] = useState<PostData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadPost();
+  }, [resolvedParams.slug]);
+
+  const loadPost = async () => {
+    try {
+      setLoading(true);
+      const response = await petPostService.getPostBySlug(resolvedParams.slug);
+      const data = response.data;
+      
+      if (data) {
+        // Transform API response to expected format
+        const transformedPost: PostData = {
+          id: String(data.id),
+          title: data.title,
+          slug: data.slug,
+          description: data.description,
+          image: data.image || data.media?.[0]?.imageUrl || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
+          petType: data.petType,
+          status: data.status?.toLowerCase().replace('_', '-') || 'lost',
+          location: data.location || `${data.district || ''}, ${data.city || ''}`,
+          views: data.views,
+          createdAt: data.createdAt,
+          tags: data.tags || [],
+          postedBy: {
+            id: String(data.postedBy?.id || ''),
+            name: data.postedBy?.name || 'Người dùng',
+            phone: data.postedBy?.phone || '',
+            avatar: data.postedBy?.avatar ?? undefined,
+          },
+          pet: data.pet ? {
+            id: String(data.pet.id),
+            name: data.pet.name,
+            type: data.pet.type || data.petType,
+            breed: data.pet.breed ?? undefined,
+            age: data.pet.age || 0,
+            gender: data.pet.gender?.toLowerCase() === 'male' ? 'male' : 'female',
+            color: data.pet.color ?? undefined,
+            size: (data.pet.size?.toLowerCase() as 'small' | 'medium' | 'large') ?? undefined,
+            weight: data.pet.weight ?? undefined,
+            personality: data.pet.personality || [],
+            specialNeeds: data.pet.specialNeeds ?? undefined,
+            bio: data.pet.bio ?? undefined,
+            photos: data.pet.photos || [data.image],
+            healthRecord: data.pet.healthRecord ? {
+              id: String(data.pet.healthRecord.id),
+              vaccinations: data.pet.healthRecord.vaccinations || [],
+              medicalHistory: data.pet.healthRecord.medicalHistory || [],
+              weight: data.pet.healthRecord.weightHistory || [],
+              lastCheckup: data.pet.healthRecord.lastCheckup || new Date().toISOString(),
+              allergies: data.pet.healthRecord.allergies || [],
+              notes: data.pet.healthRecord.notes ?? undefined,
+            } : {
+              id: `hr-${data.pet.id}`,
+              vaccinations: [],
+              medicalHistory: [],
+              weight: [],
+              lastCheckup: new Date().toISOString(),
+              allergies: [],
+            },
+            qrCodeUrl: data.pet.qrCodeUrl ?? undefined,
+          } : undefined,
+        };
+        setPost(transformedPost);
+        
+        // Increase view count
+        if (data.id) {
+          petPostService.increaseViews(data.id).catch(() => {});
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load post:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container px-4 py-12 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -38,14 +164,14 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
     );
   }
 
-  const statusConfig = {
+  const statusConfig: Record<string, { label: string; color: string }> = {
     lost: { label: 'Thất lạc', color: 'bg-red-500' },
     found: { label: 'Tìm thấy', color: 'bg-blue-500' },
     'for-adoption': { label: 'Cần nhà', color: 'bg-green-500' },
     rescue: { label: 'Cứu hộ', color: 'bg-orange-500' },
   };
 
-  const config = statusConfig[post.status];
+  const config = statusConfig[post.status] || { label: post.status, color: 'bg-gray-500' };
 
   return (
     <div className="container px-4 py-8">
@@ -83,7 +209,7 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
                 <Badge variant="outline">{post.petType}</Badge>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Eye className="h-4 w-4" />
-                  <span>{post.views} lượt xem</span>
+                  <span>{post.views || 0} lượt xem</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <span>{new Date(post.createdAt).toLocaleDateString('vi-VN')}</span>
@@ -115,7 +241,6 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
             </CardContent>
           </Card>
 
-
           {/* Tags */}
           {post.tags.length > 0 && (
             <Card>
@@ -134,7 +259,7 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Pet Info Card - New */}
+          {/* Pet Info Card */}
           {post.pet && (
             <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
               <CardHeader>
@@ -176,10 +301,12 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
                         {post.pet.gender === 'male' ? '🐾 Đực' : '🐾 Cái'}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold text-muted-foreground">Cân nặng</p>
-                      <p className="font-semibold">{post.pet.weight} kg</p>
-                    </div>
+                    {post.pet.weight && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Cân nặng</p>
+                        <p className="font-semibold">{post.pet.weight} kg</p>
+                      </div>
+                    )}
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground">Loài</p>
                       <p className="font-semibold text-sm">{post.pet.breed || post.pet.type}</p>
@@ -237,28 +364,6 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
 
                 {/* View Health Profile Button */}
                 <PetHealthProfileDialog pet={post.pet} />
-
-                {/* QR Code Section */}
-                {post.pet.qrCodeUrl && (
-                  <div className="border-t pt-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <QrCode className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-semibold">Mã QR thú cưng</p>
-                    </div>
-                    <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
-                      <PetQRImage
-                        src={post.pet.qrCodeUrl}
-                        alt={`QR Code for ${post.pet.name}`}
-                        width={160}
-                        height={160}
-                        className="border border-border rounded"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Quét mã QR để xem thông tin chi tiết về {post.pet.name}
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           )}
@@ -313,4 +418,3 @@ export default async function PetDetailPage({ params }: PetDetailPageProps) {
     </div>
   );
 }
-

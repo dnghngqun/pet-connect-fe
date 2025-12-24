@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -9,23 +9,81 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { fundraisingCampaigns, donations } from '@/lib/fundraising'
-import { Heart, Share2, ArrowLeft, User, QrCode } from 'lucide-react'
+import { Heart, Share2, ArrowLeft, User, QrCode, Loader2 } from 'lucide-react'
 import PetQRImage from '@/components/pet-qr-image'
+import fundraisingService, { CampaignDetail, DonationItem } from '@/services/fundraisingService'
+import { use } from 'react'
 
 interface FundraisingDetailPageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
-export default function FundraisingDetailPage({
-  params,
-}: FundraisingDetailPageProps) {
-  const campaign = fundraisingCampaigns.find((c) => c.slug === params.slug)
+export default function FundraisingDetailPage({ params }: FundraisingDetailPageProps) {
+  const resolvedParams = use(params)
+  const [campaign, setCampaign] = useState<CampaignDetail | null>(null)
+  const [donations, setDonations] = useState<DonationItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [donationAmount, setDonationAmount] = useState('')
   const [donationMessage, setDonationMessage] = useState('')
   const [isAnonymous, setIsAnonymous] = useState(false)
+  const [donating, setDonating] = useState(false)
+
+  useEffect(() => {
+    loadCampaign()
+  }, [resolvedParams.slug])
+
+  const loadCampaign = async () => {
+    try {
+      setLoading(true)
+      const response = await fundraisingService.getCampaignDetail(resolvedParams.slug)
+      setCampaign(response.data)
+      
+      // Load donations
+      if (response.data?.id) {
+        const donationsResponse = await fundraisingService.getCampaignDonations(response.data.id)
+        setDonations(donationsResponse.data?.content || [])
+      }
+    } catch (error) {
+      console.error('Failed to load campaign:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDonate = async (paymentMethod: 'MOMO' | 'ZALOPAY' | 'BANK' | 'CARD') => {
+    if (!donationAmount || parseFloat(donationAmount) <= 0 || !campaign) {
+      alert('Vui lòng nhập số tiền hợp lệ')
+      return
+    }
+    try {
+      setDonating(true)
+      await fundraisingService.donate(campaign.id, {
+        amount: parseFloat(donationAmount),
+        message: donationMessage || undefined,
+        isAnonymous,
+        paymentMethod,
+      })
+      alert('Cảm ơn bạn đã đóng góp!')
+      setDonationAmount('')
+      setDonationMessage('')
+      loadCampaign() // Reload to update amounts
+    } catch (error) {
+      console.error('Donation failed:', error)
+      alert('Có lỗi xảy ra khi đóng góp. Vui lòng thử lại.')
+    } finally {
+      setDonating(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="container px-4 py-12 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   if (!campaign) {
     return (
@@ -38,22 +96,14 @@ export default function FundraisingDetailPage({
     )
   }
 
-  const campaignDonations = donations.filter((d) => d.campaignId === campaign.id)
   const progress = (campaign.currentAmount / campaign.targetAmount) * 100
 
-  const handleDonate = async () => {
-    if (!donationAmount || parseFloat(donationAmount) <= 0) {
-      alert('Vui lòng nhập số tiền hợp lệ')
-      return
-    }
-    // Simulate donation process
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    alert('Cảm ơn bạn đã đóng góp!')
-    setDonationAmount('')
-    setDonationMessage('')
-  }
-
   const categoryLabels: Record<string, string> = {
+    MEDICAL: '🏥 Y tế',
+    RESCUE: '🆘 Cứu hộ',
+    SHELTER: '🏠 Nơi trú ẩn',
+    FOOD: '🍖 Thức ăn',
+    OTHER: '📌 Khác',
     medical: '🏥 Y tế',
     rescue: '🆘 Cứu hộ',
     shelter: '🏠 Nơi trú ẩn',
@@ -62,6 +112,11 @@ export default function FundraisingDetailPage({
   }
 
   const categoryColors: Record<string, string> = {
+    MEDICAL: 'bg-red-100 text-red-800',
+    RESCUE: 'bg-orange-100 text-orange-800',
+    SHELTER: 'bg-blue-100 text-blue-800',
+    FOOD: 'bg-green-100 text-green-800',
+    OTHER: 'bg-gray-100 text-gray-800',
     medical: 'bg-red-100 text-red-800',
     rescue: 'bg-orange-100 text-orange-800',
     shelter: 'bg-blue-100 text-blue-800',
@@ -86,7 +141,7 @@ export default function FundraisingDetailPage({
           <div className="space-y-4">
             <div className="relative h-96 rounded-lg overflow-hidden">
               <Image
-                src={campaign.image}
+                src={campaign.image || '/placeholder.jpg'}
                 alt={campaign.title}
                 fill
                 className="object-cover"
@@ -99,8 +154,8 @@ export default function FundraisingDetailPage({
                   <h1 className="text-3xl md:text-4xl font-bold mb-2">
                     {campaign.title}
                   </h1>
-                  <Badge className={categoryColors[campaign.category]}>
-                    {categoryLabels[campaign.category]}
+                  <Badge className={categoryColors[campaign.category] || 'bg-gray-100 text-gray-800'}>
+                    {categoryLabels[campaign.category] || campaign.category}
                   </Badge>
                 </div>
                 <Button variant="outline" size="icon">
@@ -115,9 +170,9 @@ export default function FundraisingDetailPage({
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <div className="relative w-16 h-16 rounded-full overflow-hidden">
-                  {campaign.createdBy.avatar ? (
+                  {campaign.createdBy.avatarUrl ? (
                     <Image
-                      src={campaign.createdBy.avatar}
+                      src={campaign.createdBy.avatarUrl}
                       alt={campaign.createdBy.name}
                       fill
                       className="object-cover"
@@ -145,7 +200,7 @@ export default function FundraisingDetailPage({
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-base leading-relaxed">
-                {campaign.description_detailed || campaign.description}
+                {campaign.descriptionDetailed || campaign.description}
               </p>
               {campaign.beneficiary && (
                 <div className="border-t pt-4">
@@ -197,20 +252,20 @@ export default function FundraisingDetailPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="h-5 w-5 text-red-500" />
-                Những người đã đóng góp ({campaignDonations.length})
+                Những người đã đóng góp ({donations.length})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {campaignDonations.length === 0 ? (
+              {donations.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   Chưa có ai đóng góp. Hãy là người đầu tiên!
                 </p>
               ) : (
-                campaignDonations.map((donation) => (
+                donations.map((donation) => (
                   <div key={donation.id} className="border-b pb-3 last:border-0">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-semibold">
-                        {donation.isAnonymous ? 'Ẩn danh' : 'Nhà tài trợ'}
+                        {donation.isAnonymous ? 'Ẩn danh' : (donation.donor?.name || 'Nhà tài trợ')}
                       </span>
                       <span className="text-primary font-bold">
                         +{donation.amount.toLocaleString('vi-VN')}₫
@@ -310,10 +365,10 @@ export default function FundraisingDetailPage({
                   <Button
                     className="w-full"
                     size="lg"
-                    disabled={!donationAmount || parseFloat(donationAmount) <= 0}
+                    disabled={!donationAmount || parseFloat(donationAmount) <= 0 || donating}
                   >
-                    <Heart className="h-4 w-4 mr-2" />
-                    Góp {donationAmount ? `${donationAmount}₫` : '...'}
+                    {donating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Heart className="h-4 w-4 mr-2" />}
+                    Góp {donationAmount ? `${parseInt(donationAmount).toLocaleString('vi-VN')}₫` : '...'}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -322,16 +377,17 @@ export default function FundraisingDetailPage({
                   </DialogHeader>
                   <div className="space-y-3">
                     {[
-                      { id: 'momo', name: 'Momo', icon: '📱' },
-                      { id: 'zalopay', name: 'ZaloPay', icon: '📲' },
-                      { id: 'bank', name: 'Chuyển khoản', icon: '🏦' },
-                      { id: 'card', name: 'Thẻ tín dụng', icon: '💳' },
+                      { id: 'MOMO' as const, name: 'Momo', icon: '📱' },
+                      { id: 'ZALOPAY' as const, name: 'ZaloPay', icon: '📲' },
+                      { id: 'BANK' as const, name: 'Chuyển khoản', icon: '🏦' },
+                      { id: 'CARD' as const, name: 'Thẻ tín dụng', icon: '💳' },
                     ].map((method) => (
                       <Button
                         key={method.id}
                         variant="outline"
                         className="w-full justify-start text-lg h-12"
-                        onClick={handleDonate}
+                        onClick={() => handleDonate(method.id)}
+                        disabled={donating}
                       >
                         <span className="mr-3 text-2xl">{method.icon}</span>
                         {method.name}
@@ -351,8 +407,8 @@ export default function FundraisingDetailPage({
             <CardContent className="space-y-3 text-sm">
               <div>
                 <p className="text-muted-foreground">Trạng thái</p>
-                <Badge className={campaign.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                  {campaign.status === 'active' ? '🟢 Đang hoạt động' : '⚪ Đã kết thúc'}
+                <Badge className={campaign.status === 'ACTIVE' || campaign.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                  {campaign.status === 'ACTIVE' || campaign.status === 'active' ? '🟢 Đang hoạt động' : '⚪ Đã kết thúc'}
                 </Badge>
               </div>
               <div>
@@ -393,28 +449,6 @@ export default function FundraisingDetailPage({
                   </div>
                 )}
                 <p className="font-semibold text-lg">{campaign.relatedPet.name}</p>
-
-                {/* QR Code Section */}
-                {campaign.relatedPet.qrCodeUrl && (
-                  <div className="border-t pt-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <QrCode className="h-4 w-4 text-primary" />
-                      <p className="text-sm font-semibold">Mã QR thú cưng</p>
-                    </div>
-                    <div className="flex justify-center p-4 bg-muted/30 rounded-lg">
-                      <PetQRImage
-                        src={campaign.relatedPet.qrCodeUrl}
-                        alt={`QR Code for ${campaign.relatedPet.name}`}
-                        width={140}
-                        height={140}
-                        className="border border-border rounded"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center mt-2">
-                      Quét mã QR để xem hồ sơ sức khỏe của {campaign.relatedPet.name}
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           )}
@@ -423,4 +457,3 @@ export default function FundraisingDetailPage({
     </div>
   )
 }
-

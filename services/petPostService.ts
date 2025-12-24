@@ -1,297 +1,318 @@
-// Pet Post Service - Fake API with mock data
+// Pet Post Service - Real API calls
+// Based on PostController.java endpoints
 
-import { petPosts } from '@/lib/pet-posts';
-import type { PetPost } from '@/lib/types';
+import { COMMON_API } from '@/common/Constant/COMMON_API';
+import apiClient from '@/common/apiClient';
 
-// Simulated delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// ============ Types based on backend DTOs ============
 
-// Local storage for posts
-let localPosts = [...petPosts];
-let nextPostId = 100;
+// PosterDTO
+export interface Poster {
+  id: number;
+  name: string;
+  phone: string;
+  avatar: string | null;
+}
 
-export interface CreatePostData {
+// PetInfoDTO
+export interface PetInfo {
+  id: number;
+  userId: number;
+  name: string;
+  type: string;
+  breed: string | null;
+  age: number | null;
+  gender: string | null;
+  color: string | null;
+  size: string | null;
+  weight: number | null;
+  personality: string[];
+  specialNeeds: string | null;
+  bio: string | null;
+  profilePhoto: string | null;
+  photos: string[];
+  qrCodeUrl: string | null;
+  healthRecord: {
+    id: number;
+    allergies: string[];
+    notes: string | null;
+    lastCheckup: string | null;
+    vaccinations: { name: string; date: string; nextDue?: string }[];
+    medicalHistory: { date: string; condition: string; treatment: string; notes?: string }[];
+    weightHistory: { date: string; value: number }[];
+  } | null;
+}
+
+// PostListItemDTO
+export interface PostListItem {
+  id: number;
+  title: string;
+  slug: string;
+  description: string;
+  image: string;
+  petType: string;
+  status: string;
+  city: string;
+  district: string;
+  location: string;
+  latitude: number | null;
+  longitude: number | null;
+  views: number;
+  featured: boolean;
+  isActive: boolean;
+  tags: string[];
+  postedBy: Poster;
+  pet: PetInfo | null;
+  mediaCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// PostDetailDTO
+export interface PostDetail {
+  id: number;
+  title: string;
+  slug: string;
+  petType: string;
+  status: string;
+  location: string;
+  city: string;
+  district: string;
+  latitude: number | null;
+  longitude: number | null;
+  image: string;
+  description: string;
+  views: number;
+  featured: boolean;
+  isActive: boolean;
+  tags: string[];
+  postedBy: {
+    id: number;
+    name: string;
+    phone: string;
+    avatar: string | null;
+    email: string | null;
+    createdAt: string;
+    totalPosts: number;
+  };
+  pet: PetInfo | null;
+  media: { id: number; imageUrl: string; isThumbnail: boolean }[];
+  comments: {
+    total: number;
+    items: any[];
+  };
+  relatedPosts: PostListItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// API Response wrapper from ResponseHandler
+export interface ApiResponse<T> {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: T;
+}
+
+// Paginated response
+export interface PaginatedResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  first?: boolean;
+  last?: boolean;
+}
+
+// ============ Request Types ============
+
+export interface GetPostsParams {
+  page?: number;
+  size?: number;
+  status?: string;
+  petType?: string;
+  city?: string;
+  district?: string;
+  search?: string;
+  featured?: boolean;
+  sort?: string;
+}
+
+export interface CreatePostRequest {
   title: string;
   description: string;
   petType: string;
-  status: 'LOST' | 'FOUND' | 'FOR_ADOPTION' | 'RESCUE';
+  status: string;
   city: string;
+  district: string;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  tags?: string[];
+  petId?: number;
+}
+
+export interface UpdatePostRequest {
+  title?: string;
+  description?: string;
+  status?: string;
+  city?: string;
   district?: string;
   location?: string;
   latitude?: number;
   longitude?: number;
-  images: string[];
   tags?: string[];
-  // Pet info (optional - for linking existing pet or creating new)
-  petId?: string;
-  petName?: string;
-  petBreed?: string;
-  petAge?: number;
-  petGender?: 'MALE' | 'FEMALE';
-  petColor?: string;
-  petSize?: 'SMALL' | 'MEDIUM' | 'LARGE';
-}
-
-export interface UpdatePostData extends Partial<CreatePostData> {
   isActive?: boolean;
 }
 
-// Helper to generate slug
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    + '-' + Date.now();
-}
+// ============ Service Functions ============
 
 const petPostService = {
-  // Get all posts with filters
-  async getPosts(filters?: {
+  /**
+   * API 1: Get posts list with filters
+   * GET /api/v1/posts
+   */
+  async getPosts(params: GetPostsParams = {}): Promise<ApiResponse<PaginatedResponse<PostListItem>>> {
+    const response = await apiClient.get(COMMON_API.posts, {
+      params: {
+        page: params.page || 0,
+        size: params.size || 10,
+        status: params.status,
+        petType: params.petType,
+        city: params.city,
+        district: params.district,
+        search: params.search,
+        featured: params.featured,
+        sort: params.sort || 'createdAt,desc',
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * API 2: Get post detail by ID or slug
+   * GET /api/v1/posts/{idOrSlug}
+   */
+  async getPostBySlug(idOrSlug: string): Promise<ApiResponse<PostDetail>> {
+    const response = await apiClient.get(COMMON_API.postDetail(idOrSlug));
+    return response.data;
+  },
+
+  /**
+   * API 3: Get current user's posts
+   * GET /api/v1/posts/my-posts
+   */
+  async getMyPosts(params: { status?: string; isActive?: boolean; page?: number; size?: number } = {}): Promise<ApiResponse<PaginatedResponse<PostListItem>>> {
+    const response = await apiClient.get(COMMON_API.myPosts, {
+      params: {
+        status: params.status,
+        isActive: params.isActive,
+        page: params.page || 0,
+        size: params.size || 10,
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * API 4: Create new post
+   * POST /api/v1/posts
+   */
+  async createPost(postData: CreatePostRequest, images?: File[]): Promise<ApiResponse<PostDetail>> {
+    const formData = new FormData();
+    formData.append('postData', new Blob([JSON.stringify(postData)], { type: 'application/json' }));
+    
+    if (images && images.length > 0) {
+      images.forEach((image) => {
+        formData.append('images', image);
+      });
+    }
+
+    const response = await apiClient.post(COMMON_API.posts, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  /**
+   * API 5: Update post
+   * PUT /api/v1/posts/{id}
+   */
+  async updatePost(id: number, postData: UpdatePostRequest): Promise<ApiResponse<PostDetail>> {
+    const response = await apiClient.put(COMMON_API.postDetail(String(id)), postData);
+    return response.data;
+  },
+
+  /**
+   * API 6: Delete post
+   * DELETE /api/v1/posts/{id}
+   */
+  async deletePost(id: number): Promise<ApiResponse<void>> {
+    const response = await apiClient.delete(COMMON_API.postDetail(String(id)));
+    return response.data;
+  },
+
+  /**
+   * API 7: Upload images to post
+   * POST /api/v1/posts/{id}/images
+   */
+  async uploadImages(postId: number, images: File[], setThumbnail?: number): Promise<ApiResponse<{ id: number; imageUrl: string; isThumbnail: boolean }[]>> {
+    const formData = new FormData();
+    images.forEach((image) => {
+      formData.append('images', image);
+    });
+    if (setThumbnail !== undefined) {
+      formData.append('setThumbnail', String(setThumbnail));
+    }
+
+    const response = await apiClient.post(COMMON_API.postImages(postId), formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  /**
+   * API 8: Delete image from post
+   * DELETE /api/v1/posts/{postId}/images/{imageId}
+   */
+  async deleteImage(postId: number, imageId: number): Promise<ApiResponse<void>> {
+    const response = await apiClient.delete(COMMON_API.postImageDelete(postId, imageId));
+    return response.data;
+  },
+
+  /**
+   * API 9: Increment view count
+   * POST /api/v1/posts/{id}/view
+   */
+  async increaseViews(id: number): Promise<ApiResponse<{ views: number; isNewView: boolean }>> {
+    const response = await apiClient.post(COMMON_API.postView(id));
+    return response.data;
+  },
+
+  /**
+   * API 10: Get nearby posts
+   * GET /api/v1/posts/nearby
+   */
+  async getNearbyPosts(params: {
+    latitude: number;
+    longitude: number;
+    radiusKm?: number;
     status?: string;
-    petType?: string;
-    city?: string;
-    search?: string;
     page?: number;
     size?: number;
-  }): Promise<{ content: PetPost[]; totalElements: number; totalPages: number }> {
-    await delay(300);
-    
-    let filtered = [...localPosts];
-    
-    if (filters?.status) {
-      filtered = filtered.filter(p => p.status === filters.status);
-    }
-    if (filters?.petType) {
-      filtered = filtered.filter(p => 
-        p.petType.toLowerCase().includes(filters.petType!.toLowerCase())
-      );
-    }
-    if (filters?.city) {
-      filtered = filtered.filter(p => 
-        p.location.toLowerCase().includes(filters.city!.toLowerCase())
-      );
-    }
-    if (filters?.search) {
-      const search = filters.search.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.title.toLowerCase().includes(search) ||
-        p.description.toLowerCase().includes(search)
-      );
-    }
-    
-    const page = filters?.page || 0;
-    const size = filters?.size || 10;
-    const start = page * size;
-    const end = start + size;
-    
-    return {
-      content: filtered.slice(start, end),
-      totalElements: filtered.length,
-      totalPages: Math.ceil(filtered.length / size),
-    };
-  },
-
-  // Get post by ID
-  async getPostById(id: string): Promise<PetPost | null> {
-    await delay(200);
-    return localPosts.find(p => p.id === id) || null;
-  },
-
-  // Get post by slug
-  async getPostBySlug(slug: string): Promise<PetPost | null> {
-    await delay(200);
-    return localPosts.find(p => p.slug === slug) || null;
-  },
-
-  // Get my posts (current user's posts)
-  async getMyPosts(): Promise<PetPost[]> {
-    await delay(300);
-    // Mock: return posts from user1
-    return localPosts.filter(p => p.postedBy.id === 'user1');
-  },
-
-  // Create new post
-  async createPost(data: CreatePostData): Promise<PetPost> {
-    await delay(500);
-    
-    const slug = generateSlug(data.title);
-    const now = new Date().toISOString();
-    
-    // Map status from DB format to frontend format
-    const statusMap: Record<string, 'lost' | 'found' | 'for-adoption' | 'rescue'> = {
-      'LOST': 'lost',
-      'FOUND': 'found',
-      'FOR_ADOPTION': 'for-adoption',
-      'RESCUE': 'rescue',
-    };
-
-    const newPost: PetPost = {
-      id: String(nextPostId++),
-      title: data.title,
-      slug,
-      description: data.description,
-      image: data.images[0] || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
-      petType: data.petType,
-      status: statusMap[data.status] || 'lost',
-      location: data.district ? `${data.district}, ${data.city}` : data.city,
-      locationCoords: data.latitude && data.longitude ? {
-        latitude: data.latitude,
-        longitude: data.longitude,
-      } : undefined,
-      postedBy: {
-        id: 'user1', // Mock current user
-        name: 'Người dùng hiện tại',
-        phone: '0912345678',
-        avatar: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=100',
+  }): Promise<ApiResponse<{ content: PostListItem[]; totalElements: number }>> {
+    const response = await apiClient.get(COMMON_API.nearbyPosts, {
+      params: {
+        latitude: params.latitude,
+        longitude: params.longitude,
+        radiusKm: params.radiusKm || 5.0,
+        status: params.status,
+        page: params.page || 0,
+        size: params.size || 10,
       },
-      createdAt: now,
-      tags: data.tags || [],
-      featured: false,
-      views: 0,
-      pet: data.petName ? {
-        id: `pet-${nextPostId}`,
-        name: data.petName,
-        type: data.petType,
-        breed: data.petBreed || data.petType,
-        age: data.petAge || 0,
-        gender: data.petGender === 'MALE' ? 'male' : 'female',
-        color: data.petColor,
-        size: data.petSize?.toLowerCase() as 'small' | 'medium' | 'large',
-        personality: [],
-        healthRecord: {
-          id: `health-${nextPostId}`,
-          vaccinations: [],
-          medicalHistory: [],
-          weight: [],
-          lastCheckup: now,
-          allergies: [],
-        },
-        photos: data.images,
-      } : undefined,
-    };
-    
-    localPosts = [newPost, ...localPosts];
-    return newPost;
-  },
-
-  // Update post
-  async updatePost(id: string, data: UpdatePostData): Promise<PetPost> {
-    await delay(400);
-    
-    const index = localPosts.findIndex(p => p.id === id);
-    if (index === -1) {
-      throw new Error('Post not found');
-    }
-    
-    // Check ownership (mock)
-    if (localPosts[index].postedBy.id !== 'user1') {
-      throw new Error('You can only edit your own posts');
-    }
-    
-    const statusMap: Record<string, 'lost' | 'found' | 'for-adoption' | 'rescue'> = {
-      'LOST': 'lost',
-      'FOUND': 'found',
-      'FOR_ADOPTION': 'for-adoption',
-      'RESCUE': 'rescue',
-    };
-    
-    localPosts[index] = {
-      ...localPosts[index],
-      ...(data.title && { title: data.title }),
-      ...(data.description && { description: data.description }),
-      ...(data.petType && { petType: data.petType }),
-      ...(data.status && { status: statusMap[data.status] }),
-      ...(data.city && {
-        location: data.district ? `${data.district}, ${data.city}` : data.city,
-      }),
-      ...(data.images && data.images.length > 0 && { image: data.images[0] }),
-    };
-    
-    return localPosts[index];
-  },
-
-  // Delete post
-  async deletePost(id: string): Promise<void> {
-    await delay(300);
-    
-    const index = localPosts.findIndex(p => p.id === id);
-    if (index === -1) {
-      throw new Error('Post not found');
-    }
-    
-    // Check ownership (mock)
-    if (localPosts[index].postedBy.id !== 'user1') {
-      throw new Error('You can only delete your own posts');
-    }
-    
-    localPosts = localPosts.filter(p => p.id !== id);
-  },
-
-  // Increase view count
-  async increaseViews(id: string): Promise<void> {
-    await delay(100);
-    const post = localPosts.find(p => p.id === id);
-    if (post) {
-      post.views = (post.views || 0) + 1;
-    }
-  },
-
-  // Cities list for Vietnam
-  getCities(): string[] {
-    return [
-      'TP. Hồ Chí Minh',
-      'Hà Nội',
-      'Đà Nẵng',
-      'Hải Phòng',
-      'Cần Thơ',
-      'Biên Hòa',
-      'Nha Trang',
-      'Huế',
-      'Buôn Ma Thuột',
-      'Thái Nguyên',
-    ];
-  },
-
-  // Districts for a city (mock)
-  getDistricts(city: string): string[] {
-    const districts: Record<string, string[]> = {
-      'TP. Hồ Chí Minh': [
-        'Quận 1', 'Quận 2', 'Quận 3', 'Quận 4', 'Quận 5',
-        'Quận 6', 'Quận 7', 'Quận 8', 'Quận 9', 'Quận 10',
-        'Quận 11', 'Quận 12', 'Quận Bình Thạnh', 'Quận Gò Vấp',
-        'Quận Phú Nhuận', 'Quận Tân Bình', 'Quận Tân Phú',
-        'Quận Thủ Đức', 'Huyện Bình Chánh', 'Huyện Củ Chi',
-      ],
-      'Hà Nội': [
-        'Quận Hoàn Kiếm', 'Quận Ba Đình', 'Quận Đống Đa', 'Quận Hai Bà Trưng',
-        'Quận Hoàng Mai', 'Quận Thanh Xuân', 'Quận Long Biên', 'Quận Cầu Giấy',
-        'Quận Tây Hồ', 'Quận Bắc Từ Liêm', 'Quận Nam Từ Liêm',
-      ],
-    };
-    return districts[city] || ['Khác'];
-  },
-
-  // Pet types
-  getPetTypes(): string[] {
-    return ['Chó', 'Mèo', 'Chim', 'Thỏ', 'Cá', 'Hamster', 'Khác'];
-  },
-
-  // Mock image upload
-  async uploadImage(file: File): Promise<string> {
-    await delay(800);
-    // Return a mock image URL
-    const mockImages = [
-      'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800',
-      'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800',
-      'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
-      'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=800',
-      'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800',
-    ];
-    return mockImages[Math.floor(Math.random() * mockImages.length)];
+    });
+    return response.data;
   },
 };
 

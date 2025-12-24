@@ -11,11 +11,28 @@ interface Coordinates {
   longitude: number
 }
 
+interface RescueCenter {
+  id: string
+  name: string
+  location: {
+    address?: string
+    latitude: number
+    longitude: number
+  }
+  phone?: string
+  website?: string
+  specialties?: string[]
+  distance?: number
+  rating?: number
+  reviewCount?: number
+}
+
 interface NearbyRescueCentersProps {
   userLocation?: Coordinates | null
   radiusKm?: number
   limit?: number
   isLoading?: boolean
+  rescueCentersData?: RescueCenter[] // New prop to accept data from API
 }
 
 export default function NearbyRescueCenters({
@@ -23,9 +40,15 @@ export default function NearbyRescueCenters({
   radiusKm = 10,
   limit = 5,
   isLoading = false,
+  rescueCentersData,
 }: NearbyRescueCentersProps) {
-  // Calculate nearby rescue centers
+  // Use provided data or fall back to mock data
   const centers = useMemo(() => {
+    // If external data is provided, use it
+    if (rescueCentersData && rescueCentersData.length > 0) {
+      return rescueCentersData.slice(0, limit)
+    }
+    // Otherwise, fall back to mock data
     if (!userLocation) return []
     return findNearbyRescueCenters(
       userLocation.latitude,
@@ -33,7 +56,7 @@ export default function NearbyRescueCenters({
       radiusKm,
       limit
     )
-  }, [userLocation, radiusKm, limit])
+  }, [userLocation, radiusKm, limit, rescueCentersData])
 
   if (isLoading) {
     return (

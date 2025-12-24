@@ -12,9 +12,9 @@ import { cn } from '@/lib/utils';
 import WishlistButton from '@/components/wishlist-button';
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
