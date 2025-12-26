@@ -35,6 +35,7 @@ import DeletePostDialog from '@/components/delete-post-dialog';
 import petPostService from '@/services/petPostService';
 import authService from '@/services/authService';
 import type { PetProfile } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 function ChatButton({ postedBy }: { postedBy: { id?: string; _id?: string; name?: string; phone?: string } }) {
   const router = useRouter();
