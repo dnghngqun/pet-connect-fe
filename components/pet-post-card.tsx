@@ -57,9 +57,9 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
         }
       }}
     >
-      <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:translate-y-[-4px] cursor-pointer h-full">
+      <Card className="overflow-hidden transition-all duration-200 hover:shadow-lg hover:translate-y-[-4px] cursor-pointer h-full flex flex-col">
         {/* Image Section */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <Image
             src={post.image || '/placeholder.svg'}
             alt={post.title}
@@ -113,7 +113,7 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
         </div>
 
         {/* Content Section */}
-        <CardContent className="p-4">
+        <CardContent className="p-4 flex-1 flex flex-col">
           {/* Title */}
           <h3 className="font-bold text-lg line-clamp-2 mb-2">{post.title}</h3>
 
@@ -121,10 +121,10 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
           <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{post.description}</p>
 
           {/* Location & Pet Type */}
-          <div className="space-y-2 mb-4 text-sm">
+          <div className="space-y-2 mb-4 text-sm flex-1">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span>{post.location}</span>
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="line-clamp-1">{post.location}</span>
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{post.petType}</Badge>
@@ -153,7 +153,7 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-auto">
             <Button
               variant="outline"
               size="sm"
@@ -164,7 +164,7 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
               }}
             >
               <Phone className="h-4 w-4 mr-1" />
-              Goi
+              Gọi
             </Button>
             <Button
               variant="default"

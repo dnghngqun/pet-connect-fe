@@ -1,14 +1,78 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, MapPin, Users, MessageSquare, SearchIcon } from 'lucide-react';
+import { Heart, MapPin, Users, MessageSquare, Loader2 } from 'lucide-react';
 import PetPostCard from '@/components/pet-post-card';
-import { petPosts } from '@/lib/pet-posts';
 import HeroSlider from '@/components/hero-slider';
+import petPostService from '@/services/petPostService';
+
+interface PetPost {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  image: string;
+  petType: string;
+  status: string;
+  location: string;
+  postedBy: {
+    id: string;
+    name: string;
+    phone: string;
+    avatar?: string;
+  };
+  createdAt: string;
+  tags: string[];
+  featured?: boolean;
+}
 
 export default function Home() {
-  const featuredPosts = petPosts.filter((post) => post.featured).slice(0, 8);
-  const recentPosts = petPosts.slice(0, 6);
+  const [posts, setPosts] = useState<PetPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
+
+  const loadPosts = async () => {
+    try {
+      const response = await petPostService.getPosts({ size: 20 });
+      // Transform API response to match expected format
+      // Backend returns: postedBy { id, name, phone, avatar }
+      const transformedPosts = (response.data?.content || []).map((post: any) => ({
+        id: String(post.id),
+        title: post.title,
+        slug: post.slug,
+        description: post.description,
+        image: post.image || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
+        petType: post.petType,
+        status: post.status?.toLowerCase().replace('_', '-') || 'lost',
+        location: post.location || `${post.district || ''}, ${post.city || ''}`,
+        postedBy: {
+          id: String(post.postedBy?.id || ''),
+          name: post.postedBy?.name || 'Người dùng',
+          phone: post.postedBy?.phone || '',
+          avatar: post.postedBy?.avatar,
+        },
+        createdAt: post.createdAt,
+        tags: post.tags || [],
+        featured: post.featured,
+      }));
+      setPosts(transformedPosts);
+    } catch (error) {
+      console.error('Failed to load posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const featuredPosts = posts.filter(post => post.featured).slice(0, 8);
+  const recentPosts = [...posts]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 6);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -99,11 +163,27 @@ export default function Home() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {featuredPosts.map((post) => (
-              <PetPostCard key={post.id} post={post} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : featuredPosts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {featuredPosts.map((post) => (
+                <PetPostCard key={post.id} post={post as any} />
+              ))}
+            </div>
+          ) : recentPosts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {recentPosts.slice(0, 8).map((post) => (
+                <PetPostCard key={post.id} post={post as any} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              Chưa có bài đăng nào
+            </div>
+          )}
         </div>
       </section>
 
@@ -117,11 +197,21 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {recentPosts.map((post) => (
-              <PetPostCard key={post.id} post={post} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : recentPosts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {recentPosts.map((post) => (
+                <PetPostCard key={post.id} post={post as any} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              Chưa có bài đăng nào
+            </div>
+          )}
 
           <div className="mt-8 text-center">
             <Button asChild size="lg">

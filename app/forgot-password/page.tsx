@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { PawPrint, Lock } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -20,7 +21,10 @@ export default function ForgotPasswordPage() {
     // Simulate password reset request
     setTimeout(() => {
       setIsLoading(false)
-      alert("Password reset link sent to your email!")
+      toast({
+        title: "Đã gửi email",
+        description: "Link đặt lại mật khẩu đã được gửi đến email của bạn!",
+      })
       window.location.href = "/sign-in"
     }, 1500)
   }

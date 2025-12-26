@@ -1,54 +1,99 @@
-import { Suspense } from "react"
-import { petPosts } from "@/lib/pet-posts"
-import PetPostCard from "@/components/pet-post-card"
-import ShopFilters from "@/components/shop-filters"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+'use client'
 
-interface ShopPageProps {
-  searchParams: {
-    status?: string
-    petType?: string
-    location?: string
-    sort?: string
+import { Suspense, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import PetPostCard from '@/components/pet-post-card'
+import ShopFilters from '@/components/shop-filters'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+import { Loader2 } from 'lucide-react'
+import petPostService from '@/services/petPostService'
+
+interface PostData {
+  id: string
+  title: string
+  slug: string
+  description: string
+  image: string
+  petType: string
+  status: string
+  location: string
+  postedBy: {
+    id: string
+    name: string
+    phone: string
+    avatar?: string
   }
+  createdAt: string
+  tags: string[]
+  views?: number
+  featured?: boolean
 }
 
-export default function ShopPage({ searchParams }: ShopPageProps) {
-  // Filter posts based on search params
-  let filteredPosts = [...petPosts]
+function ShopContent() {
+  const searchParams = useSearchParams()
+  const [posts, setPosts] = useState<PostData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [totalPages, setTotalPages] = useState(0)
+  const [currentPage, setCurrentPage] = useState(0)
 
-  // Filter by status
-  if (searchParams.status) {
-    const statuses = searchParams.status.split(',')
-    filteredPosts = filteredPosts.filter((post) => statuses.includes(post.status))
-  }
+  const status = searchParams.get('status')
+  const petType = searchParams.get('petType')
+  const location = searchParams.get('location')
+  const sort = searchParams.get('sort')
 
-  // Filter by pet type
-  if (searchParams.petType) {
-    filteredPosts = filteredPosts.filter((post) => post.petType.toLowerCase().includes(searchParams.petType!.toLowerCase()))
-  }
+  useEffect(() => {
+    loadPosts()
+  }, [status, petType, location, sort, currentPage])
 
-  // Filter by location
-  if (searchParams.location) {
-    filteredPosts = filteredPosts.filter((post) => post.location.toLowerCase().includes(searchParams.location!.toLowerCase()))
-  }
+  const loadPosts = async () => {
+    try {
+      setLoading(true)
+      
+      // Build sort parameter
+      let sortParam = undefined
+      if (sort === 'newest') sortParam = 'createdAt,desc'
+      else if (sort === 'oldest') sortParam = 'createdAt,asc'
+      else if (sort === 'views') sortParam = 'views,desc'
 
-  // Sort posts
-  if (searchParams.sort) {
-    switch (searchParams.sort) {
-      case "newest":
-        filteredPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        break
-      case "oldest":
-        filteredPosts.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-        break
-      case "views":
-        filteredPosts.sort((a, b) => (b.views || 0) - (a.views || 0))
-        break
-      default:
-        break
+      const response = await petPostService.getPosts({
+        status: status || undefined,
+        petType: petType || undefined,
+        city: location || undefined,
+        page: currentPage,
+        size: 12,
+        sort: sortParam,
+      })
+
+      // Transform API response - using postedBy from backend
+      const transformedPosts: PostData[] = (response.data?.content || []).map((post: any) => ({
+        id: String(post.id),
+        title: post.title,
+        slug: post.slug,
+        description: post.description,
+        image: post.image || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
+        petType: post.petType,
+        status: post.status?.toLowerCase().replace('_', '-') || 'lost',
+        location: post.location || `${post.district || ''}, ${post.city || ''}`,
+        postedBy: {
+          id: String(post.postedBy?.id || ''),
+          name: post.postedBy?.name || 'Người dùng',
+          phone: post.postedBy?.phone || '',
+          avatar: post.postedBy?.avatar,
+        },
+        createdAt: post.createdAt,
+        tags: post.tags || [],
+        views: post.views,
+        featured: post.featured,
+      }))
+
+      setPosts(transformedPosts)
+      setTotalPages(response.data?.totalPages || 0)
+    } catch (error) {
+      console.error('Failed to load posts:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -68,45 +113,70 @@ export default function ShopPage({ searchParams }: ShopPageProps) {
         <ShopFilters />
 
         <div>
-          <Suspense fallback={<PetPostGridSkeleton />}>
-            {filteredPosts.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : posts.length > 0 ? (
+            <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredPosts.map((post) => (
-                  <PetPostCard key={post.id} post={post} />
+                {posts.map((post) => (
+                  <PetPostCard key={post.id} post={post as any} />
                 ))}
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="text-lg font-semibold mb-2">Không có bài đăng nào</p>
-                <p className="text-muted-foreground mb-6">Hãy thử thay đổi bộ lọc hoặc đăng bài mới</p>
-                <Button asChild>
-                  <Link href="/post/new">Đăng bài mới</Link>
-                </Button>
-              </div>
-            )}
-          </Suspense>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center gap-2 mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                    disabled={currentPage === 0}
+                  >
+                    Trước
+                  </Button>
+                  <span className="flex items-center px-4">
+                    Trang {currentPage + 1} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={currentPage >= totalPages - 1}
+                  >
+                    Sau
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-lg font-semibold mb-2">Không có bài đăng nào</p>
+              <p className="text-muted-foreground mb-6">Hãy thử thay đổi bộ lọc hoặc đăng bài mới</p>
+              <Button asChild>
+                <Link href="/post/new">Đăng bài mới</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-function PetPostGridSkeleton() {
+function LoadingFallback() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array(6)
-        .fill(0)
-        .map((_, i) => (
-          <div key={i} className="space-y-3">
-            <Skeleton className="h-60 w-full rounded-lg" />
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-4 w-1/2" />
-            <div className="flex gap-2">
-              <Skeleton className="h-4 w-1/4" />
-              <Skeleton className="h-4 w-1/4" />
-            </div>
-          </div>
-        ))}
+    <div className="container px-4 py-8 md:py-12">
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     </div>
+  )
+}
+
+export default function ShopPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ShopContent />
+    </Suspense>
   )
 }

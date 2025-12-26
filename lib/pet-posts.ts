@@ -10,6 +10,10 @@ export const petPosts: PetPost[] = [
     petType: "Husky",
     status: "lost",
     location: "Quận 1, TP.HCM",
+    locationCoords: {
+      latitude: 10.7769,
+      longitude: 106.7009
+    },
     postedBy: {
       id: "user1",
       name: "Nguyễn Văn A",
@@ -66,6 +70,10 @@ export const petPosts: PetPost[] = [
     petType: "Golden Retriever",
     status: "for-adoption",
     location: "Quận 7, TP.HCM",
+    locationCoords: {
+      latitude: 10.8256,
+      longitude: 106.7331
+    },
     postedBy: {
       id: "user2",
       name: "Trần Thị B",
@@ -214,7 +222,8 @@ export const petPosts: PetPost[] = [
       },
       photos: [
         "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?q=80&w=800&auto=format&fit=crop"
-      ]
+      ],
+      qrCodeUrl: "http://localhost:8080/api/pets/pet4/qr-code"
     }
   },
   {
@@ -235,7 +244,7 @@ export const petPosts: PetPost[] = [
     createdAt: "2024-11-01T11:20:00Z",
     tags: ["adoption", "cat", "cute"],
     featured: false,
-    views: 2100,
+    views: 450,
     pet: {
       id: "pet5",
       name: "Miu",
@@ -267,8 +276,8 @@ export const petPosts: PetPost[] = [
       },
       photos: [
         "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop"
-      ]
+      ],
+      qrCodeUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAeFBMVEX///8AAAB4eHgnJye7u7vo6OiioqJwcHDy8vLBwcFnZ2evr6/i4uKHh4dVVVWcnJy1tbU1NTXS0tKVlZWpqamOjo7Y2Nh/f3/Hx8dMTEzx8fH4+Phra2sbGxtHR0fg4OA8PDwREREwMDBcXFwiIiIYGBgxMTFBQUH/lneRAAAKh0lEQVR4nO2df0OyMBDH0xBFU0nwJ6SWVu//HT7ujie/eAyHYFrd9y8a27GP6ca22+3hQaVSqVQqlUqlUqlUKpVKpVKpVCpVpn9lFgUCI6E3/AAAAABJRU5ErkJggg=="
     }
-  },
+  }
 ]
-

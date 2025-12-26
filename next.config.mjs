@@ -8,6 +8,20 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.wikimedia.org',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.example.com',
+      },
+    ],
   },
   devIndicators: false
 }

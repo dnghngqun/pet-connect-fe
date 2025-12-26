@@ -7,6 +7,7 @@ import { Send, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
+import { toast } from "@/components/ui/use-toast";
 
 interface Props {
   onReplyCancel?: () => void;
@@ -24,7 +25,11 @@ export function ChatFooter({ onReplyCancel, replyTo }: Props) {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn file ảnh");
+      toast({
+        title: "File không hợp lệ",
+        description: "Vui lòng chọn file ảnh (jpg, png, gif...)",
+        variant: "destructive",
+      });
       return;
     }
 

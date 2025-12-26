@@ -4,13 +4,14 @@ import Header from "@/components/header";
 import PageBackground from "@/components/page-background";
 import { Toaster } from "@/components/ui/toaster";
 import { Inter } from "next/font/google";
+import type { Metadata } from "next";
 import type React from "react";
 import "./globals.css";
-import { RootLayoutClient } from "./root-layout-client";
+import "leaflet/dist/leaflet.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "PetPals - What your pet needs, when they need it",
   description: "Premium pet products for cats and dogs with same-day delivery",
   generator: "v0.dev",
@@ -33,7 +34,6 @@ export default function RootLayout({
           </div>
           <Toaster />
         </CartProvider>
-        <RootLayoutClient children={undefined} />
       </body>
     </html>
   );
