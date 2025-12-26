@@ -8,13 +8,21 @@ import { ChatFooter } from "./chat-footer";
 import { NewChatDialog } from "./new-chat-dialog";
 import type { MessageType } from "@/lib/chat.types";
 
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useChat } from "@/hooks/useChat";
 
 export function ChatContainer({ initialParticipantId }: { initialParticipantId?: string }) {
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<MessageType | null>(null);
-  const { createChat, selectChat } = useChat();
+  const { createChat, selectChat, selectedChatId } = useChat();
+
+  const isMounted = React.useRef(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!initialParticipantId) return;
@@ -22,13 +30,14 @@ export function ChatContainer({ initialParticipantId }: { initialParticipantId?:
     (async () => {
       try {
         const newChat = await createChat({ participantId: initialParticipantId });
-        if (newChat) {
-          setSelectedChatId(newChat._id);
+        if (isMounted.current && newChat && newChat._id) {
           // also select chat to load messages
           await selectChat(newChat._id);
         }
       } catch (err) {
-        console.error('Failed to create/select chat for participant:', err);
+        if (isMounted.current) {
+          console.error('Failed to create/select chat for participant:', err);
+        }
       }
     })();
   }, [initialParticipantId, createChat, selectChat]);
@@ -48,13 +57,10 @@ export function ChatContainer({ initialParticipantId }: { initialParticipantId?:
       <div className="w-80 border-r bg-white flex flex-col">
         <div className="p-4 border-b space-y-3">
           <h1 className="text-2xl font-bold text-gray-900">Tin nhắn</h1>
-          <NewChatDialog onChatCreated={setSelectedChatId} />
+          <NewChatDialog onChatCreated={selectChat} />
         </div>
         <div className="flex-1 overflow-y-auto">
-          <ChatList
-            selectedChatId={selectedChatId}
-            onSelectChat={setSelectedChatId}
-          />
+          <ChatList />
         </div>
       </div>
 

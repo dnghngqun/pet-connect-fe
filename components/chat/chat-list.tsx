@@ -8,9 +8,8 @@ import { Loader2 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-interface Props {
-  selectedChatId?: string | null;
-  onSelectChat?: (chatId: string) => void;
+function getChatId(chat: ChatType): string {
+  return chat._id || String(chat.id) || `temp_${Date.now()}_${Math.random()}`;
 }
 
 function getOtherParticipant(chat: ChatType, currentUserId: string | undefined) {
@@ -48,12 +47,11 @@ function getLastMessagePreview(chat: ChatType, currentUserId: string | undefined
   return message.content || "(Không có nội dung)";
 }
 
-export function ChatList({ selectedChatId, onSelectChat }: Props) {
-  const { chats, isChatsLoading, selectChat, currentUser } = useChat();
+export function ChatList() {
+  const { chats, isChatsLoading, selectChat, selectedChatId, currentUser } = useChat();
 
   const handleSelectChat = async (chatId: string) => {
     await selectChat(chatId);
-    onSelectChat?.(chatId);
   };
 
   if (isChatsLoading && chats.length === 0) {
@@ -80,21 +78,21 @@ export function ChatList({ selectedChatId, onSelectChat }: Props) {
         const lastMessagePreview = getLastMessagePreview(chat, currentUser?._id);
         const lastMessageTime = chat.lastMessage
           ? formatDistanceToNow(new Date(chat.lastMessage.createdAt), {
-              addSuffix: false,
-              locale: vi,
-            })
+            addSuffix: false,
+            locale: vi,
+          })
           : formatDistanceToNow(new Date(chat.createdAt), {
-              addSuffix: false,
-              locale: vi,
-            });
+            addSuffix: false,
+            locale: vi,
+          });
 
         return (
           <button
-            key={chat._id}
-            onClick={() => handleSelectChat(chat._id)}
+            key={getChatId(chat)}
+            onClick={() => handleSelectChat(getChatId(chat))}
             className={cn(
               "w-full flex gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-left",
-              selectedChatId === chat._id && "bg-gray-100"
+              selectedChatId === getChatId(chat) && "bg-gray-100"
             )}
           >
             {/* Avatar */}

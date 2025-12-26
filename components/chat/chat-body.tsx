@@ -24,6 +24,11 @@ export function ChatBody({ onReply }: Props) {
     };
   }, []);
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   if (isMessagesLoading && messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">

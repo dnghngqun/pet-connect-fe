@@ -32,7 +32,7 @@ export function NewChatDialog({ onChatCreated }: Props) {
         participantId: selectedUserId,
       });
 
-      if (newChat) {
+      if (newChat && newChat._id) {
         onChatCreated?.(newChat._id);
         setOpen(false);
         setSelectedUserId(null);
@@ -83,12 +83,11 @@ export function NewChatDialog({ onChatCreated }: Props) {
                 filteredUsers.map((user) => (
                   <button
                     key={user._id}
-                    onClick={() => setSelectedUserId(user._id)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                      selectedUserId === user._id
+                    onClick={() => setSelectedUserId(user._id || null)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${selectedUserId === user._id
                         ? "bg-blue-100 border border-blue-500"
                         : "hover:bg-gray-100 border border-transparent"
-                    }`}
+                      }`}
                   >
                     {user.avatar ? (
                       <Image

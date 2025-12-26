@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MapPin, Phone, MessageCircle, Heart, MoreVertical, Flag } from 'lucide-react';
 import ReportDialog from '@/components/report-dialog';
+import { useAuth } from '@/hooks/useAuth';
 import type { PetPost } from '@/lib/types';
 
 interface PetPostCardProps {
@@ -27,6 +28,7 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
   const [favorite, setFavorite] = useState(isFavorited);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleFavoriteToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -172,13 +174,14 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
                 e.preventDefault();
                 e.stopPropagation();
 
-                const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+                // Check if user is logged in
                 if (!user) {
-                  // redirect to sign-in if not logged in
+                  // Not logged in - redirect to login
                   router.push('/sign-in');
                   return;
                 }
 
+                // User is logged in - go to chat with the post author
                 const participantId = post.postedBy?.id;
                 if (!participantId) {
                   // fallback: open chat list
@@ -186,7 +189,7 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
                   return;
                 }
 
-                // Navigate to chat and let chat page create/select the conversation
+                // Navigate to chat with participantId to create/select conversation
                 router.push(`/chat?participantId=${encodeURIComponent(participantId)}`);
               }}
             >

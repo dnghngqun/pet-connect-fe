@@ -15,7 +15,7 @@ function ChatButton({ postedBy }: { postedBy: { id?: string; _id?: string; name?
   const router = useRouter();
 
   const handleChat = () => {
-    const user = typeof window !== 'undefined' ? localStorage.getItem('user') : null;
+    const user = typeof window !== 'undefined' ? localStorage.getItem('pet-connect-user') : null;
     if (!user) {
       router.push('/sign-in');
       return;
@@ -296,7 +296,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                   <Phone className="h-4 w-4 mr-2" />
                   Gọi: {post.postedBy.phone}
                 </Button>
-                  <ChatButton postedBy={post.postedBy} />
+                <ChatButton postedBy={post.postedBy} />
               </div>
             </CardContent>
           </Card>

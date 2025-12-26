@@ -1,5 +1,6 @@
 export type UserType = {
-  _id: string;
+  id?: string | number;
+  _id?: string;
   name: string;
   email: string;
   avatar?: string;
@@ -7,23 +8,25 @@ export type UserType = {
 };
 
 export type MessageType = {
-  _id: string;
+  id?: string | number;
+  _id?: string;
   content?: string;
   image?: string;
   sender: UserType;
   replyTo?: MessageType;
-  chatId: string;
+  chatId?: string;
   createdAt: string;
   updatedAt: string;
   status?: "sending" | "sent" | "failed";
 };
 
 export type ChatType = {
-  _id: string;
+  id?: string | number;
+  _id?: string;
   lastMessage?: MessageType;
   participants: UserType[];
-  isGroup: boolean;
-  createdBy: string;
+  isGroup?: boolean;
+  createdBy?: string;
   groupName?: string;
   createdAt: string;
   updatedAt: string;
@@ -42,6 +45,16 @@ export type CreateMessagePayload = {
   image?: string;
   replyToId?: string;
 };
+
+// API Response Types
+export type ApiResponse<T> = {
+  code: string;
+  message: string;
+  data: T | null;
+};
+
+export type CreateConversationResponse = ApiResponse<ChatType>;
+export type SendMessageResponse = ApiResponse<MessageType>;
 
 export type ConversationRow = {
   id: number | string;

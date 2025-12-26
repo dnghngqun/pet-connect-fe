@@ -6,6 +6,7 @@ import React, {
   useCallback,
   ReactNode,
   useEffect,
+  useRef,
 } from "react";
 import type {
   ChatType,
@@ -14,7 +15,7 @@ import type {
   MessageType,
   UserType,
 } from "@/lib/chat.types";
-import { chatAPI } from "@/services/chatService";
+import { chatAPI, normalizeMessageResponse } from "@/services/chatService";
 import { useAuth } from "./useAuth";
 
 interface ChatContextType {
@@ -85,6 +86,106 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+
+  // Refs for callbacks
+  const selectedChatIdRef = useRef(selectedChatId);
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChatId;
+  }, [selectedChatId]);
+
+  // WebSocket Handlers
+  const handleWebSocketMessage = useCallback((response: any) => {
+    const rawData = response.data || response;
+
+    // Check if it's a message
+    if (response.type === 'MESSAGE' || (rawData.content && rawData.conversationId)) {
+      const msgData = rawData;
+      try {
+        const normalized = normalizeMessageResponse(msgData);
+
+        // 1. Update Messages if belongs to current chat
+        // Use ref to get current selectedChatId
+        if (normalized.chatId === selectedChatIdRef.current) {
+          setMessages((prev) => {
+            // Check logic for optimistic replacement
+            const index = prev.findIndex(m =>
+              m.status === 'sending' &&
+              m.content === normalized.content &&
+              m.chatId === normalized.chatId
+            );
+
+            if (index !== -1) {
+              const newMessages = [...prev];
+              newMessages[index] = normalized;
+              return newMessages;
+            }
+
+            // Avoid duplicates if already exists (via ID)
+            if (prev.some(m => m._id === normalized._id)) return prev;
+
+            return [...prev, normalized];
+          });
+        }
+
+        // 2. Update Chat List (Last Message)
+        setChats((prevChats) => {
+          const chatIndex = prevChats.findIndex(c => c._id === normalized.chatId);
+          if (chatIndex !== -1) {
+            const newChats = [...prevChats];
+            newChats[chatIndex] = {
+              ...newChats[chatIndex],
+              lastMessage: normalized,
+              updatedAt: normalized.createdAt,
+            };
+            // Move updated chat to top?
+            const updatedChat = newChats[chatIndex];
+            newChats.splice(chatIndex, 1);
+            newChats.unshift(updatedChat);
+            return newChats;
+          } else {
+            // Chat not in list? Maybe fetch all?
+            // For now ignore
+            return prevChats;
+          }
+        });
+
+      } catch (e) {
+        console.error("Error processing WS message", e);
+      }
+    }
+  }, []);
+
+  const handleNotification = useCallback((response: any) => {
+    // console.log("Notification received", response); 
+    // Could Trigger fetchAllChats if notification implies new chat?
+  }, []);
+
+  const handleError = useCallback((error: any) => {
+    console.error("WebSocket error", error);
+  }, []);
+
+
+  // Connect WebSocket
+  useEffect(() => {
+    if (!currentUser || demo) return;
+
+    const userStr = localStorage.getItem('pet-connect-user');
+    const token = userStr ? JSON.parse(userStr).token : null;
+
+    if (token) {
+      chatAPI.connectWebSocket(
+        token,
+        handleWebSocketMessage,
+        handleNotification,
+        handleError
+      );
+    }
+
+    return () => {
+      chatAPI.disconnectWebSocket();
+    };
+  }, [currentUser, demo, handleWebSocketMessage, handleNotification, handleError]);
+
 
   // Fetch all chats
   const fetchAllChats = useCallback(async () => {
@@ -226,15 +327,12 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     [currentUser?._id, demo, users]
   );
 
-  // Refresh messages (polling)
+  // Refresh messages (polling) - kept for manual refresh if needed
   const refreshMessages = useCallback(async () => {
     if (!selectedChatId || !currentUser?._id) return;
 
     try {
-      if (demo) {
-        // no-op in demo or you can implement message append simulation
-        return;
-      }
+      if (demo) return;
       const { messages: fetchedMessages } = await chatAPI.getSingleChat(selectedChatId);
       setMessages(fetchedMessages);
     } catch (error) {
@@ -267,7 +365,9 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
         setChats((prev) => [newChat, ...prev]);
         return newChat;
       } catch (error) {
-        console.error("Failed to create chat:", error);
+        const errorMsg = error instanceof Error ? error.message : "Failed to create chat";
+        console.error("Failed to create chat:", errorMsg);
+        alert(`Lỗi: ${errorMsg}`);
         return null;
       }
     },
@@ -306,12 +406,18 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
             updatedAt: new Date().toISOString(),
             status: "sent",
           };
-          // Replace optimistic message
           setMessages((prev) => prev.map((m) => (m._id === optimisticMessage._id ? { ...saved } : m)));
           return saved;
         }
 
         const sentMessage = await chatAPI.sendMessage(payload);
+
+        // If handled via WS (returnValue is null), we keep the optimistic message.
+        // It will be replaced when the broadcast is received.
+        if (sentMessage === null) {
+          return optimisticMessage;
+        }
+
         // Replace optimistic message with real message
         setMessages((prev) =>
           prev.map((msg) =>
@@ -320,7 +426,8 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
         );
         return sentMessage;
       } catch (error) {
-        console.error("Failed to send message:", error);
+        const errorMsg = error instanceof Error ? error.message : "Failed to send message";
+        console.error("Failed to send message:", errorMsg);
         // Mark message as failed
         setMessages((prev) => prev.map((msg) => (msg._id === optimisticMessage._id ? { ...msg, status: "failed" } : msg)));
         return null;
@@ -331,28 +438,16 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     [currentUser?._id, selectedChatId, demo]
   );
 
-  // Fetch chats on mount and set up polling
+  // Fetch chats on mount (Polling for chats list retained as per typical requirements for "Other chats updated")
   useEffect(() => {
     if (!currentUser?._id) return;
 
     fetchAllChats();
     if (!demo) {
-      const interval = setInterval(fetchAllChats, 5000); // Poll every 5 seconds
+      const interval = setInterval(fetchAllChats, 10000); // Poll every 10 seconds for chat list
       return () => clearInterval(interval);
     }
-    // no polling in demo mode
   }, [currentUser?._id, fetchAllChats, demo]);
-
-  // Polling for new messages
-  useEffect(() => {
-    if (!selectedChatId) return;
-
-    if (!demo) {
-      const interval = setInterval(refreshMessages, 3000); // Poll every 3 seconds
-      return () => clearInterval(interval);
-    }
-    // no polling in demo mode
-  }, [selectedChatId, refreshMessages, demo]);
 
   const value: ChatContextType = {
     chats,

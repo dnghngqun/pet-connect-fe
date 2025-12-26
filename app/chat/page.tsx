@@ -8,6 +8,7 @@ export default function ChatPage() {
   const params = useSearchParams();
   const participantId = params?.get('participantId') || undefined;
   const demo = params?.get('demo') === '1';
+
   return (
     <ChatProvider demo={demo}>
       <ChatContainer initialParticipantId={participantId} />
