@@ -68,7 +68,8 @@ export default function OrganizationReportForm({
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [reason, setReason] = useState('');
   const [content, setContent] = useState('');
-  const [evidence, setEvidence] = useState<string[]>([]);
+  const [evidence, setEvidence] = useState<File[]>([]);
+  const [evidencePreviews, setEvidencePreviews] = useState<string[]>([]);
 
   // Load organizations on mount
   useEffect(() => {
@@ -92,7 +93,8 @@ export default function OrganizationReportForm({
         setSelectedOrg(org);
         setReason(editReport.reason);
         setContent(editReport.content);
-        setEvidence(editReport.evidence || []);
+        setEvidence([]);
+        setEvidencePreviews([]);
         setCurrentStep(1);
       } else {
         resetForm();
@@ -122,6 +124,7 @@ export default function OrganizationReportForm({
     setReason('');
     setContent('');
     setEvidence([]);
+    setEvidencePreviews([]);
     setSearchQuery('');
   };
 
@@ -193,21 +196,60 @@ export default function OrganizationReportForm({
     }
   };
 
-  // Mock evidence upload
-  const handleAddEvidence = () => {
-    const mockImages = [
-      'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400',
-      'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400',
-      'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400',
-    ];
-    const randomImage = mockImages[Math.floor(Math.random() * mockImages.length)];
-    if (evidence.length < 5) {
-      setEvidence([...evidence, randomImage]);
+  // Real evidence upload handler
+  const handleAddEvidence = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const remainingSlots = 5 - evidence.length;
+    if (remainingSlots <= 0) {
+      toast({
+        title: 'Giới hạn ảnh',
+        description: 'Bạn chỉ có thể tải tối đa 5 ảnh',
+        variant: 'destructive',
+      });
+      return;
     }
+    
+    const newFiles: File[] = [];
+    const newPreviews: string[] = [];
+    
+    const filesToAdd = Math.min(files.length, remainingSlots);
+    for (let i = 0; i < filesToAdd; i++) {
+      const file = files[i];
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: 'Lỗi',
+          description: `${file.name} không phải là file ảnh`,
+          variant: 'destructive',
+        });
+        continue;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: 'Lỗi',
+          description: `${file.name} vượt quá 5MB`,
+          variant: 'destructive',
+        });
+        continue;
+      }
+      newFiles.push(file);
+      newPreviews.push(URL.createObjectURL(file));
+    }
+    
+    if (newFiles.length > 0) {
+      setEvidence(prev => [...prev, ...newFiles]);
+      setEvidencePreviews(prev => [...prev, ...newPreviews]);
+      toast({ title: 'Thành công', description: `Đã thêm ${newFiles.length} ảnh` });
+    }
+    
+    e.target.value = '';
   };
 
   const handleRemoveEvidence = (index: number) => {
+    URL.revokeObjectURL(evidencePreviews[index]);
     setEvidence(evidence.filter((_, i) => i !== index));
+    setEvidencePreviews(evidencePreviews.filter((_, i) => i !== index));
   };
 
   const filteredOrgs = organizations.filter(org =>
@@ -371,7 +413,7 @@ export default function OrganizationReportForm({
                     Bằng chứng (tùy chọn, tối đa 5 ảnh)
                   </Label>
                   <div className="flex flex-wrap gap-2">
-                    {evidence.map((url, index) => (
+                    {evidencePreviews.map((url, index) => (
                       <div key={index} className="relative group">
                         <img
                           src={url}
@@ -387,13 +429,19 @@ export default function OrganizationReportForm({
                       </div>
                     ))}
                     {evidence.length < 5 && (
-                      <button
-                        onClick={handleAddEvidence}
-                        className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                      <label
+                        className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors cursor-pointer"
                       >
                         <ImagePlus className="h-6 w-6" />
                         <span className="text-xs mt-1">Thêm ảnh</span>
-                      </button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleAddEvidence}
+                          className="hidden"
+                        />
+                      </label>
                     )}
                   </div>
                 </div>
@@ -447,11 +495,11 @@ export default function OrganizationReportForm({
                   </p>
                 </div>
 
-                {evidence.length > 0 && (
+                {evidencePreviews.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="font-semibold">Bằng chứng đính kèm</h4>
                     <div className="flex flex-wrap gap-2">
-                      {evidence.map((url, index) => (
+                      {evidencePreviews.map((url, index) => (
                         <img
                           key={index}
                           src={url}

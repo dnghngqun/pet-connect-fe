@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Heart, MapPin, Phone, Mail, Calendar, Edit, Share2, MessageCircle } from 'lucide-react';
+import { Heart, MapPin, Phone, Mail, Calendar, Edit, Share2, MessageCircle, Plus, Loader2, Eye } from 'lucide-react';
 import authService from '@/services/authService';
 import userService from '@/services/userService';
+import petPostService from '@/services/petPostService';
 
 interface UserProfile {
   id: string | number;
@@ -37,57 +39,8 @@ interface PostItem {
   createdAt: string;
 }
 
-// Mock data for posts
-const mockUserPosts: PostItem[] = [
-  {
-    id: 'post-001',
-    title: 'Chó Husky mất tích tại quận 1',
-    slug: 'cho-husky-mat-tich-quan-1',
-    image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500',
-    status: 'LOST',
-    petType: 'Husky',
-    location: 'Quận 1, TP.HCM',
-    views: 2450,
-    createdAt: '2024-11-04T10:30:00Z',
-  },
-  {
-    id: 'post-002',
-    title: 'Mèo Ba Tư đang tìm gia đình',
-    slug: 'meo-ba-tu-tim-gia-dinh',
-    image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500',
-    status: 'FOR_ADOPTION',
-    petType: 'Mèo',
-    location: 'Quận 3, TP.HCM',
-    views: 890,
-    createdAt: '2024-11-02T09:15:00Z',
-  },
-];
-
-// Mock data for favorite posts
-const mockFavoritePosts: PostItem[] = [
-  {
-    id: 'fav-001',
-    title: 'Chó Poodle trắng tìm thấy',
-    slug: 'cho-poodle-trang-tim-thay',
-    image: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=500',
-    status: 'FOUND',
-    petType: 'Poodle',
-    location: 'Quận 2, TP.HCM',
-    views: 1200,
-    createdAt: '2024-11-03T14:20:00Z',
-  },
-  {
-    id: 'fav-002',
-    title: 'Chó Golden Retriever cần nhà',
-    slug: 'cho-golden-retriever-can-nha',
-    image: 'https://images.unsplash.com/photo-1633722715463-d30628519d50?w=500',
-    status: 'FOR_ADOPTION',
-    petType: 'Golden Retriever',
-    location: 'Quận 7, TP.HCM',
-    views: 3400,
-    createdAt: '2024-11-01T11:00:00Z',
-  },
-];
+// Favorites API not implemented yet
+const mockFavoritePosts: PostItem[] = [];
 
 interface PostCardProps {
   post: PostItem;
@@ -112,8 +65,8 @@ function PostCard({ post, isFavorited = false, onFavoriteToggle }: PostCardProps
   };
 
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="relative h-48 overflow-hidden bg-gray-200">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full flex flex-col">
+      <div className="relative h-48 overflow-hidden bg-gray-200 flex-shrink-0">
         <Image
           src={post.image}
           alt={post.title}
@@ -124,18 +77,18 @@ function PostCard({ post, isFavorited = false, onFavoriteToggle }: PostCardProps
           {statusLabels[post.status]}
         </Badge>
       </div>
-      <CardContent className="pt-4">
+      <CardContent className="pt-4 flex-1 flex flex-col">
         <h3 className="font-semibold line-clamp-2 mb-2">{post.title}</h3>
-        <div className="space-y-2 text-sm text-muted-foreground mb-3">
+        <div className="space-y-2 text-sm text-muted-foreground mb-3 flex-1">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
-            <span>{post.location}</span>
+            <span className="line-clamp-1">{post.location}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs">🐾 {post.petType}</span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-auto">
           <Button
             variant="outline"
             size="sm"
@@ -145,7 +98,7 @@ function PostCard({ post, isFavorited = false, onFavoriteToggle }: PostCardProps
             <Heart
               className={`h-4 w-4 mr-1 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`}
             />
-            {isFavorited ? 'Bỏ quan tâm' : 'Quan tâm'}
+            Quan tâm
           </Button>
           <Button variant="outline" size="sm" className="flex-1">
             <MessageCircle className="h-4 w-4 mr-1" />
@@ -159,6 +112,8 @@ function PostCard({ post, isFavorited = false, onFavoriteToggle }: PostCardProps
 
 export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [myPosts, setMyPosts] = useState<PostItem[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set(mockFavoritePosts.map(p => p.id)));
   const [isLoading, setIsLoading] = useState(true);
 
@@ -228,7 +183,50 @@ export default function ProfilePage() {
       }
     };
 
+    const fetchMyPosts = async () => {
+      setIsLoadingPosts(true);
+      try {
+        const response = await petPostService.getMyPosts();
+        console.log('My Posts API Response:', response);
+        
+        // Handle different response formats (success:true OR code:'0000')
+        const isSuccess = response.success || (response as any).code === '0000';
+        let postsContent: any[] = [];
+        
+        if (isSuccess && response.data) {
+          // If data has content array (paginated)
+          if (Array.isArray(response.data.content)) {
+            postsContent = response.data.content;
+          } 
+          // If data is directly an array
+          else if (Array.isArray(response.data)) {
+            postsContent = response.data;
+          }
+        }
+        
+        console.log('Posts content:', postsContent);
+        
+        setMyPosts(postsContent.map((p: any) => ({
+          id: String(p.id),
+          title: p.title,
+          slug: p.slug,
+          image: p.image || p.thumbnail || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500',
+          status: (p.status || 'LOST').toUpperCase() as 'LOST' | 'FOUND' | 'FOR_ADOPTION' | 'RESCUE',
+          petType: p.petType || p.type || 'Thú cưng',
+          location: p.location || `${p.district || ''}, ${p.city || ''}`.replace(/^, |, $/g, '') || 'Chưa xác định',
+          views: p.views || 0,
+          createdAt: p.createdAt,
+        })));
+      } catch (err: any) {
+        console.error('Failed to load my posts:', err);
+        console.error('Error details:', err.response?.data);
+      } finally {
+        setIsLoadingPosts(false);
+      }
+    };
+
     fetchProfile();
+    fetchMyPosts();
   }, []);
 
   if (isLoading) {
@@ -348,7 +346,7 @@ export default function ProfilePage() {
         <Tabs defaultValue="info" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info">Thông tin cá nhân</TabsTrigger>
-            <TabsTrigger value="posts">Bài đăng của tôi ({mockUserPosts.length})</TabsTrigger>
+            <TabsTrigger value="posts">Bài đăng của tôi ({myPosts.length})</TabsTrigger>
             <TabsTrigger value="favorites">Đã quan tâm ({mockFavoritePosts.length})</TabsTrigger>
           </TabsList>
 
@@ -455,16 +453,26 @@ export default function ProfilePage() {
                 <CardDescription>Quản lý các bài đăng về thú cưng của bạn</CardDescription>
               </CardHeader>
               <CardContent>
-                {mockUserPosts.length === 0 ? (
+                {isLoadingPosts ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                    <p className="text-muted-foreground mt-2">Đang tải bài đăng...</p>
+                  </div>
+                ) : myPosts.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">
                       Bạn chưa có bài đăng nào. Hãy bắt đầu bằng cách đăng bài đầu tiên!
                     </p>
-                    <Button variant="default">Đăng bài mới</Button>
+                    <Button variant="default" asChild>
+                      <Link href="/post/new">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Đăng bài mới
+                      </Link>
+                    </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {mockUserPosts.map((post) => (
+                    {myPosts.map((post) => (
                       <PostCard
                         key={post.id}
                         post={post}

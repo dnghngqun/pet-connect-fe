@@ -30,6 +30,7 @@ import {
 import petPostService from '@/services/petPostService';
 import locationService from '@/services/locationService';
 import authService from '@/services/authService';
+import ImageCropper from '@/components/image-cropper';
 
 // Step configuration
 const STEPS = [
@@ -86,10 +87,15 @@ export default function NewPostPage() {
     isVaccinated: false, // is_vaccinated
   });
   
-  const [images, setImages] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [districts, setDistricts] = useState<string[]>([]);
   const [petTypes] = useState(['Chó', 'Mèo', 'Chim', 'Hamster', 'Thỏ', 'Khác']);
+  
+  // Image cropper state
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>('');
   
   useEffect(() => {
     const user = authService.getCurrentUser();
@@ -156,7 +162,7 @@ export default function NewPostPage() {
         // Pet info is optional
         return true;
       case 4:
-        if (images.length === 0) {
+        if (imageFiles.length === 0) {
           toast({ title: 'Lỗi', description: 'Vui lòng thêm ít nhất 1 ảnh', variant: 'destructive' });
           return false;
         }
@@ -175,7 +181,7 @@ export default function NewPostPage() {
       case 3:
         return true; // Optional step
       case 4:
-        return images.length > 0;
+        return imageFiles.length > 0;
       default:
         return false;
     }
@@ -193,9 +199,12 @@ export default function NewPostPage() {
     }
   };
   
-  // Mock image upload
-  const handleImageUpload = async () => {
-    if (images.length >= 5) {
+  // Real image upload handler - opens cropper for each image
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    if (imageFiles.length >= 5) {
       toast({
         title: 'Giới hạn ảnh',
         description: 'Bạn chỉ có thể tải tối đa 5 ảnh',
@@ -204,21 +213,62 @@ export default function NewPostPage() {
       return;
     }
     
-    const mockImages = [
-      'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800',
-      'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=800',
-      'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
-      'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?w=800',
-      'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800',
-    ];
-    const randomImage = mockImages[Math.floor(Math.random() * mockImages.length)];
-    setImages(prev => [...prev, randomImage]);
+    const file = files[0];
     
-    toast({ title: 'Thành công', description: 'Đã thêm ảnh (demo)' });
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Lỗi',
+        description: `${file.name} không phải là file ảnh`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Lỗi', 
+        description: `${file.name} vượt quá 5MB`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Open cropper
+    const imageUrl = URL.createObjectURL(file);
+    setImageToCrop(imageUrl);
+    setCropperOpen(true);
+    
+    // Reset input
+    e.target.value = '';
+  };
+  
+  // Handle cropped image
+  const handleCropComplete = (croppedBlob: Blob) => {
+    const croppedFile = new File([croppedBlob], `cropped_${Date.now()}.jpg`, {
+      type: 'image/jpeg',
+    });
+    
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    
+    setImageFiles(prev => [...prev, croppedFile]);
+    setImagePreviews(prev => [...prev, previewUrl]);
+    
+    // Clean up original image URL
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+      setImageToCrop('');
+    }
+    
+    toast({ title: 'Thành công', description: 'Đã thêm ảnh' });
   };
   
   const handleRemoveImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+    // Revoke object URL to prevent memory leaks
+    URL.revokeObjectURL(imagePreviews[index]);
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
   
   const handleSubmit = async () => {
@@ -236,8 +286,7 @@ export default function NewPostPage() {
         city: formData.city,
         district: formData.district || '',
         location: formData.location || undefined,
-        // petId can be added if pet was created separately
-      });
+      }, imageFiles);
       
       toast({
         title: 'Thành công!',
@@ -629,14 +678,14 @@ export default function NewPostPage() {
                 <span className="text-sm font-medium">Hình ảnh * (tối đa 5 ảnh)</span>
                 <span className={cn(
                   "text-sm",
-                  images.length > 0 ? "text-green-600" : "text-muted-foreground"
+                  imageFiles.length > 0 ? "text-green-600" : "text-muted-foreground"
                 )}>
-                  {images.length}/5 ảnh
+                  {imageFiles.length}/5 ảnh
                 </span>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
-                {images.map((url, index) => (
+                {imagePreviews.map((url, index) => (
                   <div key={index} className="relative group aspect-square">
                     <img
                       src={url}
@@ -658,15 +707,20 @@ export default function NewPostPage() {
                   </div>
                 ))}
                 
-                {images.length < 5 && (
-                  <button
-                    type="button"
-                    onClick={handleImageUpload}
-                    className="aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-all hover:bg-primary/5"
+                {imageFiles.length < 5 && (
+                  <label
+                    className="aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-all hover:bg-primary/5 cursor-pointer"
                   >
                     <ImagePlus className="h-10 w-10 mb-2" />
                     <span className="text-sm font-medium">Thêm ảnh</span>
-                  </button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
                 )}
               </div>
 
@@ -675,7 +729,7 @@ export default function NewPostPage() {
               </p>
 
               {/* Summary */}
-              {images.length > 0 && (
+              {imageFiles.length > 0 && (
                 <div className="mt-8 p-4 bg-muted/50 rounded-xl border">
                   <h4 className="font-semibold mb-3">Tóm tắt bài đăng</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -683,7 +737,7 @@ export default function NewPostPage() {
                     <div><span className="text-muted-foreground">Thú cưng:</span> {formData.petType}</div>
                     <div className="col-span-2"><span className="text-muted-foreground">Tiêu đề:</span> {formData.title}</div>
                     <div><span className="text-muted-foreground">Vị trí:</span> {formData.district ? `${formData.district}, ${formData.city}` : formData.city}</div>
-                    <div><span className="text-muted-foreground">Số ảnh:</span> {images.length}</div>
+                    <div><span className="text-muted-foreground">Số ảnh:</span> {imageFiles.length}</div>
                   </div>
                 </div>
               )}
@@ -734,6 +788,16 @@ export default function NewPostPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Image Cropper Modal */}
+      <ImageCropper
+        open={cropperOpen}
+        onOpenChange={setCropperOpen}
+        imageSrc={imageToCrop}
+        onCropComplete={handleCropComplete}
+        aspectRatio={16 / 10}
+        title="Cắt ảnh (16:10)"
+      />
     </div>
   );
 }

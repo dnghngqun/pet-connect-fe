@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft } from 'lucide-react'
+import { toast } from '@/components/ui/use-toast'
 
 export default function CreateFundraisingPage() {
   const [formData, setFormData] = useState({
@@ -40,7 +41,10 @@ export default function CreateFundraisingPage() {
     // Simulate submission
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    alert('Chiến dịch của bạn đã được tạo thành công!')
+    toast({
+      title: "Tạo chiến dịch thành công!",
+      description: "Chiến dịch gây quỹ của bạn đã được tạo và đang chờ xét duyệt.",
+    })
     setFormData({
       title: '',
       description: '',

@@ -13,6 +13,7 @@ import { Heart, Share2, ArrowLeft, User, QrCode, Loader2 } from 'lucide-react'
 import PetQRImage from '@/components/pet-qr-image'
 import fundraisingService, { CampaignDetail, DonationItem } from '@/services/fundraisingService'
 import { use } from 'react'
+import { toast } from '@/components/ui/use-toast'
 
 interface FundraisingDetailPageProps {
   params: Promise<{
@@ -54,7 +55,11 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
 
   const handleDonate = async (paymentMethod: 'MOMO' | 'ZALOPAY' | 'BANK' | 'CARD') => {
     if (!donationAmount || parseFloat(donationAmount) <= 0 || !campaign) {
-      alert('Vui lòng nhập số tiền hợp lệ')
+      toast({
+        title: "Số tiền không hợp lệ",
+        description: "Vui lòng nhập số tiền quyên góp hợp lệ.",
+        variant: "destructive",
+      })
       return
     }
     try {
@@ -65,13 +70,20 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
         isAnonymous,
         paymentMethod,
       })
-      alert('Cảm ơn bạn đã đóng góp!')
+      toast({
+        title: "Quyên góp thành công!",
+        description: "Cảm ơn bạn đã đóng góp cho chiến dịch. Tấm lòng của bạn sẽ giúp ích rất nhiều!",
+      })
       setDonationAmount('')
       setDonationMessage('')
       loadCampaign() // Reload to update amounts
     } catch (error) {
       console.error('Donation failed:', error)
-      alert('Có lỗi xảy ra khi đóng góp. Vui lòng thử lại.')
+      toast({
+        title: "Đóng góp thất bại",
+        description: "Có lỗi xảy ra khi đóng góp. Vui lòng thử lại sau.",
+        variant: "destructive",
+      })
     } finally {
       setDonating(false)
     }

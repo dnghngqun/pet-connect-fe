@@ -10,6 +10,7 @@ import PetHealthProfileDialog from '@/components/pet-health-profile-dialog';
 import PetInfoCard from '@/components/pet-info-card';
 import PetQRCode from '@/components/pet-qr-code';
 import { PetPost } from '@/lib/types';
+import { toast } from '@/components/ui/use-toast';
 
 interface PetDetailClientProps {
   post: PetPost;
@@ -245,8 +246,10 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    // TODO: Implement chat
-                    alert('Chức năng chat sẽ được triển khai');
+                    toast({
+                      title: "Chức năng đang phát triển",
+                      description: "Tính năng chat sẽ sớm được triển khai. Vui lòng quay lại sau!",
+                    });
                   }}
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
