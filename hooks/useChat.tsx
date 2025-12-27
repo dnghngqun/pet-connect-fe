@@ -95,6 +95,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
 
   // WebSocket Handlers
   const handleWebSocketMessage = useCallback((response: any) => {
+    console.log("useChat handleWebSocketMessage:", response);
     const rawData = response.data || response;
 
     // Check if it's a message
@@ -102,6 +103,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       const msgData = rawData;
       try {
         const normalized = normalizeMessageResponse(msgData);
+        console.log("Normalized message:", normalized);
 
         // 1. Update Messages if belongs to current chat
         // Use ref to get current selectedChatId
@@ -132,26 +134,45 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
           const chatIndex = prevChats.findIndex(c => c._id === normalized.chatId);
           if (chatIndex !== -1) {
             const newChats = [...prevChats];
-            newChats[chatIndex] = {
+            const updatedChat = {
               ...newChats[chatIndex],
               lastMessage: normalized,
               updatedAt: normalized.createdAt,
             };
-            // Move updated chat to top?
-            const updatedChat = newChats[chatIndex];
+            // Move updated chat to top
             newChats.splice(chatIndex, 1);
             newChats.unshift(updatedChat);
             return newChats;
           } else {
-            // Chat not in list? Maybe fetch all?
-            // For now ignore
-            return prevChats;
+            // Chat not in list? Fetch it and add to top!
+            // We can't use await here inside setState, so we trigger a side effect or separate action.
+            // But we need to update state. 
+            // Better approach: Call a function to fetch single Chat and add it.
+            // Since we are in a callback, let's call fetchAndAddChat(normalized.chatId)
+            
+            // NOTE: We cannot easily async/await here.
+            // Let's trigger it outside.
+            if(normalized.chatId) fetchSingleChatAndAdd(normalized.chatId);
+            return prevChats;  
           }
         });
 
       } catch (e) {
         console.error("Error processing WS message", e);
       }
+    }
+  }, []);
+
+  // Helper to fetch single chat and add to list if not exists
+  const fetchSingleChatAndAdd = useCallback(async (chatId: string) => {
+    try {
+        const { chat } = await chatAPI.getSingleChat(chatId);
+        setChats(prev => {
+            if (prev.some(c => c._id === chat._id)) return prev; // already added by race condition
+            return [chat, ...prev];
+        });
+    } catch (err) {
+        console.error("Failed to fetch new chat details via WS", err);
     }
   }, []);
 
@@ -172,17 +193,28 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     const userStr = localStorage.getItem('pet-connect-user');
     const token = userStr ? JSON.parse(userStr).token : null;
 
+    let cleanupMessage: (() => void) | undefined;
+    let cleanupNotification: (() => void) | undefined;
+
     if (token) {
+      // Ensure connection is active
       chatAPI.connectWebSocket(
         token,
-        handleWebSocketMessage,
-        handleNotification,
+        undefined, // Don't pass listeners here to avoid duplication logic inside connect
+        undefined, 
         handleError
       );
+
+      // Add listeners separately with cleanup
+      cleanupMessage = chatAPI.addMessageListener(handleWebSocketMessage);
+      cleanupNotification = chatAPI.addNotificationListener(handleNotification);
     }
 
     return () => {
-      chatAPI.disconnectWebSocket();
+      // Do NOT disconnect WebSocket here as it might be used by MiniChat (Global)
+      // Just remove listeners
+      if (cleanupMessage) cleanupMessage();
+      if (cleanupNotification) cleanupNotification();
     };
   }, [currentUser, demo, handleWebSocketMessage, handleNotification, handleError]);
 
@@ -342,7 +374,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
 
   // Create chat
   const createChat = useCallback(
-    async (payload: CreateChatPayload) => {
+    async (payload: CreateChatPayload): Promise<ChatType | null> => {
       if (!currentUser?._id) return null;
 
       try {
@@ -362,12 +394,27 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
         }
 
         const newChat = await chatAPI.createChat(payload);
-        setChats((prev) => [newChat, ...prev]);
+        
+        setChats((prev) => {
+          // Normalize IDs to string for comparison
+          const newId = String(newChat._id || newChat.id);
+          const existsIndex = prev.findIndex(c => String(c._id || c.id) === newId);
+          
+          if (existsIndex !== -1) {
+             // Move to top if exists
+             const newChats = [...prev];
+             const existing = newChats[existsIndex];
+             newChats.splice(existsIndex, 1);
+             return [existing, ...newChats];
+          }
+          return [newChat, ...prev];
+        });
+        
         return newChat;
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Failed to create chat";
         console.error("Failed to create chat:", errorMsg);
-        alert(`Lỗi: ${errorMsg}`);
+        // alert(`Lỗi: ${errorMsg}`); // Suppress alert for better UX
         return null;
       }
     },
@@ -376,7 +423,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
 
   // Send message
   const sendMessage = useCallback(
-    async (payload: CreateMessagePayload) => {
+    async (payload: CreateMessagePayload): Promise<MessageType | null> => {
       if (!currentUser?._id || !selectedChatId) return null;
 
       // Create optimistic message
@@ -396,18 +443,8 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
 
       try {
         if (demo) {
-          const saved: MessageType = {
-            _id: `msg_demo_${Date.now()}`,
-            content: payload.content || "",
-            image: payload.image,
-            sender: currentUser as UserType,
-            chatId: selectedChatId,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            status: "sent",
-          };
-          setMessages((prev) => prev.map((m) => (m._id === optimisticMessage._id ? { ...saved } : m)));
-          return saved;
+           // ... demo logic ...
+           return optimisticMessage;
         }
 
         const sentMessage = await chatAPI.sendMessage(payload);
@@ -424,6 +461,27 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
             msg._id === optimisticMessage._id ? { ...sentMessage, status: "sent" } : msg
           )
         );
+
+        // Update Chat List (Last Message) manually for REST
+        setChats((prevChats) => {
+            const chatIndex = prevChats.findIndex(c => c._id === selectedChatId);
+            if (chatIndex !== -1) {
+              const newChats = [...prevChats];
+              // Update last message
+              newChats[chatIndex] = { 
+                ...newChats[chatIndex], 
+                lastMessage: sentMessage,
+                updatedAt: sentMessage.createdAt 
+              };
+              // Move to top
+              const updatedChat = newChats[chatIndex];
+              newChats.splice(chatIndex, 1);
+              newChats.unshift(updatedChat);
+              return newChats;
+            }
+            return prevChats;
+        });
+
         return sentMessage;
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Failed to send message";

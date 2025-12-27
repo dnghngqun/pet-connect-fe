@@ -55,9 +55,8 @@ export function ChatContainer({ initialParticipantId }: { initialParticipantId?:
     <div className="flex h-screen bg-gray-50">
       {/* Chat List Sidebar */}
       <div className="w-80 border-r bg-white flex flex-col">
-        <div className="p-4 border-b space-y-3">
+        <div className="p-4 border-b">
           <h1 className="text-2xl font-bold text-gray-900">Tin nhắn</h1>
-          <NewChatDialog onChatCreated={selectChat} />
         </div>
         <div className="flex-1 overflow-y-auto">
           <ChatList />

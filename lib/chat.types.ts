@@ -18,6 +18,7 @@ export type MessageType = {
   createdAt: string;
   updatedAt: string;
   status?: "sending" | "sent" | "failed";
+  isRecalled?: boolean;
 };
 
 export type ChatType = {

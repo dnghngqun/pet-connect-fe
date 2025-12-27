@@ -19,31 +19,24 @@ export const chatAPI = {
   getAllChats: async () => {
     // Updated endpoint to match backend 'conversation' resource
     const response = await apiClient.get("/api/conversation/all");
-    const apiResponse = response.data as ApiResponse<ChatType[]>;
-    // Check if apiResponse.data is valid, otherwise return empty array
-    // The previous code used (response.data as any).chats which implies non-standard response.
-    // Assuming migration aligns with standard ApiResponse<T>.
-    return apiResponse.data || [];
+    const apiResponse = response.data as ApiResponse<any[]>;
+    
+    if (!apiResponse.data) return [];
+    
+    // Normalize each chat response
+    const normalizedChats = apiResponse.data.map((chat: any) => normalizeChatResponse(chat));
+    
+    // Deduplicate by _id
+    const uniqueChats = normalizedChats.filter((chat, index, self) => 
+      index === self.findIndex(c => c._id === chat._id)
+    );
+    
+    return uniqueChats;
   },
 
   getSingleChat: async (chatId: string) => {
     // Updated endpoint to match socket file: /api/conversation/{id}
     const response = await apiClient.get(`/api/conversation/${chatId}`);
-
-    // For single chat, backend might return a complex object not just ApiResponse<ChatWithMessages>
-    // Based on previous code, it returned { chat, messages }.
-    // If the backend migration kept "REST API endpoints continue to work", the structure should be similar.
-    // However, if the endpoint changed name, the structure might have too.
-    // I will attempt to preserve the logic of extracting messages, 
-    // but assuming standard ApiResponse container first if possible.
-    // Previous code: response.data.messages.
-
-    // Let's assume response.data IS the payload (maybe not wrapped in code/message/data if legacy?).
-    // But other methods use ApiResponse.
-    // Let's assume response.data.data has the info?
-    // Or response.data directly.
-    // I'll stick to the previous extraction logic but on the new URL logic, 
-    // effectively trusting the extracted properties exist.
 
     const data = response.data.data || response.data; // Try to unwrap if wrapped
     const rawMessages = data.messages;
@@ -53,10 +46,18 @@ export const chatAPI = {
       data.pagination ?? rawMessages?.pagination ?? null;
 
     if (Array.isArray(rawMessages)) {
-      messages = rawMessages as MessageType[];
+      // Normalize each message to ensure consistent format
+      messages = rawMessages.map((msg: any) => normalizeMessageResponse(msg));
     } else if (rawMessages && rawMessages.items) {
-      messages = rawMessages.items as MessageType[];
+      messages = rawMessages.items.map((msg: any) => normalizeMessageResponse(msg));
     }
+
+    // Sort messages by createdAt ascending (oldest first at top, newest at bottom)
+    messages.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateA - dateB;
+    });
 
     return {
       chat: data.chat as ChatType,
@@ -66,7 +67,12 @@ export const chatAPI = {
   },
 
   createChat: async (payload: CreateChatPayload): Promise<ChatType> => {
-    const response = await apiClient.post("/api/conversation/create", payload);
+    // Transform frontend payload to backend format
+    const backendPayload = {
+      targetUserId: payload.participantId ? Number(payload.participantId) : undefined,
+    };
+    
+    const response = await apiClient.post("/api/conversation/create", backendPayload);
     const apiResponse = response.data as ApiResponse<ChatType>;
 
     // Handle backend error response
@@ -84,12 +90,18 @@ export const chatAPI = {
 
   // Messages
   sendMessage: async (payload: CreateMessagePayload): Promise<MessageType | null> => {
+    // Transform frontend payload to backend format
+    const backendPayload = {
+      conversationId: payload.chatId ? Number(payload.chatId) : undefined,
+      content: payload.content,
+      image: payload.image,
+    };
+
     // If WebSocket is connected, use it
     if (stompClient && isConnected) {
       const message = {
-        conversationId: payload.chatId,
-        content: payload.content,
-        // image: payload.image, // TODO: Handle image via WS if supported by backend DTO
+        conversationId: backendPayload.conversationId,
+        content: backendPayload.content,
         type: payload.image ? "IMAGE" : "TEXT",
         timestamp: new Date().toISOString(),
       };
@@ -104,8 +116,11 @@ export const chatAPI = {
     }
 
     // Fallback to REST API
-    // Endpoint updated to match socket file: /api/conversation/message/send
-    const response = await apiClient.post("/api/conversation/message/send", payload);
+    if (!backendPayload.conversationId || isNaN(backendPayload.conversationId)) {
+        throw new Error("Invalid Conversation ID: " + payload.chatId);
+    }
+
+    const response = await apiClient.post("/api/conversation/message/send", backendPayload);
     const apiResponse = response.data as ApiResponse<MessageType>;
 
     // Handle backend error response
@@ -124,10 +139,14 @@ export const chatAPI = {
   // WebSocket
   connectWebSocket: (
     token: string,
-    onMessage: (message: any) => void,
-    onNotification: (notification: any) => void,
-    onError: (error: any) => void
+    onMessage?: (message: any) => void,
+    onNotification?: (notification: any) => void,
+    onError?: (error: any) => void
   ) => {
+    // Add initial listeners if provided
+    if (onMessage) chatAPI.addMessageListener(onMessage);
+    if (onNotification) chatAPI.addNotificationListener(onNotification);
+
     if (stompClient?.active) return;
 
     const socket = new SockJS(`${BASE_URL}/ws`);
@@ -143,7 +162,9 @@ export const chatAPI = {
         // Subscribe to messages
         stompClient?.subscribe("/user/queue/messages", (message: IMessage) => {
           const response = JSON.parse(message.body);
-          onMessage(response);
+          console.log("WebSocket message received:", response);
+          // Broadcast to all listeners
+          messageListeners.forEach(listener => listener(response));
         });
 
         // Subscribe to notifications
@@ -151,20 +172,22 @@ export const chatAPI = {
           "/user/queue/notifications",
           (notification: IMessage) => {
             const response = JSON.parse(notification.body);
-            onNotification(response);
+            notificationListeners.forEach(listener => listener(response));
           }
         );
 
         // Subscribe to errors
         stompClient?.subscribe("/user/queue/errors", (error: IMessage) => {
           const response = JSON.parse(error.body);
-          onError(response);
+          if (onError) onError(response);
+          console.error("WebSocket Error:", response);
         });
       },
       onStompError: (frame) => {
         console.error("Broker reported error: " + frame.headers["message"]);
         console.error("Additional details: " + frame.body);
-        onError(frame);
+        isConnected = false;
+        if (onError) onError(frame);
       },
       onWebSocketClose: () => {
         console.log("WebSocket connection closed");
@@ -181,7 +204,24 @@ export const chatAPI = {
       stompClient.deactivate();
       stompClient = null;
       isConnected = false;
+      messageListeners = [];
+      notificationListeners = [];
     }
+  },
+
+  // Listener management
+  addMessageListener: (listener: (message: any) => void) => {
+    messageListeners.push(listener);
+    return () => {
+      messageListeners = messageListeners.filter(l => l !== listener);
+    };
+  },
+
+  addNotificationListener: (listener: (notification: any) => void) => {
+    notificationListeners.push(listener);
+    return () => {
+      notificationListeners = notificationListeners.filter(l => l !== listener);
+    };
   },
 
   // Users
@@ -189,7 +229,56 @@ export const chatAPI = {
     const response = await apiClient.get("/api/user/all");
     return response.data.users as UserType[];
   },
+
+  // Recall Message
+  recallMessage: async (messageId: string): Promise<MessageType> => {
+    const response = await apiClient.put(`/api/conversation/message/${messageId}/recall`);
+    const apiResponse = response.data as ApiResponse<MessageType>;
+
+    if (apiResponse.code !== "0000") {
+      throw new Error(apiResponse.message || "Failed to recall message");
+    }
+
+    if (!apiResponse.data) {
+      throw new Error("No message data returned");
+    }
+
+    return normalizeMessageResponse(apiResponse.data);
+  },
+
+  // Delete Conversation
+  deleteConversation: async (conversationId: string): Promise<void> => {
+    const response = await apiClient.delete(`/api/conversation/${conversationId}`);
+    const apiResponse = response.data as ApiResponse<void>;
+
+    if (apiResponse.code !== "0000") {
+      throw new Error(apiResponse.message || "Failed to delete conversation");
+    }
+  },
+
+  // Upload Chat Image
+  uploadChatImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await apiClient.post("/api/conversation/upload-image", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    const apiResponse = response.data as ApiResponse<string>;
+
+    if (apiResponse.code !== "0000") {
+      throw new Error(apiResponse.message || "Failed to upload image");
+    }
+
+    return apiResponse.data || "";
+  },
 };
+
+// Internal listener arrays
+let messageListeners: ((message: any) => void)[] = [];
+let notificationListeners: ((notification: any) => void)[] = [];
 
 /**
  * Normalize chat response from backend to ChatType format
@@ -215,19 +304,36 @@ function normalizeChatResponse(data: any): ChatType {
 
 /**
  * Normalize message response from backend to MessageType format
+ * Backend WebSocket uses 'conversationId', REST API uses 'chatId'
  */
 export function normalizeMessageResponse(data: any): MessageType {
+  // Handle both chatId (REST) and conversationId (WebSocket)
+  const chatId = data.chatId || (data.conversationId ? String(data.conversationId) : "");
+  
+  // Map replyTo from ReplyInfoDTO (simplified format: id, content, sender)
+  let replyTo: MessageType | undefined = undefined;
+  if (data.replyTo) {
+    replyTo = {
+      _id: String(data.replyTo.id),
+      content: data.replyTo.content,
+      sender: normalizeUserResponse(data.replyTo.sender),
+      createdAt: "",
+      updatedAt: "",
+    };
+  }
+  
   return {
     id: data.id,
     _id: String(data.id),
     content: data.content,
     image: data.image,
     sender: normalizeUserResponse(data.sender),
-    replyTo: data.replyTo ? normalizeMessageResponse(data.replyTo) : undefined,
-    chatId: data.chatId || "",
+    replyTo,
+    chatId,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
     status: "sent",
+    isRecalled: data.isRecalled || false,
   };
 }
 
@@ -235,12 +341,24 @@ export function normalizeMessageResponse(data: any): MessageType {
  * Normalize user response from backend to UserType format
  */
 function normalizeUserResponse(data: any): UserType {
+  // Defensive check for undefined/null data
+  if (!data) {
+    return {
+      id: undefined,
+      _id: "",
+      name: "Unknown User",
+      email: "",
+      avatar: undefined,
+      isOnline: false,
+    };
+  }
+  
   return {
     id: data.id,
-    _id: String(data.id),
-    name: data.name,
-    email: data.email,
+    _id: String(data.id || ""),
+    name: data.name || "Unknown User",
+    email: data.email || "",
     avatar: data.avatar,
-    isOnline: data.isOnline,
+    isOnline: data.isOnline || false,
   };
 }

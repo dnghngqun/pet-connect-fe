@@ -14,7 +14,8 @@ function getChatId(chat: ChatType): string {
 
 function getOtherParticipant(chat: ChatType, currentUserId: string | undefined) {
   if (chat.isGroup) return null;
-  return chat.participants.find((p) => p._id !== currentUserId);
+  // Compare as strings to handle number/string mismatch
+  return chat.participants.find((p) => String(p._id) !== String(currentUserId));
 }
 
 function getChatDisplayName(
@@ -34,7 +35,7 @@ function getLastMessagePreview(chat: ChatType, currentUserId: string | undefined
   }
 
   const message = chat.lastMessage;
-  const isCurrentUserSender = message.sender._id === currentUserId;
+  const isCurrentUserSender = String(message.sender._id) === String(currentUserId);
 
   if (message.image) {
     return isCurrentUserSender ? "Bạn đã gửi ảnh" : `${message.sender.name} gửi ảnh`;

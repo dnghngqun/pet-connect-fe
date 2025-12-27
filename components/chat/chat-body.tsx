@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@/hooks/useChat";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import type { MessageType } from "@/lib/chat.types";
 import ChatMessageItem from "@/components/chat/chat-message-item";
 import { Loader2 } from "lucide-react";
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function ChatBody({ onReply }: Props) {
-  const { messages, isMessagesLoading } = useChat();
+  const { messages, isMessagesLoading, refreshMessages } = useChat();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Debug mount count (helps find duplicate renders)
@@ -28,6 +28,11 @@ export function ChatBody({ onReply }: Props) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Handle message recall - refresh messages to update UI
+  const handleRecall = useCallback(async () => {
+    await refreshMessages();
+  }, [refreshMessages]);
 
   if (isMessagesLoading && messages.length === 0) {
     return (
@@ -50,6 +55,7 @@ export function ChatBody({ onReply }: Props) {
               key={message._id}
               message={message}
               onReply={onReply}
+              onRecall={handleRecall}
             />
           ))}
           <div ref={bottomRef} />

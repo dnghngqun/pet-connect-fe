@@ -3,6 +3,8 @@ import Footer from "@/components/footer";
 import Header from "@/components/header";
 import PageBackground from "@/components/page-background";
 import { Toaster } from "@/components/ui/toaster";
+import { MiniChatProvider } from "@/contexts/mini-chat-context";
+import { MiniChatContainer } from "@/components/mini-chat/mini-chat-container";
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import type React from "react";
@@ -27,14 +29,18 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning={true}>
         <PageBackground />
         <CartProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-          <Toaster />
+          <MiniChatProvider>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+            <MiniChatContainer />
+            <Toaster />
+          </MiniChatProvider>
         </CartProvider>
       </body>
     </html>
   );
 }
+

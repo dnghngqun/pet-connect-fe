@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut } from "lucide-react"
+import { User, LogOut, MessageCircle } from "lucide-react"
 import authService from "@/services/authService"
 
 interface UserData {
@@ -83,6 +83,12 @@ export default function UserDropdown() {
           <DropdownMenuItem>
             <User className="mr-2 h-4 w-4" />
             <span>Trang cá nhân</span>
+          </DropdownMenuItem>
+        </Link>
+        <Link href="/chat" passHref>
+          <DropdownMenuItem>
+            <MessageCircle className="mr-2 h-4 w-4" />
+            <span>Tin nhắn</span>
           </DropdownMenuItem>
         </Link>
         <DropdownMenuSeparator />

@@ -16,6 +16,7 @@ import {
 import { MapPin, Phone, MessageCircle, Heart, MoreVertical, Flag } from 'lucide-react';
 import ReportDialog from '@/components/report-dialog';
 import { useAuth } from '@/hooks/useAuth';
+import { useMiniChat } from '@/contexts/mini-chat-context';
 import type { PetPost } from '@/lib/types';
 
 interface PetPostCardProps {
@@ -29,6 +30,7 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
+  const { openMiniChat } = useMiniChat();
 
   const handleFavoriteToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -181,7 +183,7 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
                   return;
                 }
 
-                // User is logged in - go to chat with the post author
+                // User is logged in - open mini chat with the post author
                 const participantId = post.postedBy?.id;
                 if (!participantId) {
                   // fallback: open chat list
@@ -189,8 +191,12 @@ export default function PetPostCard({ post, onFavoriteToggle, isFavorited = fals
                   return;
                 }
 
-                // Navigate to chat with participantId to create/select conversation
-                router.push(`/chat?participantId=${encodeURIComponent(participantId)}`);
+                // Open mini chat popup
+                openMiniChat(participantId, {
+                  id: participantId,
+                  name: post.postedBy.name,
+                  avatar: post.postedBy.avatar,
+                });
               }}
             >
               <MessageCircle className="h-4 w-4 mr-1" />
