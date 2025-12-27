@@ -63,6 +63,7 @@ export default function OrganizationReportForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [reportedOrgIds, setReportedOrgIds] = useState<Set<number>>(new Set());
 
   // Form data
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -105,8 +106,25 @@ export default function OrganizationReportForm({
   const loadOrganizations = async () => {
     setIsLoading(true);
     try {
-      const result = await organizationReportService.getOrganizations();
-      setOrganizations(result.content);
+      // Load both organizations and user's existing reports
+      const [orgsResult, myReports] = await Promise.all([
+        organizationReportService.getOrganizations(),
+        organizationReportService.getMyReports(),
+      ]);
+
+      // Get IDs of organizations that user has already reported (not REFUSED - those can be edited)
+      const alreadyReportedIds = new Set(
+        myReports
+          .filter(report => report.status !== 'REFUSED')
+          .map(report => Number(report.organizationId))
+      );
+      setReportedOrgIds(alreadyReportedIds);
+
+      // Filter out already reported organizations (unless editing)
+      const availableOrgs = orgsResult.content.filter(
+        org => !alreadyReportedIds.has(org.id)
+      );
+      setOrganizations(availableOrgs);
     } catch {
       toast({
         title: 'Lỗi',
@@ -163,8 +181,6 @@ export default function OrganizationReportForm({
 
     setIsSubmitting(true);
     try {
-      const reasonLabel = REPORT_REASONS.find(r => r.id === reason)?.label || reason;
-      
       if (editReport) {
         await organizationReportService.updateReport(
           Number(editReport.id),
@@ -185,7 +201,8 @@ export default function OrganizationReportForm({
 
       handleClose();
       onSuccess?.();
-    } catch {
+    } catch (error) {
+      console.error('Submit report error:', error);
       toast({
         title: 'Lỗi',
         description: 'Không thể gửi báo cáo. Vui lòng thử lại.',

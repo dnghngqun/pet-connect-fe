@@ -108,8 +108,8 @@ function transformToFrontendReport(item: ReportListItem | ReportDetail): Organiz
       email: item.organization.email || '',
       phone: item.organization.phone || '',
       address: '',
-      city: '',
-      district: '',
+      city: item.organization.city || '',
+      district: item.organization.district || '',
       isVerified: item.organization.isVerified || false,
       followerCount: 0,
     },
@@ -162,9 +162,14 @@ const organizationReportService = {
    * API 3: Create report
    * POST /api/v1/reports
    */
-  async createReport(data: CreateReportRequest): Promise<OrganizationReport> {
+  async createReport(data: CreateReportRequest): Promise<OrganizationReport | null> {
     const response = await apiClient.post<ApiResponse<ReportDetail>>(COMMON_API.reports, data);
-    return transformToFrontendReport(response.data.data);
+    const reportData = response.data?.data;
+    if (!reportData) {
+      console.log('Create report response:', response.data);
+      return null; // Return null on success without data transform
+    }
+    return transformToFrontendReport(reportData);
   },
 
   /**
@@ -187,15 +192,15 @@ const organizationReportService = {
    * Get organizations list for creating report
    * GET /api/v1/organizations
    */
-  async getOrganizations(search?: string, page = 0, size = 20): Promise<{ content: Organization[]; total: number }> {
+  async getOrganizations(search?: string, page = 1, size = 20): Promise<{ content: Organization[]; total: number }> {
     const response = await apiClient.get(COMMON_API.organizations, {
       params: { search, page, size },
     });
-    // Response format: { success, statusCode, message, data: { content, page, limit, total } }
+    // Response format: { success, statusCode, message, data: { rescueGroups: { items, total }, pagination } }
     const data = response.data.data;
     return {
-      content: data.content || [],
-      total: data.total || 0,
+      content: data.rescueGroups?.items || [],
+      total: data.rescueGroups?.total || 0,
     };
   },
 };

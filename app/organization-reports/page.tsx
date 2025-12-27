@@ -41,7 +41,7 @@ type FilterTab = 'all' | ReportStatus;
 
 const FILTER_TABS: { id: FilterTab; label: string; icon: React.ElementType }[] = [
   { id: 'all', label: 'Tất cả', icon: FileText },
-  { id: 'RECEIVED', label: 'Chờ xử lý', icon: Clock },
+  { id: 'CREATED', label: 'Chờ xử lý', icon: Clock },
   { id: 'RESOLVED', label: 'Đã xử lý', icon: CheckCircle },
   { id: 'REFUSED', label: 'Từ chối', icon: XCircle },
 ];
@@ -117,7 +117,6 @@ export default function OrganizationReportsPage() {
   const getStatusIcon = (status: ReportStatus) => {
     switch (status) {
       case 'CREATED':
-      case 'RECEIVED':
         return <Clock className="h-3.5 w-3.5" />;
       case 'RESOLVED':
         return <CheckCircle className="h-3.5 w-3.5" />;
@@ -318,7 +317,7 @@ export default function OrganizationReportsPage() {
             <CardTitle className="text-sm font-medium">Chú thích trạng thái</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {Object.entries(STATUS_CONFIG).map(([status, config]) => (
                 <div key={status} className="flex items-center gap-2">
                   <Badge className={`${config.bgColor} ${config.color} gap-1`}>
@@ -326,7 +325,7 @@ export default function OrganizationReportsPage() {
                     {config.label}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {(status === 'CREATED' || status === 'RECEIVED') && '- Đang chờ Admin'}
+                    {status === 'CREATED' && '- Đang chờ Admin'}
                     {status === 'RESOLVED' && '- Đã hoàn tất'}
                     {status === 'REFUSED' && '- Có thể gửi lại'}
                   </span>

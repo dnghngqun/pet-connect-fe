@@ -95,6 +95,7 @@ export const chatAPI = {
       conversationId: payload.chatId ? Number(payload.chatId) : undefined,
       content: payload.content,
       image: payload.image,
+      replyToId: payload.replyToId ? Number(payload.replyToId) : undefined,
     };
 
     // If WebSocket is connected, use it

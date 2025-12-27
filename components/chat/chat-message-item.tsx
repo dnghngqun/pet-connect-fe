@@ -36,6 +36,10 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
   const isWithin5Minutes = (now - messageTime) <= fiveMinutesMs;
   
   const canRecall = isCurrentUser && !message.isRecalled && message.status !== "sending" && isWithin5Minutes;
+  const canReply = onReply && !message.isRecalled && message.status !== "sending";
+
+  // Show dropdown only if there are options
+  const hasDropdownOptions = canRecall || canReply;
 
   const handleRecall = async () => {
     if (!message._id || isRecalling) return;
@@ -48,6 +52,12 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
       console.error("Failed to recall message:", error);
     } finally {
       setIsRecalling(false);
+    }
+  };
+
+  const handleReply = () => {
+    if (onReply && !message.isRecalled) {
+      onReply(message);
     }
   };
 
@@ -86,8 +96,8 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
         )}
 
         <div className="flex items-center gap-1">
-          {/* Actions menu for own messages */}
-          {isCurrentUser && (
+          {/* Actions menu - shown on hover */}
+          {hasDropdownOptions && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -99,6 +109,12 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {canReply && (
+                  <DropdownMenuItem onClick={handleReply}>
+                    <Reply className="h-4 w-4 mr-2" />
+                    Trả lời
+                  </DropdownMenuItem>
+                )}
                 {canRecall && (
                   <DropdownMenuItem onClick={handleRecall} disabled={isRecalling}>
                     <RotateCcw className="h-4 w-4 mr-2" />
@@ -154,16 +170,6 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
           )}
         </div>
       </div>
-
-      {onReply && !isCurrentUser && (
-        <button
-          onClick={() => onReply(message)}
-          className="self-center opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Trả lời"
-        >
-          <Reply className="w-4 h-4 text-gray-500" />
-        </button>
-      )}
     </div>
   );
 }
