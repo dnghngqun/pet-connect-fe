@@ -187,9 +187,19 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
             photos: data.pet.photos || [],
             healthRecord: data.pet.healthRecord ? {
               id: String(data.pet.healthRecord.id),
-              vaccinations: data.pet.healthRecord.vaccinations || [],
-              medicalHistory: data.pet.healthRecord.medicalHistory || [],
-              weight: data.pet.healthRecord.weightHistory || [],
+              vaccinations: (data.pet.healthRecord.vaccinations || []).map((v: any) => ({
+                name: v.name,
+                date: v.vaccinationDate || v.date,
+                nextDue: v.nextDueDate || v.nextDue,
+              })),
+              medicalHistory: (data.pet.healthRecord.medicalHistory || []).map((m: any) => ({
+                date: m.visitDate || m.date,
+                condition: m.condition,
+                treatment: m.treatment,
+                notes: m.notes,
+                weight: m.weight,
+              })),
+              weight: [],
               lastCheckup: data.pet.healthRecord.lastCheckup || new Date().toISOString(),
               allergies: data.pet.healthRecord.allergies || [],
               notes: data.pet.healthRecord.notes ?? undefined,
@@ -211,13 +221,18 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      await navigator.share({
-        title: post?.title,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: post?.title,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+      }
+    } catch (error) {
+      // User cancelled share dialog - ignore
+      console.log('Share cancelled or failed:', error);
     }
   };
 
@@ -537,14 +552,16 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       </div>
                     )}
 
-                    {/* Owner can manage health */}
-                    {isOwner && post.pet.id && (
-                      <Button variant="outline" asChild className="w-full">
-                        <Link href={`/pets/${post.pet.id}/health`}>
-                          <QrCode className="h-4 w-4 mr-2" />
-                          Quản lý hồ sơ sức khỏe
-                        </Link>
-                      </Button>
+                    {/* Pet QR Code */}
+                    {post.pet.qrCodeUrl && (
+                      <div className="bg-muted/50 rounded-lg p-4 text-center">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Mã QR thú cưng</p>
+                        <img
+                          src={post.pet.qrCodeUrl}
+                          alt="Pet QR Code"
+                          className="w-32 h-32 mx-auto rounded-lg border bg-white"
+                        />
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -569,17 +586,19 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                     </div>
                   </div>
 
-              {/* Contact Buttons */}
-              <div className="space-y-2 pt-4 border-t">
-                <Button
-                  className="w-full"
-                  onClick={() => window.location.href = `tel:${post.postedBy.phone}`}
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  Gọi: {post.postedBy.phone}
-                </Button>
-                <ChatButton postedBy={post.postedBy} />
-              </div>
+              {/* Contact Buttons - Only show if not owner */}
+              {!isOwner && (
+                <div className="space-y-2 pt-4 border-t">
+                  <Button
+                    className="w-full"
+                    onClick={() => window.location.href = `tel:${post.postedBy.phone}`}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    Gọi: {post.postedBy.phone}
+                  </Button>
+                  <ChatButton postedBy={post.postedBy} />
+                </div>
+              )}
                     {/*<div className="grid gap-2">*/}
                     {/*    {post.postedBy.phone && (*/}
                     {/*        <Button className="w-full" asChild>*/}
@@ -620,14 +639,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                         Chỉnh sửa bài đăng
                       </Link>
                     </Button>
-                    {post.pet && (
-                      <Button variant="outline" className="w-full" asChild>
-                        <Link href={`/pets/${post.pet.id}/health`}>
-                          <Syringe className="h-4 w-4 mr-2" />
-                          Cập nhật hồ sơ y tế
-                        </Link>
-                      </Button>
-                    )}
+
                     <DeletePostDialog
                       postId={Number(post.id)}
                       postTitle={post.title}

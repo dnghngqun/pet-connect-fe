@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import authService from '@/services/authService'
 
 export default function CreateFundraisingPage() {
   const [formData, setFormData] = useState({
@@ -21,6 +24,19 @@ export default function CreateFundraisingPage() {
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+     const user = authService.getCurrentUser();
+     if (!user || (user.roleCode !== 'ADMIN' && user.roleCode !== 'RESCUE_GROUP')) {
+        toast({
+            title: "Truy cập bị từ chối",
+            description: "Bạn không có quyền tạo chiến dịch gây quỹ.",
+            variant: "destructive"
+        });
+        router.push('/fundraising');
+     }
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<

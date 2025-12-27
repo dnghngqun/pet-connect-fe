@@ -8,13 +8,16 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Heart, TrendingUp, Loader2 } from 'lucide-react'
 import fundraisingService, { CampaignListItem } from '@/services/fundraisingService'
+import authService from '@/services/authService'
 
 export default function FundraisingPage() {
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<any>(null)
 
   useEffect(() => {
+    setCurrentUser(authService.getCurrentUser())
     loadCampaigns()
   }, [])
 
@@ -96,9 +99,12 @@ export default function FundraisingPage() {
               Hãy cùng chúng tôi giúp đỡ các thú cưng cần sự giúp đỡ
             </p>
           </div>
-          <Button asChild size="lg" className="w-full md:w-auto">
-            <Link href="/fundraising/create">Tạo chiến dịch</Link>
-          </Button>
+          {/* Only ADMIN or RESCUE_GROUP can create campaigns */}
+          {(currentUser?.roleCode === 'ADMIN' || currentUser?.roleCode === 'RESCUE_GROUP') && (
+            <Button asChild size="lg" className="w-full md:w-auto">
+              <Link href="/fundraising/create">Tạo chiến dịch</Link>
+            </Button>
+          )}
         </div>
 
         {/* Stats */}

@@ -29,6 +29,8 @@ export interface PetInfo {
   personality: string[];
   specialNeeds: string | null;
   bio: string | null;
+  isNeutered: boolean | null;
+  isVaccinated: boolean | null;
   profilePhoto: string | null;
   photos: string[];
   qrCodeUrl: string | null;
@@ -37,9 +39,9 @@ export interface PetInfo {
     allergies: string[];
     notes: string | null;
     lastCheckup: string | null;
-    vaccinations: { name: string; date: string; nextDue?: string }[];
-    medicalHistory: { date: string; condition: string; treatment: string; notes?: string }[];
-    weightHistory: { date: string; value: number }[];
+    weight: number | null;
+    vaccinations: { id: number; name: string; vaccinationDate: string; nextDueDate?: string; notes?: string }[];
+    medicalHistory: { id: number; visitDate: string; condition: string; treatment: string; notes?: string; weight?: number }[];
   } | null;
 }
 
@@ -151,6 +153,27 @@ export interface CreatePostRequest {
   longitude?: number;
   tags?: string[];
   petId?: number;
+  pet?: {
+    name?: string;
+    breed?: string;
+    age?: number;
+    gender?: string;
+    color?: string;
+    size?: string;
+    weight?: number;
+    isNeutered?: boolean;
+    isVaccinated?: boolean;
+    personality?: string[];
+    specialNeeds?: string;
+    bio?: string;
+  };
+  healthRecord?: {
+    weight?: number;
+    allergies?: string[];
+    notes?: string;
+    vaccinations?: Array<{ name: string; date: string }>;
+    medicalHistory?: Array<{ condition: string; treatment: string; date: string; notes?: string }>;
+  };
 }
 
 export interface UpdatePostRequest {
@@ -164,6 +187,27 @@ export interface UpdatePostRequest {
   longitude?: number;
   tags?: string[];
   isActive?: boolean;
+  pet?: {
+     name?: string;
+     breed?: string;
+     age?: number;
+     gender?: string;
+     color?: string;
+     size?: string;
+     weight?: number;
+     personality?: string[];
+     specialNeeds?: string;
+     bio?: string;
+     isVaccinated?: boolean;
+     isNeutered?: boolean;
+  };
+  healthRecord?: {
+    weight?: number;
+    allergies?: string[];
+    notes?: string;
+    vaccinations?: any[];
+    medicalHistory?: any[];
+  };
 }
 
 // ============ Service Functions ============
@@ -314,6 +358,93 @@ const petPostService = {
     });
     return response.data;
   },
+
+  /**
+   * API 11: Update pet info
+   * PUT /api/pets/{petId}
+   */
+  async updatePet(petId: number, petData: {
+    name?: string;
+    breed?: string;
+    age?: number;
+    gender?: string;
+    color?: string;
+    size?: string;
+    weight?: number;
+    personality?: string[];
+    specialNeeds?: string;
+    bio?: string;
+    isVaccinated?: boolean;
+    isNeutered?: boolean;
+  }): Promise<ApiResponse<PetInfo>> {
+    const response = await apiClient.put(`/api/pets/${petId}`, petData);
+    return response.data;
+  },
+
+  /**
+   * API 12: Update health record
+   * PUT /api/v1/pets/{petId}/health
+   */
+  async updateHealthRecord(petId: number, healthData: {
+    weight?: number;
+    allergies?: string[];
+    notes?: string;
+    lastCheckup?: string;
+  }): Promise<ApiResponse<unknown>> {
+    const response = await apiClient.put(`/api/v1/pets/${petId}/health`, healthData);
+    return response.data;
+  },
+
+  /**
+   * API 13: Add vaccination
+   * POST /api/v1/pets/{petId}/health/vaccinations
+   */
+  async addVaccination(petId: number, data: { name: string; date: string; nextDueDate?: string }): Promise<ApiResponse<any>> {
+    // Backend expects LocalDateTime format: "2025-12-02T00:00:00"
+    const formatToLocalDateTime = (dateStr: string) => dateStr ? `${dateStr}T00:00:00` : undefined;
+    
+    const response = await apiClient.post(`/api/v1/pets/${petId}/health/vaccinations`, {
+      name: data.name,
+      vaccinationDate: formatToLocalDateTime(data.date),
+      nextDueDate: data.nextDueDate ? formatToLocalDateTime(data.nextDueDate) : undefined,
+    });
+    return response.data;
+  },
+
+  /**
+   * API 14: Delete vaccination
+   * DELETE /api/v1/pets/{petId}/health/vaccinations/{vaccinationId}
+   */
+  async deleteVaccination(petId: number, vaccinationId: number): Promise<ApiResponse<void>> {
+    const response = await apiClient.delete(`/api/v1/pets/${petId}/health/vaccinations/${vaccinationId}`);
+    return response.data;
+  },
+
+  /**
+   * API 15: Add medical history
+   * POST /api/v1/pets/{petId}/health/medical-history
+   */
+  async addMedicalHistory(petId: number, data: { condition: string; treatment: string; date: string; notes?: string; weight?: number }): Promise<ApiResponse<any>> {
+    // Backend expects LocalDateTime format: "2025-12-02T00:00:00"
+    const response = await apiClient.post(`/api/v1/pets/${petId}/health/medical-history`, {
+      condition: data.condition,
+      treatment: data.treatment,
+      visitDate: data.date ? `${data.date}T00:00:00` : undefined,
+      notes: data.notes,
+      weight: data.weight || undefined,
+    });
+    return response.data;
+  },
+
+  /**
+   * API 16: Delete medical history
+   * DELETE /api/v1/pets/{petId}/health/medical-history/{historyId}
+   */
+  async deleteMedicalHistory(petId: number, historyId: number): Promise<ApiResponse<void>> {
+    const response = await apiClient.delete(`/api/v1/pets/${petId}/health/medical-history/${historyId}`);
+    return response.data;
+  },
 };
 
 export default petPostService;
+

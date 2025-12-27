@@ -27,12 +27,11 @@ export default function RescueCentersPage() {
       const location = await getUserLocation()
       setUserLocation(location)
 
-      // Load rescue centers with location for distance calculation
+      // Load rescue centers - NO radius filter to show all
       const response = await rescueCenterService.getRescueCenters({
         latitude: location.latitude,
         longitude: location.longitude,
-        radiusKm: 50,
-        size: 50,
+        size: 100, // Load more centers
       })
 
       const centersData = response.data?.content || []
@@ -44,7 +43,7 @@ export default function RescueCentersPage() {
       setError(err.message || 'Không thể lấy vị trí của bạn')
       // Try to load centers without location
       try {
-        const response = await rescueCenterService.getRescueCenters({ size: 50 })
+        const response = await rescueCenterService.getRescueCenters({ size: 100 })
         setCenters(response.data?.content || [])
       } catch {
         // Silently fail

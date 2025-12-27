@@ -69,13 +69,17 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm text-muted-foreground mb-2">Tính cách</p>
-              <div className="flex flex-wrap gap-2">
-                {pet.personality.map((trait) => (
-                  <Badge key={trait} variant="secondary">
-                    {trait}
-                  </Badge>
-                ))}
-              </div>
+              {pet.personality && pet.personality.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {pet.personality.map((trait) => (
+                    <Badge key={trait} variant="secondary">
+                      {trait}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">Chưa có thông tin</p>
+              )}
             </div>
             {pet.color && (
               <div>
@@ -157,9 +161,9 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
                     <div>
                       <p className="font-semibold">{vac.name}</p>
                       <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                        <span>📅 {new Date(vac.date).toLocaleDateString('vi-VN')}</span>
-                        {vac.nextDue && (
-                          <span>🔄 Lần tới: {new Date(vac.nextDue).toLocaleDateString('vi-VN')}</span>
+                        <span>Ngay tiem: {new Date((vac as any).vaccinationDate || vac.date).toLocaleDateString('vi-VN')}</span>
+                        {((vac as any).nextDueDate || vac.nextDue) && (
+                          <span>Lan toi: {new Date((vac as any).nextDueDate || vac.nextDue).toLocaleDateString('vi-VN')}</span>
                         )}
                       </div>
                     </div>
@@ -187,9 +191,14 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
                   <div className="flex items-start gap-3">
                     <Activity className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="font-semibold">{history.condition}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold">{history.condition}</p>
+                        {(history as any).weight && (
+                          <span className="text-sm text-green-600 font-medium">• {(history as any).weight} kg</span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground mt-1">
-                        📅 {new Date(history.date).toLocaleDateString('vi-VN')}
+                        Ngày khám: {new Date((history as any).visitDate || history.date).toLocaleDateString('vi-VN')}
                       </p>
                       <p className="text-sm mt-2">
                         <span className="font-semibold">Điều trị:</span> {history.treatment}
@@ -213,28 +222,6 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
       {/* Details Tab */}
       <TabsContent value="details">
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Cân nặng</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {pet.healthRecord.weight && pet.healthRecord.weight.length > 0 ? (
-                  pet.healthRecord.weight.map((w, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-2 bg-muted rounded">
-                      <span className="text-sm">
-                        📅 {new Date(w.date).toLocaleDateString('vi-VN')}
-                      </span>
-                      <span className="font-semibold">{w.value} kg</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">Chưa có thông tin cân nặng</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Ghi chú y tế</CardTitle>

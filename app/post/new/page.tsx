@@ -26,6 +26,10 @@ import {
   ChevronRight,
   AlertCircle,
   Image as ImageIcon,
+  Heart,
+  Plus,
+  Trash2,
+  Syringe,
 } from 'lucide-react';
 import petPostService from '@/services/petPostService';
 import locationService from '@/services/locationService';
@@ -37,7 +41,8 @@ const STEPS = [
   { id: 1, title: 'Loại bài đăng', icon: FileText },
   { id: 2, title: 'Thông tin bài viết', icon: FileText },
   { id: 3, title: 'Thú cưng', icon: PawPrint },
-  { id: 4, title: 'Hình ảnh', icon: ImageIcon },
+  { id: 4, title: 'Hồ sơ y tế', icon: Heart },
+  { id: 5, title: 'Hình ảnh', icon: ImageIcon },
 ];
 
 const POST_STATUS = [
@@ -85,6 +90,9 @@ export default function NewPostPage() {
     petWeight: '',     // weight
     isNeutered: false, // is_neutered
     isVaccinated: false, // is_vaccinated
+    personality: [] as string[], // personality traits
+    specialNeeds: '',  // special needs
+    bio: '',           // bio
   });
   
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -92,6 +100,18 @@ export default function NewPostPage() {
   const [cities, setCities] = useState<string[]>([]);
   const [districts, setDistricts] = useState<string[]>([]);
   const [petTypes] = useState(['Chó', 'Mèo', 'Chim', 'Hamster', 'Thỏ', 'Khác']);
+  
+  // Health record state (optional)
+  const [healthRecord, setHealthRecord] = useState({
+    notes: '',
+    allergies: [] as string[],
+    weight: '',
+    vaccinations: [] as Array<{ name: string; date: string; nextDueDate?: string }>,
+    medicalHistory: [] as Array<{ condition: string; treatment: string; date: string; notes?: string; weight?: string }>,
+  });
+  const [newAllergy, setNewAllergy] = useState('');
+  const [newVaccine, setNewVaccine] = useState({ name: '', date: '', nextDueDate: '' });
+  const [newMedical, setNewMedical] = useState({ condition: '', treatment: '', date: '', notes: '', weight: '' });
   
   // Image cropper state
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -162,6 +182,9 @@ export default function NewPostPage() {
         // Pet info is optional
         return true;
       case 4:
+        // Health record is optional
+        return true;
+      case 5:
         if (imageFiles.length === 0) {
           toast({ title: 'Lỗi', description: 'Vui lòng thêm ít nhất 1 ảnh', variant: 'destructive' });
           return false;
@@ -181,6 +204,8 @@ export default function NewPostPage() {
       case 3:
         return true; // Optional step
       case 4:
+        return true; // Optional step (health record)
+      case 5:
         return imageFiles.length > 0;
       default:
         return false;
@@ -188,7 +213,7 @@ export default function NewPostPage() {
   };
   
   const goToNextStep = () => {
-    if (validateStep(currentStep) && currentStep < 4) {
+    if (validateStep(currentStep) && currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -272,12 +297,51 @@ export default function NewPostPage() {
   };
   
   const handleSubmit = async () => {
-    if (!validateStep(4)) return;
+    if (!validateStep(5)) return;
     
     setIsSubmitting(true);
     try {
-      // Note: createPost expects (postData, images as File[])
-      // For demo purposes, we'll call without actual File objects
+      // Build health record data if any field is filled
+      
+      // Construct Pet Info object
+      const petInfo = {
+        name: formData.petName,
+        breed: formData.petBreed,
+        age: formData.petAge ? parseInt(formData.petAge) : undefined,
+        gender: formData.petGender, // MALE/FEMALE
+        color: formData.petColor,
+        size: formData.petSize, // SMALL/MEDIUM/LARGE
+        weight: formData.petWeight ? parseFloat(formData.petWeight) : undefined,
+        isNeutered: formData.isNeutered,
+        isVaccinated: formData.isVaccinated,
+        personality: formData.personality.length > 0 ? formData.personality : undefined,
+        specialNeeds: formData.specialNeeds || undefined,
+        bio: formData.bio || undefined,
+      };
+
+      // Construct Health Record object if any data exists
+      const hasHealthData = 
+        healthRecord.allergies.length > 0 ||
+        healthRecord.vaccinations.length > 0 ||
+        healthRecord.medicalHistory.length > 0 ||
+        healthRecord.weight ||
+        healthRecord.notes;
+
+      const healthRecordData = hasHealthData ? {
+          weight: healthRecord.weight ? parseFloat(healthRecord.weight) : undefined,
+          allergies: healthRecord.allergies.length > 0 ? healthRecord.allergies : undefined,
+          notes: healthRecord.notes || undefined,
+          vaccinations: healthRecord.vaccinations.length > 0 ? healthRecord.vaccinations.map(v => ({
+            name: v.name,
+            date: v.date
+          })) : undefined,
+          medicalHistory: healthRecord.medicalHistory.length > 0 ? healthRecord.medicalHistory.map(m => ({
+            condition: m.condition,
+            treatment: m.treatment,
+            date: m.date
+          })) : undefined,
+      } : undefined;
+
       await petPostService.createPost({
         title: formData.title,
         description: formData.description,
@@ -286,6 +350,9 @@ export default function NewPostPage() {
         city: formData.city,
         district: formData.district || '',
         location: formData.location || undefined,
+        tags: [], // Add empty tags if not managed
+        pet: petInfo, // Key fix: Sending 'pet' object with mapped fields
+        healthRecord: healthRecordData,
       }, imageFiles);
       
       toast({
@@ -661,11 +728,301 @@ export default function NewPostPage() {
                   />
                 </div>
               </div>
+
+              {/* Special Needs */}
+              <div className="space-y-2">
+                <Label htmlFor="specialNeeds">Nhu cầu đặc biệt</Label>
+                <Input
+                  id="specialNeeds"
+                  name="specialNeeds"
+                  placeholder="Ví dụ: Cần chế độ ăn đặc biệt..."
+                  value={formData.specialNeeds}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {/* Bio */}
+              <div className="space-y-2">
+                <Label htmlFor="bio">Mô tả về thú cưng (Bio)</Label>
+                <Textarea
+                  id="bio"
+                  name="bio"
+                  placeholder="Mô tả thêm về tính cách, thói quen của thú cưng..."
+                  value={formData.bio}
+                  onChange={handleChange}
+                  rows={3}
+                />
+              </div>
             </div>
           )}
 
-          {/* Step 4: Images */}
+          {/* Step 4: Health Record (Optional) */}
           {currentStep === 4 && (
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-semibold">Hồ sơ y tế</h3>
+                <p className="text-muted-foreground text-sm">
+                  Thêm thông tin sức khỏe để người nhận nuôi biết rõ hơn (không bắt buộc)
+                </p>
+              </div>
+
+              <div className="p-4 bg-muted/50 rounded-lg border mb-6">
+                <p className="text-sm text-muted-foreground">
+                  💡 Bước này không bắt buộc. Bạn có thể bỏ qua hoặc thêm sau.
+                </p>
+              </div>
+
+              {/* Allergies */}
+              <div className="space-y-2">
+                <Label>Dị ứng</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newAllergy}
+                    onChange={(e) => setNewAllergy(e.target.value)}
+                    placeholder="Nhập loại dị ứng..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newAllergy.trim()) {
+                        e.preventDefault();
+                        setHealthRecord(prev => ({
+                          ...prev,
+                          allergies: [...prev.allergies, newAllergy.trim()]
+                        }));
+                        setNewAllergy('');
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (newAllergy.trim()) {
+                        setHealthRecord(prev => ({
+                          ...prev,
+                          allergies: [...prev.allergies, newAllergy.trim()]
+                        }));
+                        setNewAllergy('');
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {healthRecord.allergies.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {healthRecord.allergies.map((allergy, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-sm flex items-center gap-1"
+                      >
+                        {allergy}
+                        <button
+                          type="button"
+                          onClick={() => setHealthRecord(prev => ({
+                            ...prev,
+                            allergies: prev.allergies.filter((_, i) => i !== idx)
+                          }))}
+                          className="hover:text-red-900"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+
+              {/* Vaccinations */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Syringe className="h-4 w-4" />
+                  Tiêm phòng
+                </Label>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <Label className="text-xs text-muted-foreground">Tên vaccine</Label>
+                    <Input
+                      value={newVaccine.name}
+                      onChange={(e) => setNewVaccine(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Tên vaccine..."
+                    />
+                  </div>
+                  <div className="w-36">
+                    <Label className="text-xs text-muted-foreground">Ngày tiêm</Label>
+                    <Input
+                      type="date"
+                      value={newVaccine.date}
+                      onChange={(e) => setNewVaccine(prev => ({ ...prev, date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="w-36">
+                    <Label className="text-xs text-muted-foreground">Lần tới</Label>
+                    <Input
+                      type="date"
+                      value={newVaccine.nextDueDate}
+                      onChange={(e) => setNewVaccine(prev => ({ ...prev, nextDueDate: e.target.value }))}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    onClick={() => {
+                      if (newVaccine.name.trim() && newVaccine.date) {
+                        setHealthRecord(prev => ({
+                          ...prev,
+                          vaccinations: [...prev.vaccinations, { ...newVaccine }]
+                        }));
+                        setNewVaccine({ name: '', date: '', nextDueDate: '' });
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {healthRecord.vaccinations.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    {healthRecord.vaccinations.map((vac, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-green-50 p-2 rounded-lg">
+                        <div>
+                          <span className="font-medium">{vac.name}</span>
+                          <span className="text-sm text-muted-foreground ml-2">
+                            Ngày tiêm: {new Date(vac.date).toLocaleDateString('vi-VN')}
+                          </span>
+                          {vac.nextDueDate && (
+                            <span className="text-sm text-muted-foreground ml-2">
+                              | Lần tới: {new Date(vac.nextDueDate).toLocaleDateString('vi-VN')}
+                            </span>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setHealthRecord(prev => ({
+                            ...prev,
+                            vaccinations: prev.vaccinations.filter((_, i) => i !== idx)
+                          }))}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Medical History */}
+              <div className="space-y-2">
+                <Label>Lịch sử khám bệnh</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    value={newMedical.condition}
+                    onChange={(e) => setNewMedical(prev => ({ ...prev, condition: e.target.value }))}
+                    placeholder="Tình trạng..."
+                  />
+                  <Input
+                    value={newMedical.treatment}
+                    onChange={(e) => setNewMedical(prev => ({ ...prev, treatment: e.target.value }))}
+                    placeholder="Điều trị..."
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <div className="w-36">
+                    <Label className="text-xs text-muted-foreground">Ngày khám</Label>
+                    <Input
+                      type="date"
+                      value={newMedical.date}
+                      onChange={(e) => setNewMedical(prev => ({ ...prev, date: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-xs text-muted-foreground">Ghi chú (tùy chọn)</Label>
+                    <Input
+                      value={newMedical.notes}
+                      onChange={(e) => setNewMedical(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Ghi chú..."
+                    />
+                  </div>
+                  <div className="w-20">
+                    <Label className="text-xs text-muted-foreground">Cân nặng</Label>
+                    <Input
+                      type="number"
+                      value={newMedical.weight}
+                      onChange={(e) => setNewMedical(prev => ({ ...prev, weight: e.target.value }))}
+                      placeholder="Kg"
+                      step="0.1"
+                      min="0"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="self-end"
+                    onClick={() => {
+                      if (newMedical.condition.trim() && newMedical.treatment.trim()) {
+                        setHealthRecord(prev => ({
+                          ...prev,
+                          medicalHistory: [...prev.medicalHistory, { ...newMedical }]
+                        }));
+                        setNewMedical({ condition: '', treatment: '', date: '', notes: '', weight: '' });
+                      }
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                {healthRecord.medicalHistory.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    {healthRecord.medicalHistory.map((med, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-blue-50 p-2 rounded-lg">
+                        <div>
+                          <span className="font-medium">{med.condition}</span>
+                          <span className="text-muted-foreground"> → {med.treatment}</span>
+                          {med.date && (
+                            <span className="text-sm text-muted-foreground ml-2">
+                              ({new Date(med.date).toLocaleDateString('vi-VN')})
+                            </span>
+                          )}
+                          {med.weight && (
+                            <span className="text-sm text-green-600 ml-2">• {med.weight} kg</span>
+                          )}
+                          {med.notes && (
+                            <span className="text-sm text-muted-foreground ml-2">- {med.notes}</span>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setHealthRecord(prev => ({
+                            ...prev,
+                            medicalHistory: prev.medicalHistory.filter((_, i) => i !== idx)
+                          }))}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="healthNotes">Ghi chú sức khỏe</Label>
+                <Textarea
+                  id="healthNotes"
+                  value={healthRecord.notes}
+                  onChange={(e) => setHealthRecord(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Ghi chú về tình trạng sức khỏe chung..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Images */}
+          {currentStep === 5 && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h3 className="text-lg font-semibold">Thêm hình ảnh</h3>
@@ -756,7 +1113,7 @@ export default function NewPostPage() {
               {currentStep > 1 ? 'Quay lại' : 'Hủy'}
             </Button>
 
-            {currentStep < 4 ? (
+            {currentStep < 5 ? (
               <Button
                 type="button"
                 onClick={goToNextStep}
