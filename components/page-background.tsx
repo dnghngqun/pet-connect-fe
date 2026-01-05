@@ -1,68 +1,114 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { PawPrint, Bone, Heart } from "lucide-react"
+import { useState, useEffect } from "react"
 
 export default function PageBackground() {
   return (
-    <>
-      {/* Background image with overlay */}
-      <div className="fixed inset-0 -z-10">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1623387641168-d9803ddd3f35?q=80&w=2000&auto=format&fit=crop')`,
-          }}
-        ></div>
-        {/* Warm gradient overlay - soft and friendly */}
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-800/20 via-red-800/20 to-pink-800/20 dark:from-orange-950/35 dark:via-red-950/35 dark:to-pink-950/35"></div>
-        {/* Light overlay for better readability */}
-        <div className="absolute inset-0 bg-white/75 dark:bg-black/55"></div>
-      </div>
+    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+      {/* Base Background Gradient - Fixed at bottom layer */}
+      <div 
+        className="absolute inset-0 -z-20"
+        style={{
+          background: "linear-gradient(135deg, #fbf7f4 0%, #f8f5f2 50%, #fbf7f4 100%)"
+        }}
+      />
 
-      {/* Animated background shapes */}
-      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute -top-40 -right-40 w-96 h-96 bg-orange-400/12 dark:bg-orange-500/8 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            x: [0, 30, 0],
-            y: [0, -50, 0],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
+      {/* Warm gradient blobs */}
+      <motion.div
+        className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-orange-100/30 rounded-full blur-[100px]"
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.2, 0.3, 0.2],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      <motion.div
+        className="absolute -bottom-[20%] -left-[10%] w-[50%] h-[50%] bg-amber-100/30 rounded-full blur-[100px]"
+        animate={{
+          scale: [1, 1.1, 1],
+          opacity: [0.2, 0.3, 0.2],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2
+        }}
+      />
+
+      {/* Floating Stickers (Paws, Bones, Hearts) - Lower opacity */}
+      <FloatingSticker Icon={PawPrint} x="10%" y="20%" rotate={-15} duration={20} color="text-orange-200/20" size={40} />
+      <FloatingSticker Icon={PawPrint} x="85%" y="15%" rotate={20} duration={25} color="text-amber-200/20" size={50} />
+      <FloatingSticker Icon={Bone} x="20%" y="80%" rotate={45} duration={18} color="text-yellow-300/20" size={35} />
+      <FloatingSticker Icon={Heart} x="80%" y="75%" rotate={-10} duration={22} color="text-red-200/20" size={30} />
+      
+      {/* Tiny particles - Validated client-side only */}
+      <ParticleStickers count={5} />
+    </div>
+  )
+}
+
+function ParticleStickers({ count = 5 }: { count: number }) {
+  const [stickers, setStickers] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Generate particles only on client to match hydration
+    const newStickers = Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      x: `${Math.random() * 100}%`,
+      y: `${Math.random() * 100}%`,
+      rotate: Math.random() * 360,
+      duration: 15 + Math.random() * 10,
+      size: 20 + Math.random() * 20
+    }));
+    setStickers(newStickers);
+  }, [count]);
+
+  if (stickers.length === 0) return null;
+
+  return (
+    <>
+      {stickers.map((s) => (
+        <FloatingSticker 
+          key={s.id}
+          Icon={PawPrint} 
+          x={s.x}
+          y={s.y} 
+          rotate={s.rotate} 
+          duration={s.duration} 
+          color="text-orange-100/10" 
+          size={s.size} 
         />
-        <motion.div
-          className="absolute -bottom-40 -left-40 w-96 h-96 bg-red-400/12 dark:bg-red-500/8 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl"
-          animate={{
-            scale: [1, 1.1, 1],
-            x: [0, -30, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{
-            duration: 18,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2
-          }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-400/12 dark:bg-pink-500/8 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl"
-          animate={{
-            scale: [1, 1.15, 1],
-            rotate: [0, 180, 360],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear",
-            delay: 4
-          }}
-        />
-      </div>
+      ))}
     </>
+  );
+}
+
+
+function FloatingSticker({ Icon, x, y, rotate, duration, color, size }: any) {
+  return (
+    <motion.div
+      className={`absolute ${color}`}
+      style={{ left: x, top: y }}
+      initial={{ rotate: rotate }}
+      animate={{
+        y: [0, -20, 0],
+        rotate: [rotate, rotate + 10, rotate],
+      }}
+      transition={{
+        duration: duration,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+    >
+      <Icon size={size} strokeWidth={2.5} />
+    </motion.div>
   )
 }
 

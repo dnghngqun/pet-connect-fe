@@ -115,7 +115,7 @@ export default function PostReactions({
               userReaction && currentReaction?.bgColor,
               !userReaction && 'hover:bg-blue-50 hover:text-blue-600'
             )}
-            onClick={() => !userReaction && handleReaction('LIKE')}
+            onClick={() => handleReaction(userReaction || 'LIKE')}
             onMouseEnter={() => setShowPicker(true)}
             disabled={isLoading}
           >

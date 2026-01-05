@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,6 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { useRouter } from 'next/navigation';
-import { useDebouncedCallback } from 'use-debounce';
 
 interface SearchBarProps {
   onSearch?: (query: string) => void;
@@ -31,43 +30,40 @@ export default function SearchBar({
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<any[]>([]);
 
-  // Debounced search function
-  const debouncedSearch = useDebouncedCallback(async (searchQuery: string) => {
-    if (!searchQuery || searchQuery.length < 2) {
-      setResults([]);
-      setIsSearching(false);
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      // Call search API
-      const response = await fetch(
-        `/api/v1/posts?q=${encodeURIComponent(searchQuery)}&size=5`
-      );
-      const data = await response.json();
-      
-      if (data.success && data.data?.posts) {
-        setResults(data.data.posts);
+  // Manual debounce implementation
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (!query || query.length < 2) {
+        setResults([]);
+        setIsSearching(false);
+        return;
       }
-    } catch (error) {
-      console.error('Search error:', error);
-      setResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  }, 300);
+
+      setIsSearching(true);
+      try {
+        const response = await fetch(
+          `/api/v1/posts?q=${encodeURIComponent(query)}&size=5`
+        );
+        const data = await response.json();
+        
+        if (data.success && data.data?.posts) {
+          setResults(data.data.posts);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        setResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
     setIsOpen(value.length > 0);
-    
-    if (value.length >= 2) {
-      debouncedSearch(value);
-    } else {
-      setResults([]);
-    }
   };
 
   const handleClear = () => {

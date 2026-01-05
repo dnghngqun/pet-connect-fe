@@ -1076,15 +1076,21 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                   value={formData.description}
                   onChange={handleChange}
                   rows={5}
+                  maxLength={2000}
                   className="resize-none"
                 />
-                <p className={cn(
-                  "text-xs",
-                  formData.description.length >= 20 ? "text-green-600" : "text-muted-foreground"
-                )}>
-                  {formData.description.length}/20 ký tự tối thiểu
-                  {formData.description.length >= 20 && " ✓"}
-                </p>
+                <div className="flex justify-between items-center text-xs">
+                  <span className={cn(
+                    formData.description.length >= 20 ? "text-green-600" : "text-muted-foreground"
+                  )}>
+                    {formData.description.length >= 20 ? "Đã đạt tối thiểu 20 ký tự ✓" : `Tối thiểu 20 ký tự (${formData.description.length}/20)`}
+                  </span>
+                  <span className={cn(
+                    formData.description.length >= 2000 ? "text-destructive" : "text-muted-foreground"
+                  )}>
+                    {formData.description.length}/2000
+                  </span>
+                </div>
               </div>
             </div>
           )}

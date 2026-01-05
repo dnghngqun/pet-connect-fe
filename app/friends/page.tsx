@@ -1,254 +1,68 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { Users, UserPlus } from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { getFriends, getPendingRequests, unfriend, acceptFriendRequest, rejectFriendRequest, Friendship, FriendRequest } from '@/services/friendshipService';
-import authService from '@/services/authService';
-import { useRouter } from 'next/navigation';
+import FriendRequestList from '@/components/friend-request/friend-request-list';
+import { Users, PawPrint, Heart, Sparkles } from 'lucide-react';
 
 export default function FriendsPage() {
-  const router = useRouter();
-  const [friends, setFriends] = useState<Friendship[]>([]);
-  const [requests, setRequests] = useState<FriendRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const currentUser = authService.getCurrentUser();
-
-  useEffect(() => {
-    if (!currentUser) {
-      router.push('/sign-in');
-      return;
-    }
-    loadFriends();
-    loadRequests();
-  }, []);
-
-  const loadFriends = async () => {
-    try {
-      setLoading(true);
-      const response = await getFriends(0, 50);
-      if (response.success) {
-        setFriends(response.data || []);
-      }
-    } catch (error) {
-      console.error('Error loading friends:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadRequests = async () => {
-    try {
-      const response = await getPendingRequests(0, 20);
-      if (response.success) {
-        setRequests(response.data || []);
-      }
-    } catch (error) {
-      console.error('Error loading requests:', error);
-    }
-  };
-
-  const handleUnfriend = async (friendId: number) => {
-    if (!confirm('Bạn có chắc muốn hủy kết bạn?')) return;
-    
-    try {
-      await unfriend(friendId);
-      loadFriends();
-    } catch (error) {
-      alert('Có lỗi xảy ra');
-    }
-  };
-
-  const handleAccept = async (requestId: number) => {
-    try {
-      await acceptFriendRequest(requestId);
-      loadRequests();
-      loadFriends();
-    } catch (error) {
-      alert('Có lỗi xảy ra');
-    }
-  };
-
-  const handleReject = async (requestId: number) => {
-    try {
-      await rejectFriendRequest(requestId);
-      loadRequests();
-    } catch (error) {
-      alert('Có lỗi xảy ra');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent" />
-          <p className="mt-4 text-muted-foreground">Đang tải...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-orange-500 text-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-2">Bạn bè</h1>
-            <p className="text-lg opacity-90">
-              Quản lý bạn bè và lời mời kết bạn
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen py-8 relative">
+      {/* Decorative stickers */}
+      <div className="absolute top-24 right-12 text-orange-200/30 animate-pulse">
+        <Users size={36} />
+      </div>
+      <div className="absolute bottom-32 left-10 text-amber-200/30">
+        <PawPrint size={32} className="rotate-12" />
+      </div>
+      <div className="absolute top-48 left-16 text-pink-200/30">
+        <Heart size={24} />
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <Tabs defaultValue="friends" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="friends">
-                Bạn bè ({friends.length})
-              </TabsTrigger>
-              <TabsTrigger value="requests">
-                Lời mời ({requests.length})
-                {requests.length > 0 && (
-                  <Badge variant="destructive" className="ml-2">
-                    {requests.length}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            </TabsList>
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col gap-8 max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl shadow-md">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                  Bạn bè
+                </h1>
+                <p className="text-sm text-muted-foreground">Kết nối với những người yêu thú cưng 🐾</p>
+              </div>
+            </div>
+          </div>
 
-            {/* Friends List */}
-            <TabsContent value="friends">
-              {friends.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium mb-2">
-                    Bạn chưa có bạn bè nào
-                  </p>
-                  <p className="text-muted-foreground mb-6">
-                    Tìm kiếm và kết nối với những người yêu thú cưng
-                  </p>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {friends.map((friend) => (
-                    <Card key={friend.id} className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={friend.userAvatar} />
-                          <AvatarFallback>
-                            {friend.userName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{friend.userName}</p>
-                          {friend.userCity && (
-                            <p className="text-sm text-muted-foreground">
-                              {friend.userCity}
-                            </p>
-                          )}
-                          {friend.mutualFriendsCount && friend.mutualFriendsCount > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              {friend.mutualFriendsCount} bạn chung
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => router.push(`/profile/${friend.userId}`)}
-                          className="flex-1"
-                        >
-                          Xem trang
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUnfriend(friend.userId)}
-                          className="text-red-600"
-                        >
-                          Hủy kết bạn
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+          {/* Requests Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-orange-400" />
+                Lời mời kết bạn
+              </h2>
+              <span className="text-orange-500 hover:underline cursor-pointer text-sm font-medium">Xem tất cả</span>
+            </div>
+            
+            <FriendRequestList />
+          </div>
 
-            {/* Friend Requests */}
-            <TabsContent value="requests">
-              {requests.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <UserPlus className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium mb-2">
-                    Không có lời mời kết bạn
-                  </p>
-                  <p className="text-muted-foreground">
-                    Khi có người gửi lời mời, nó sẽ hiện ở đây
-                  </p>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {requests.map((request) => (
-                    <Card key={request.id} className="p-4">
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={request.senderAvatar} />
-                          <AvatarFallback>
-                            {request.senderName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{request.senderName}</p>
-                          {request.senderCity && (
-                            <p className="text-sm text-muted-foreground">
-                              {request.senderCity}
-                            </p>
-                          )}
-                          {request.mutualFriendsCount && request.mutualFriendsCount > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              {request.mutualFriendsCount} bạn chung
-                            </p>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(request.createdAt).toLocaleDateString('vi-VN')}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleAccept(request.id)}
-                          className="flex-1"
-                        >
-                          Chấp nhận
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleReject(request.id)}
-                        >
-                          Từ chối
-                        </Button>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+          {/* My Friends Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Heart className="h-5 w-5 text-pink-400" />
+                Danh sách bạn bè
+              </h2>
+            </div>
+            <div className="p-8 text-center bg-white/50 backdrop-blur-sm rounded-2xl border border-white/50">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 mb-4">
+                <Users className="h-8 w-8 text-orange-400" />
+              </div>
+              <p className="text-muted-foreground">Chưa có danh sách bạn bè 🐕</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+

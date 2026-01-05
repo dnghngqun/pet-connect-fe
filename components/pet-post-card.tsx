@@ -45,6 +45,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick }: Pet
   const [reactionCount, setReactionCount] = useState(post.reactionCount || 0);
   const [favoriteCount, setFavoriteCount] = useState(post.favoriteCount || 0);
   const [isFavorited, setIsFavorited] = useState(post.isFavorited || false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
 
@@ -109,25 +110,27 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick }: Pet
           <div 
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/profile/${post.postedBy.id}`);
+              if (post.postedBy?.id) {
+                router.push(`/profile/${post.postedBy.id}`);
+              }
             }}
             className="flex items-center gap-3 flex-1 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition"
           >
             <div className="relative">
               <Image
-                src={post.postedBy.avatar || '/placeholder.svg'}
-                alt={post.postedBy.name}
+                src={post.postedBy?.avatar || '/placeholder.svg'}
+                alt={post.postedBy?.name || 'User'}
                 width={40}
                 height={40}
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-offset-1 ring-primary/20"
               />
-              {post.postedBy.isVerified && (
+              {post.postedBy?.isVerified && (
                 <Verified className="absolute -bottom-1 -right-1 h-4 w-4 text-blue-500 fill-current bg-white rounded-full" />
               )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="font-semibold text-sm truncate">{post.postedBy.name}</p>
+                <p className="font-semibold text-sm truncate">{post.postedBy?.name || 'Người dùng ẩn'}</p>
                 {post.postType && (
                   <Badge variant="outline" className={cn("text-xs border px-2 py-0", typeConfig.color)}>
                     <span className="mr-1">{typeConfig.icon}</span>
@@ -188,8 +191,32 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick }: Pet
         {/* Post Content */}
         <div onClick={() => onPostClick?.(post)} className="block cursor-pointer">
           <div className="px-4 pb-3">
+            {/* Phone Number if available */}
+            {post.postedBy?.phone && (
+              <p className="text-sm font-semibold text-blue-600 mb-2">
+                📞 Liên hệ: {post.postedBy.phone}
+              </p>
+            )}
+
             <h3 className="font-semibold text-base line-clamp-2 mb-1">{post.title}</h3>
-            <p className="text-sm text-muted-foreground line-clamp-2">{post.description}</p>
+            
+            {/* Description with See More */}
+            <div className="relative">
+              <p className={cn("text-sm text-muted-foreground whitespace-pre-line", !isExpanded && "line-clamp-3")}>
+                {post.description}
+              </p>
+              {post.description && post.description.length > 150 && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsExpanded(!isExpanded);
+                  }}
+                  className="text-primary text-sm font-medium hover:underline mt-1"
+                >
+                  {isExpanded ? 'Thu gọn' : 'Xem thêm'}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Image */}

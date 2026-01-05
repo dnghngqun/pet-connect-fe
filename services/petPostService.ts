@@ -303,6 +303,20 @@ const petPostService = {
   },
 
   /**
+   * Get user's liked posts
+   * GET /api/v1/posts/liked
+   */
+  async getLikedPosts(params: { page?: number; size?: number } = {}): Promise<ApiResponse<{ posts: PostListItem[] }>> {
+    const response = await apiClient.get(COMMON_API.likedPosts, {
+      params: {
+        page: params.page || 0,
+        size: params.size || 10,
+      },
+    });
+    return response.data;
+  },
+
+  /**
    * API 4: Create new post
    * POST /api/v1/posts
    */

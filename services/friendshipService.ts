@@ -1,6 +1,5 @@
 import apiClient from '@/common/apiClient';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import { COMMON_API } from '@/common/Constant/COMMON_API';
 
 export interface Friendship {
   id: number;
@@ -31,19 +30,8 @@ export interface FriendRequest {
  */
 export const sendFriendRequest = async (toUserId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
-    
-    const response = await fetch(`${API_URL}/api/v1/friendships/request`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-      body: JSON.stringify({ toUserId }),
-    });
-    
-    const data = await response.json();
-    return data;
+    const response = await apiClient.post('/api/v1/friendships/request', { toUserId });
+    return response.data;
   } catch (error) {
     console.error('Error sending friend request:', error);
     throw error;
@@ -55,17 +43,8 @@ export const sendFriendRequest = async (toUserId: number) => {
  */
 export const acceptFriendRequest = async (requestId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
-    
-    const response = await fetch(`${API_URL}/api/v1/friendships/${requestId}/accept`, {
-      method: 'POST',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
-    
-    const data = await response.json();
-    return data;
+    const response = await apiClient.post(`/api/v1/friendships/${requestId}/accept`);
+    return response.data;
   } catch (error) {
     console.error('Error accepting friend request:', error);
     throw error;
@@ -77,17 +56,8 @@ export const acceptFriendRequest = async (requestId: number) => {
  */
 export const rejectFriendRequest = async (requestId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
-    
-    const response = await fetch(`${API_URL}/api/v1/friendships/${requestId}/reject`, {
-      method: 'POST',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
-    
-    const data = await response.json();
-    return data;
+    const response = await apiClient.post(`/api/v1/friendships/${requestId}/reject`);
+    return response.data;
   } catch (error) {
     console.error('Error rejecting friend request:', error);
     throw error;
@@ -99,17 +69,8 @@ export const rejectFriendRequest = async (requestId: number) => {
  */
 export const unfriend = async (friendId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
-    
-    const response = await fetch(`${API_URL}/api/v1/friendships/${friendId}`, {
-      method: 'DELETE',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
-    
-    const data = await response.json();
-    return data;
+    const response = await apiClient.delete(`/api/v1/friendships/${friendId}`);
+    return response.data;
   } catch (error) {
     console.error('Error unfriending:', error);
     throw error;
@@ -121,19 +82,10 @@ export const unfriend = async (friendId: number) => {
  */
 export const getFriends = async (page = 0, size = 20) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
-    
-    const response = await fetch(
-      `${API_URL}/api/v1/friendships/friends?page=${page}&size=${size}`,
-      {
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      }
-    );
-    
-    const data = await response.json();
-    return data;
+    const response = await apiClient.get('/api/v1/friendships/friends', {
+      params: { page, size }
+    });
+    return response.data;
   } catch (error) {
     console.error('Error fetching friends:', error);
     throw error;
@@ -145,19 +97,10 @@ export const getFriends = async (page = 0, size = 20) => {
  */
 export const getPendingRequests = async (page = 0, size = 20) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
-    
-    const response = await fetch(
-      `${API_URL}/api/v1/friendships/requests?page=${page}&size=${size}`,
-      {
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      }
-    );
-    
-    const data = await response.json();
-    return data;
+    const response = await apiClient.get('/api/v1/friendships/requests', {
+      params: { page, size }
+    });
+    return response.data;
   } catch (error) {
     console.error('Error fetching requests:', error);
     throw error;
@@ -169,19 +112,10 @@ export const getPendingRequests = async (page = 0, size = 20) => {
  */
 export const getFriendSuggestions = async (limit = 10) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
-    
-    const response = await fetch(
-      `${API_URL}/api/v1/friendships/suggestions?limit=${limit}`,
-      {
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      }
-    );
-    
-    const data = await response.json();
-    return data;
+    const response = await apiClient.get('/api/v1/friendships/suggestions', {
+      params: { limit }
+    });
+    return response.data;
   } catch (error) {
     console.error('Error fetching suggestions:', error);
     throw error;
@@ -193,19 +127,8 @@ export const getFriendSuggestions = async (limit = 10) => {
  */
 export const getMutualFriends = async (userId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
-    
-    const response = await fetch(
-      `${API_URL}/api/v1/friendships/mutual/${userId}`,
-      {
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-      }
-    );
-    
-    const data = await response.json();
-    return data;
+    const response = await apiClient.get(`/api/v1/friendships/mutual/${userId}`);
+    return response.data;
   } catch (error) {
     console.error('Error fetching mutual friends:', error);
     throw error;

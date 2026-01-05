@@ -89,7 +89,8 @@ export default function ReportDialog({
 
     setIsSubmitting(true);
     try {
-      const content = `Lý do: ${postReason}${postReason === 'other' ? ' - ' + postOtherReason : ''}`;
+      // Backend requires min 20 chars, so we make the prefix descriptive
+      const content = `Báo cáo vi phạm [Bài viết ${postId}]. Lý do: ${postReason}${postReason === 'other' && postOtherReason ? ' - ' + postOtherReason : ''}`;
       if (onSubmit) {
         await onSubmit(content);
       } else {
@@ -145,7 +146,8 @@ export default function ReportDialog({
 
     setIsSubmitting(true);
     try {
-      const content = `Lý do: ${userReason}${userReason === 'other' ? ' - ' + userOtherReason : ''}`;
+      // Backend requires min 20 chars
+      const content = `Báo cáo vi phạm [Người dùng ${userId}]. Lý do: ${userReason}${userReason === 'other' && userOtherReason ? ' - ' + userOtherReason : ''}`;
       if (onSubmit) {
         await onSubmit(content);
       } else {

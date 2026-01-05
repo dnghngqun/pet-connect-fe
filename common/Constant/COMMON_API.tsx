@@ -5,7 +5,7 @@ export const COMMON_API = {
   login: `${BASE_URL}/api/auth/login`,
   register: `${BASE_URL}/api/auth/register`,
   profile: `${BASE_URL}/api/auth/me`,
-
+  refreshToken: `${BASE_URL}/api/auth/refresh-token`,
   // Posts - /api/v1/posts
   posts: `${BASE_URL}/api/v1/posts`,
   postDetail: (idOrSlug: string) => `${BASE_URL}/api/v1/posts/${idOrSlug}`,
@@ -18,6 +18,7 @@ export const COMMON_API = {
     `${BASE_URL}/api/v1/posts/${id}/reactions${type ? `?type=${type}` : ""}`,
   postFavorite: (id: number) => `${BASE_URL}/api/v1/posts/${id}/favorite`,
   favoritePosts: `${BASE_URL}/api/v1/posts/favorites`,
+  likedPosts: `${BASE_URL}/api/v1/posts/liked`,
   postComments: (postId: number) => `${BASE_URL}/api/posts/${postId}/comments`,
 
   // Fundraising - /api/v1/fundraising

@@ -79,8 +79,8 @@ export default function MarketplaceMetaDisplay({
           {condition && (
             <div className="flex items-center gap-1.5">
               <Package className="h-4 w-4 text-cyan-600" />
-              <Badge variant="outline" className={`text-xs ${conditionConfig[condition].color}`}>
-                {conditionConfig[condition].label}
+              <Badge variant="outline" className={`text-xs ${conditionConfig[condition]?.color || 'text-gray-600'}`}>
+                {conditionConfig[condition]?.label || condition}
               </Badge>
             </div>
           )}

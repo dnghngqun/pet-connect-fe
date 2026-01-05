@@ -7,25 +7,38 @@ import PostCardSkeleton from '@/components/post-card-skeleton';
 import CreatePostModal from '@/components/create-post-modal';
 import PostDetailModal from '@/components/post-detail-modal';
 import { Button } from '@/components/ui/button';
-import { Home, Heart, Bookmark, TrendingUp } from 'lucide-react';
+import { Home, Heart, Bookmark, TrendingUp, Loader2 } from 'lucide-react';
 import petPostService from '@/services/petPostService';
+import suggestionsService, { SuggestedItem, SuggestionsData } from '@/services/suggestionsService';
+import friendRequestService from '@/services/friendRequestService';
 import authService from '@/services/authService';
 import type { PetPost } from '@/lib/types';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 
 export default function FeedPage() {
+  const [mounted, setMounted] = useState(false);
+  const user = typeof window !== 'undefined' ? authService.getCurrentUser() : null;
   const [posts, setPosts] = useState<PetPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const [postTypeFilter, setPostTypeFilter] = useState<string>('');
-  const user = typeof window !== 'undefined' ? authService.getCurrentUser() : null;
   const observer = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const router = useRouter();
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [selectedPost, setSelectedPost] = useState<PetPost | null>(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [suggestions, setSuggestions] = useState<SuggestionsData>({ organizations: [], users: [], groups: [] });
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [followingIds, setFollowingIds] = useState<Set<number>>(new Set());
+  const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
+  const [trendingTags, setTrendingTags] = useState<import('@/services/trendingService').TrendingStats[]>([]);
+  const [loadingTrending, setLoadingTrending] = useState(false);
 
   const handlePostCreated = (newPostData: any) => {
     const newPost: PetPost = {
@@ -41,10 +54,10 @@ export default function FeedPage() {
       city: newPostData.city,
       district: newPostData.district,
       postedBy: {
-        id: user?._id || '',
-        name: user?.name || 'Bạn',
+        id: user?.id || '',
+        name: user?.fullName || 'Bạn',
         phone: '',
-        avatar: user?.avatar,
+        avatar: user?.avatarUrl,
         isVerified: false,
       },
       createdAt: new Date().toISOString(),
@@ -65,6 +78,19 @@ export default function FeedPage() {
   const handlePostClick = (clickedPost: PetPost) => {
     setSelectedPost(clickedPost);
     setIsPostModalOpen(true);
+    // Track view for trending
+    if (clickedPost.id && /^\d+$/.test(clickedPost.id.toString())) {
+       import('@/services/trendingService').then(mod => {
+          mod.default.trackView(clickedPost.id.toString());
+       });
+    }
+  };
+
+  const handleTrendingClick = async (tag: string) => {
+      // Track search
+      const trendingService = (await import('@/services/trendingService')).default;
+      await trendingService.trackSearch(tag);
+      router.push(`/search?q=${encodeURIComponent(tag)}`);
   };
 
   const lastPostRef = useCallback((node: HTMLDivElement | null) => {
@@ -80,13 +106,109 @@ export default function FeedPage() {
 
   useEffect(() => {
     loadPosts();
-  }, [page]);
+  }, [page, postTypeFilter]);
 
   useEffect(() => {
     setPosts([]);
     setPage(0);
     setHasMore(true);
   }, [postTypeFilter]);
+
+  // Load suggestions and trending on mount
+  useEffect(() => {
+    loadSuggestions();
+    loadTrending();
+  }, []);
+
+  const loadTrending = async () => {
+    setLoadingTrending(true);
+    try {
+      const trendingService = (await import('@/services/trendingService')).default;
+      const response = await trendingService.getTrending(5);
+      if (response.success) {
+        setTrendingTags(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load trending:', error);
+    } finally {
+      setLoadingTrending(false);
+    }
+  };
+
+  const loadSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const response = await suggestionsService.getSuggestions(5);
+      if (response.success) {
+        setSuggestions(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load suggestions:', error);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
+  const handleFollow = async (item: SuggestedItem) => {
+    if (!user) {
+      router.push('/sign-in');
+      return;
+    }
+    
+    // Prevent double-click
+    if (processingIds.has(item.id)) {
+      return;
+    }
+    
+    setProcessingIds(prev => new Set(prev).add(item.id));
+    
+    try {
+      if (item.type === 'ORGANIZATION') {
+        const response = await suggestionsService.toggleFollowOrganization(item.id);
+        if (response.success) {
+          setFollowingIds(prev => {
+            const next = new Set(prev);
+            if (response.data.isFollowing) {
+              next.add(item.id);
+              toast.success(`Đã theo dõi ${item.name}`);
+            } else {
+              next.delete(item.id);
+              toast.success(`Đã bỏ theo dõi ${item.name}`);
+            }
+            return next;
+          });
+        }
+      } else if (item.type === 'GROUP') {
+        const response = await suggestionsService.joinGroup(item.id);
+        if (response.success) {
+            setFollowingIds(prev => {
+            const next = new Set(prev);
+            next.add(item.id);
+            return next;
+            });
+            toast.success(`Đã gửi yêu cầu vào nhóm ${item.name}`);
+        }
+      } else if (item.type === 'USER') {
+        const response = await friendRequestService.sendFriendRequest(item.id);
+        if (response.success) {
+            setFollowingIds(prev => {
+            const next = new Set(prev);
+            next.add(item.id);
+            return next;
+            });
+            toast.success(`Đã gửi lời mời kết bạn tới ${item.name}`);
+        }
+      }
+    } catch (error) {
+      toast.error('Thao tác thất bại');
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(item.id);
+        return next;
+      });
+    }
+  };
 
   const loadPosts = async () => {
     if (loading) return;
@@ -142,7 +264,7 @@ export default function FeedPage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Main Layout - 3 Columns */}
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-12 gap-4 px-4 py-4">
@@ -153,7 +275,6 @@ export default function FeedPage() {
               <div className="space-y-1">
                 {[
                   { icon: Home, label: 'Trang chủ', href: '/' },
-                  { icon: TrendingUp, label: 'Thịnh hành', href: '/trending' },
                   { icon: Heart, label: 'Đã thích', href: '/liked' },
                   { icon: Bookmark, label: 'Đã lưu', href: '/saved' },
                 ].map((item) => (
@@ -184,8 +305,8 @@ export default function FeedPage() {
             <div className="bg-white rounded-lg shadow-sm p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                  {mounted && user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
                   ) : (
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-500/20" />
                   )}
@@ -286,38 +407,78 @@ export default function FeedPage() {
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold mb-3">📢 Gợi ý cho bạn</h3>
               <div className="space-y-3">
-                {[
-                  { name: 'Trung Tâm Cứu Hộ ABC', tag: 'Tổ chức', verified: true },
-                  { name: 'BS. Nguyễn Văn A', tag: 'Bác sĩ thú y', verified: true },
-                  { name: 'Cộng Đồng Yêu Chó', tag: 'Nhóm', verified: false },
-                ].map((suggestion, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <p className="text-sm font-medium truncate">{suggestion.name}</p>
-                        {suggestion.verified && <span className="text-blue-500">✓</span>}
-                      </div>
-                      <p className="text-xs text-gray-500">{suggestion.tag}</p>
-                    </div>
-                    <Button size="sm" variant="outline">Theo dõi</Button>
+                {loadingSuggestions ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                   </div>
-                ))}
+                ) : (
+                  [...suggestions.users, ...suggestions.groups]
+                    .slice(0, 5)
+                    .map((item, i) => (
+                      <div key={`${item.type}-${item.id}`} className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 overflow-hidden flex-shrink-0">
+                          {item.avatar && (
+                            <img src={item.avatar} alt={item.name} className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <p className="text-sm font-medium truncate">{item.name}</p>
+                            {item.isVerified && <span className="text-blue-500 flex-shrink-0">✓</span>}
+                          </div>
+                          <p className="text-xs text-gray-500">{item.tag}</p>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant={followingIds.has(item.id) ? "secondary" : "outline"}
+                          onClick={() => handleFollow(item)}
+                          disabled={processingIds.has(item.id)}
+                        >
+                          {processingIds.has(item.id) ? '...' : (
+                            followingIds.has(item.id) ? 
+                              (item.type === 'GROUP' ? 'Đã xin vào' : item.type === 'USER' ? 'Đã gửi lời mời' : 'Đang theo dõi') 
+                              : (item.type === 'GROUP' ? 'Xin vào nhóm' : item.type === 'USER' ? 'Kết bạn' : 'Theo dõi')
+                          )}
+                        </Button>
+                      </div>
+                    ))
+                )}
+                {!loadingSuggestions && suggestions.organizations.length === 0 && 
+                  suggestions.users.length === 0 && suggestions.groups.length === 0 && (
+                  <div className="text-center py-4 px-2 bg-gray-50 rounded-lg border border-dashed text-gray-500">
+                    <p className="text-sm font-medium">Chưa có gợi ý nào</p>
+                    <p className="text-xs mt-1 text-gray-400">Hãy theo dõi thêm các tổ chức hoặc tham gia nhóm để nhận gợi ý phù hợp.</p>
+                  </div>
+                )}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold mb-3">🔥 Trending</h3>
               <div className="space-y-2">
-                {['#HuskyThatlac', '#NhanNuoiChoMeo', '#ReviewPhongKham', '#MeoDeThg'].map((tag, i) => {
-                  const postCounts = [847, 563, 421, 315, 289];
-                  return (
-                    <button key={i} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
-                      <p className="text-sm font-medium text-blue-600">{tag}</p>
-                      <p className="text-xs text-gray-500">{postCounts[i] || 150} bài viết</p>
+                {loadingTrending ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  </div>
+                ) : trendingTags.length > 0 ? (
+                  trendingTags.map((item, i) => (
+                    <button 
+                      key={item.id} 
+                      onClick={() => handleTrendingClick(item.hashtag)}
+                      className="block w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group"
+                    >
+                      <div className="flex justify-between items-center">
+                        <p className={`text-sm font-medium ${i < 3 ? 'text-blue-600' : 'text-gray-700'} group-hover:underline`}>
+                          {item.hashtag}
+                        </p>
+                        <span className="text-xs text-gray-400">#{i + 1}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.postCount > 0 ? `${item.postCount} bài viết` : 'Mới nổi'}</p>
                     </button>
-                  );
-                })}
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-2">Chưa có xu hướng nào</p>
+                )}
               </div>
             </div>
           </aside>

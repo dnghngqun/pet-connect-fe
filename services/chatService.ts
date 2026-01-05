@@ -227,8 +227,19 @@ export const chatAPI = {
 
   // Users
   getAllUsers: async () => {
-    const response = await apiClient.get("/api/user/all");
-    return response.data.users as UserType[];
+    const response = await apiClient.get("/api/mobile/users", {
+      params: { limit: 200 },
+    });
+    const payload = response.data?.data || response.data || [];
+    const users = Array.isArray(payload) ? payload : payload.users || [];
+    
+    return users.map((u: any) => ({
+      id: u.id,
+      _id: String(u.id),
+      name: u.fullName || u.name || '',
+      email: u.email || '',
+      avatar: u.avatarUrl || u.avatar || null,
+    })) as UserType[];
   },
 
   // Recall Message

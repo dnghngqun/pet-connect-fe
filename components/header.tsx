@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
@@ -26,7 +26,11 @@ import {
 import { cn } from "@/lib/utils"
 import UserDropdown from "@/components/user-dropdown"
 import NotificationCenter from "@/components/notification-center"
+import SearchDropdown from "@/components/search-dropdown"
+import PostDetailModal from "@/components/post-detail-modal"
 import authService from "@/services/authService"
+import userService from "@/services/userService"
+import type { PetPost } from "@/lib/types"
 
 interface NavLinkProps {
   href: string
@@ -68,7 +72,13 @@ export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [selectedPost, setSelectedPost] = useState<PetPost | null>(null)
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     const user = authService.getCurrentUser()
@@ -84,15 +94,107 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery || searchQuery.length < 2) {
+      setSearchResults([])
+      return
+    }
+
+    setSearchLoading(true)
+    const timer = setTimeout(async () => {
+      try {
+        const allResults: any[] = []
+        
+        // Search users
+        try {
+          const userResponse = await userService.searchUsers(searchQuery)
+          if (userResponse.success && userResponse.data) {
+            const userResults = userResponse.data.map((user: any) => ({
+              type: 'user' as const,
+              id: user.userId || user.id,
+              title: user.fullName || user.userName,
+              subtitle: user.bio || user.email,
+              avatar: user.avatarUrl,
+            }))
+            allResults.push(...userResults)
+          }
+        } catch (err) {
+          console.error('User search error:', err)
+        }
+
+        // Search posts
+        try {
+          const postResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/posts?q=${encodeURIComponent(searchQuery)}`)
+          if (postResponse.ok) {
+            const postData = await postResponse.json()
+            if (postData.success && postData.data) {
+              const postResults = (postData.data.posts || postData.data.content)?.map((post: any) => ({
+                type: 'post' as const,
+                id: post.id,
+                title: post.title || 'Bài viết',
+                subtitle: post.description || post.content?.substring(0, 100) || '',
+                avatar: post.image || post.images?.[0]
+              })) || []
+              allResults.push(...postResults)
+            }
+          }
+        } catch (err) {
+          console.error('Post search error:', err)
+        }
+
+        setSearchResults(allResults)
+      } catch (error) {
+        console.error('Search error:', error)
+        setSearchResults([])
+      } finally {
+        setSearchLoading(false)
+      }
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   const navLinks = [
     { href: "/", icon: <Home className="h-4 w-4" />, label: "Trang chủ" },
-    { href: "/trending", icon: <Sparkles className="h-4 w-4" />, label: "Thịnh hành" },
-    { href: "/nearby", icon: <MapPin className="h-4 w-4" />, label: "Gần bạn" },
     { href: "/groups", icon: <Users className="h-4 w-4" />, label: "Hội nhóm" },
     { href: "/friends", icon: <UserPlus className="h-4 w-4" />, label: "Bạn bè" },
-    { href: "/rescue-centers", icon: <Building2 className="h-4 w-4" />, label: "Cứu hộ" },
     { href: "/chat", icon: <span className="text-lg">💬</span>, label: "Tin nhắn" },
   ]
+
+  const handleSearchResultSelect = (result: any) => {
+    if (result.type === 'post') {
+      const post: PetPost = {
+        id: result.id.toString(),
+        title: result.title,
+        slug: result.slug || result.id.toString(),
+        description: result.subtitle || '',
+        image: result.avatar || '',
+        petType: 'Unknown',
+        status: 'general',
+        location: '',
+        postedBy: {
+          id: '0',
+          name: 'Unknown', 
+          phone: '',
+          avatar: ''
+        },
+        createdAt: new Date().toISOString(),
+        views: 0,
+        commentCount: 0,
+      }
+      setSelectedPost(post)
+      setIsPostModalOpen(true)
+    } else if (result.type === 'user') {
+      router.push(`/profile/${result.id}`)
+    } else if (result.type === 'group') {
+      router.push(`/groups/${result.slug || result.id}`)
+    }
+    
+    setIsSearchOpen(false)
+    setSearchQuery('')
+    setSearchResults([])
+  }
 
   const moreLinks = [
     { href: "/about", icon: <Info className="h-4 w-4" />, label: "Giới thiệu" },
@@ -101,7 +203,7 @@ export default function Header() {
 
   return (
     <header className={cn(
-      "w-full transition-all duration-300",
+      "sticky top-0 z-50 w-full transition-all duration-300",
       isScrolled 
         ? "bg-background/80 backdrop-blur-xl shadow-lg shadow-black/5 border-b" 
         : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
@@ -146,8 +248,11 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-1 mx-4">
+        {/* Desktop Navigation - Hidden when search is open */}
+        <nav className={cn(
+          "hidden lg:flex items-center gap-1 mx-4 transition-all duration-300",
+          isSearchOpen && "opacity-0 pointer-events-none w-0 overflow-hidden"
+        )}>
           {navLinks.map((link) => (
             <NavLink
               key={link.href}
@@ -168,10 +273,10 @@ export default function Header() {
           {/* More dropdown could be added here for About/Contact */}
         </nav>
 
-        {/* Search */}
+        {/* Search - Expands to cover nav when open */}
         <div className={cn(
           "transition-all duration-300 ease-out",
-          isSearchOpen ? "flex-1 max-w-md" : "w-0 overflow-hidden"
+          isSearchOpen ? "flex-1" : "w-0 overflow-hidden"
         )}>
           {isSearchOpen && (
             <div className="relative w-full animate-in fade-in slide-in-from-right-5 duration-300">
@@ -180,19 +285,39 @@ export default function Header() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                   type="search" 
-                  placeholder="Tìm kiếm thú cưng..." 
+                  placeholder="Tìm kiếm người dùng, bài viết..." 
                   className="w-full pl-10 pr-10 rounded-full border-primary/20 focus:border-primary bg-background/80 backdrop-blur"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   autoFocus
                 />
                 <Button
                   variant="ghost"
                   size="icon"
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                  onClick={() => setIsSearchOpen(false)}
+                  onClick={() => {
+                    setIsSearchOpen(false);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
                 >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
+              
+              {/* Search Results */}
+              {searchQuery.length >= 2 && (
+                <SearchDropdown
+                  results={searchResults}
+                  loading={searchLoading}
+                  onClose={() => {
+                    setIsSearchOpen(false);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
+                  onSelect={handleSearchResultSelect}
+                />
+              )}
             </div>
           )}
         </div>
@@ -331,6 +456,14 @@ export default function Header() {
         <div 
           className="fixed inset-0 top-16 bg-black/20 backdrop-blur-sm lg:hidden z-40"
           onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+      {/* Modal for Post Details */}
+      {selectedPost && (
+        <PostDetailModal
+          post={selectedPost}
+          open={isPostModalOpen}
+          onOpenChange={setIsPostModalOpen}
         />
       )}
     </header>

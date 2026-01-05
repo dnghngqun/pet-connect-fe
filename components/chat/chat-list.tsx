@@ -92,8 +92,8 @@ export function ChatList() {
             key={getChatId(chat)}
             onClick={() => handleSelectChat(getChatId(chat))}
             className={cn(
-              "w-full flex gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors text-left",
-              selectedChatId === getChatId(chat) && "bg-gray-100"
+              "w-full flex gap-3 p-3 rounded-lg hover:bg-white/40 transition-colors text-left border border-transparent hover:border-white/20",
+              selectedChatId === getChatId(chat) && "bg-white/50 border-white/30 shadow-sm"
             )}
           >
             {/* Avatar */}

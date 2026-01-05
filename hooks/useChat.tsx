@@ -167,6 +167,12 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
   const fetchSingleChatAndAdd = useCallback(async (chatId: string) => {
     try {
         const { chat } = await chatAPI.getSingleChat(chatId);
+        
+        if (!chat) {
+          console.warn(`FetchSingleChatAndAdd: Chat ${chatId} not found`);
+          return;
+        }
+
         setChats(prev => {
             if (prev.some(c => c._id === chat._id)) return prev; // already added by race condition
             return [chat, ...prev];

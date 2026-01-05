@@ -73,7 +73,7 @@ export function ChatHeader() {
 
   return (
     <>
-      <div className="border-b bg-white p-4 flex items-center justify-between h-20">
+      <div className="border-b border-white/20 bg-white/60 backdrop-blur-md p-4 flex items-center justify-between h-20">
         <div className="flex items-center gap-3">
           {otherUser?.avatar ? (
             <Image

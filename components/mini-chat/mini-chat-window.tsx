@@ -28,7 +28,10 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [currentChat, setCurrentChat] = useState<ChatType | null>(null);
 
   // Calculate position from right
@@ -309,7 +312,70 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
 
       {/* Footer */}
       <div className="p-2 border-t bg-white">
-        <div className="flex gap-2">
+        {/* Image preview */}
+        {pendingImage && (
+          <div className="mb-2 relative inline-block">
+            <Image
+              src={pendingImage}
+              alt="Preview"
+              width={80}
+              height={60}
+              className="rounded object-cover"
+            />
+            <button
+              onClick={() => setPendingImage(null)}
+              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        <div className="flex gap-2 items-center">
+          {/* Hidden file input */}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              
+              if (!file.type.startsWith('image/')) {
+                console.error('Only image files are allowed');
+                return;
+              }
+              
+              setIsUploadingImage(true);
+              try {
+                const imageUrl = await chatAPI.uploadChatImage(file);
+                setPendingImage(imageUrl);
+              } catch (error) {
+                console.error('Failed to upload image:', error);
+              } finally {
+                setIsUploadingImage(false);
+                if (imageInputRef.current) {
+                  imageInputRef.current.value = '';
+                }
+              }
+            }}
+          />
+          
+          {/* Attachment button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full shrink-0"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={isUploadingImage || isLoading || (!chat.chatId && !currentChat)}
+          >
+            {isUploadingImage ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Paperclip className="h-4 w-4" />
+            )}
+          </Button>
+          
           <Input
             placeholder="Aa"
             value={content}
@@ -321,8 +387,75 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
           <Button
             size="icon"
             className="h-9 w-9 rounded-full"
-            onClick={handleSend}
-            disabled={isSending || !content.trim() || isLoading || (!chat.chatId && !currentChat)}
+            onClick={async () => {
+              // Modified send to include image
+              const messageContent = content.trim();
+              let chatIdToUse = chat.chatId;
+              if (!chatIdToUse && currentChat) {
+                chatIdToUse = currentChat._id || (currentChat.id ? String(currentChat.id) : null);
+              }
+              
+              if ((!messageContent && !pendingImage) || !chatIdToUse || chatIdToUse === "undefined") {
+                return;
+              }
+              if (isSending) return;
+
+              const optimisticMessage: MessageType = {
+                _id: `temp_${Date.now()}`,
+                content: messageContent,
+                image: pendingImage || undefined,
+                sender: {
+                  _id: user?._id || "",
+                  name: user?.name || "",
+                  email: user?.email || "",
+                },
+                chatId: chatIdToUse,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                status: "sending",
+              };
+
+              setMessages((prev) => [...prev, optimisticMessage]);
+              setContent("");
+              setPendingImage(null);
+              setIsSending(true);
+
+              try {
+                const sentMessage = await chatAPI.sendMessage({
+                  chatId: chatIdToUse,
+                  content: messageContent || '',
+                  image: pendingImage || undefined,
+                });
+
+                if (sentMessage) {
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m._id === optimisticMessage._id
+                        ? { ...sentMessage, status: "sent" }
+                        : m
+                    )
+                  );
+                } else {
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m._id === optimisticMessage._id
+                        ? { ...m, status: "sent" }
+                        : m
+                    )
+                  );
+                }
+              } catch (error) {
+                console.error("Failed to send message:", error);
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m._id === optimisticMessage._id ? { ...m, status: "failed" } : m
+                  )
+                );
+              } finally {
+                setIsSending(false);
+              }
+            }}
+            disabled={isSending || (!content.trim() && !pendingImage) || isLoading || (!chat.chatId && !currentChat)}
           >
             <Send className="h-4 w-4" />
           </Button>

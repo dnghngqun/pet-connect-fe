@@ -51,9 +51,44 @@ export const register = async (fullName: string, phoneNumber: string, email: str
   return response.data;
 };
 
+export const refreshToken = async () => {
+  if (typeof window === 'undefined') return null;
+  
+  const userStr = localStorage.getItem('pet-connect-user');
+  if (!userStr) return null;
+  
+  const user = JSON.parse(userStr);
+  const token = user?.refreshToken;
+  
+  if (!token) return null;
+
+  try {
+    const response = await apiClient.post(COMMON_API.refreshToken, { refreshToken: token });
+    
+    if (response.data) {
+      const newAccessToken = response.data.accessToken;
+      const newRefreshToken = response.data.refreshToken;
+      
+      user.token = newAccessToken;
+      user.refreshToken = newRefreshToken; // Update refresh token if rotated
+      localStorage.setItem('pet-connect-user', JSON.stringify(user));
+      
+      return newAccessToken;
+    }
+  } catch (error) {
+    console.error('Manual refresh token failed', error);
+    // Optional: logout if refresh fails repeatedly?
+    logout(); 
+  }
+  return null;
+};
+
 export const getCurrentUser = () => {
-  const user = localStorage.getItem('pet-connect-user');
-  return user ? JSON.parse(user) : null;
+  if (typeof window !== 'undefined') {
+    const user = localStorage.getItem('pet-connect-user');
+    return user ? JSON.parse(user) : null;
+  }
+  return null;
 };
 
 export default {
@@ -61,4 +96,5 @@ export default {
   logout,
   register,
   getCurrentUser,
+  refreshToken,
 };
