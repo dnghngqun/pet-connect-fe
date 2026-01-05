@@ -19,12 +19,14 @@ export default function ShopFilters() {
   const currentPetType = searchParams.get("petType") || ""
   const currentLocation = searchParams.get("location") || ""
   const currentSort = searchParams.get("sort") || ""
+  const currentPostType = searchParams.get("type") || ""
 
   // Local state for filters
   const [status, setStatus] = useState(currentStatus)
   const [petType, setPetType] = useState(currentPetType)
   const [location, setLocation] = useState(currentLocation)
   const [sort, setSort] = useState(currentSort)
+  const [postType, setPostType] = useState(currentPostType)
 
   // Update URL when filters change
   useEffect(() => {
@@ -48,6 +50,12 @@ export default function ShopFilters() {
       params.delete("location")
     }
 
+    if (postType) {
+      params.set("type", postType)
+    } else {
+      params.delete("type")
+    }
+
     if (sort) {
       params.set("sort", sort)
     } else {
@@ -62,12 +70,13 @@ export default function ShopFilters() {
     setStatus("")
     setPetType("")
     setLocation("")
+    setPostType("")
     setSort("")
     router.push("/shop")
   }
 
   // Check if any filters are active
-  const hasActiveFilters = status || petType || location || sort
+  const hasActiveFilters = status || petType || location || sort || postType
 
   return (
     <div className="space-y-6">
@@ -112,10 +121,19 @@ export default function ShopFilters() {
               </Button>
             </Badge>
           )}
+          {postType && (
+            <Badge variant="secondary" className="flex items-center gap-1">
+              Kiểu bài: {postType}
+              <Button variant="ghost" size="icon" onClick={() => setPostType("")} className="h-4 w-4 p-0 ml-1">
+                <X className="h-3 w-3" />
+                <span className="sr-only">Xóa bộ lọc kiểu bài</span>
+              </Button>
+            </Badge>
+          )}
         </div>
       )}
 
-      <Accordion type="multiple" defaultValue={["status", "pet-type", "location", "sort"]}>
+      <Accordion type="multiple" defaultValue={["status", "post-type", "pet-type", "location", "sort"]}>
         <AccordionItem value="status">
           <AccordionTrigger>Trạng thái</AccordionTrigger>
           <AccordionContent>
@@ -152,6 +170,40 @@ export default function ShopFilters() {
                 />
                 <Label htmlFor="status-rescue">Cứu hộ</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="status-general"
+                  checked={status === "general"}
+                  onCheckedChange={() => setStatus(status === "general" ? "" : "general")}
+                />
+                <Label htmlFor="status-general">Bài viết thường</Label>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="post-type">
+          <AccordionTrigger>Kiểu bài (mạng xã hội)</AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2">
+              {[
+                { id: "type-lostfound", value: "LOST_FOUND", label: "Lost/Found" },
+                { id: "type-adoption", value: "ADOPTION", label: "Adoption/Rescue" },
+                { id: "type-review", value: "REVIEW", label: "Review dịch vụ" },
+                { id: "type-qna", value: "QNA", label: "Hỏi đáp" },
+                { id: "type-tip", value: "TIP", label: "Mẹo" },
+                { id: "type-breeding", value: "BREEDING", label: "Phối giống" },
+                { id: "type-marketplace", value: "MARKETPLACE", label: "Marketplace" },
+              ].map((item) => (
+                <div className="flex items-center space-x-2" key={item.id}>
+                  <Checkbox
+                    id={item.id}
+                    checked={postType === item.value}
+                    onCheckedChange={() => setPostType(postType === item.value ? "" : item.value)}
+                  />
+                  <Label htmlFor={item.id}>{item.label}</Label>
+                </div>
+              ))}
             </div>
           </AccordionContent>
         </AccordionItem>

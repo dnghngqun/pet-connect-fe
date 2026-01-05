@@ -11,17 +11,17 @@ import {
   X, 
   User, 
   PawPrint, 
-  Plus, 
   MapPin, 
-  Flag,
   Home,
-  LayoutGrid,
-  Heart,
   Building2,
   Info,
   Phone,
   Sparkles,
-  ArrowRight
+  Flag,
+  Plus,
+  ArrowRight,
+  Users,
+  UserPlus,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import UserDropdown from "@/components/user-dropdown"
@@ -86,10 +86,12 @@ export default function Header() {
 
   const navLinks = [
     { href: "/", icon: <Home className="h-4 w-4" />, label: "Trang chủ" },
-    { href: "/shop", icon: <LayoutGrid className="h-4 w-4" />, label: "Bài đăng" },
+    { href: "/trending", icon: <Sparkles className="h-4 w-4" />, label: "Thịnh hành" },
     { href: "/nearby", icon: <MapPin className="h-4 w-4" />, label: "Gần bạn" },
-    { href: "/fundraising", icon: <Heart className="h-4 w-4" />, label: "Gây quỹ" },
+    { href: "/groups", icon: <Users className="h-4 w-4" />, label: "Hội nhóm" },
+    { href: "/friends", icon: <UserPlus className="h-4 w-4" />, label: "Bạn bè" },
     { href: "/rescue-centers", icon: <Building2 className="h-4 w-4" />, label: "Cứu hộ" },
+    { href: "/chat", icon: <span className="text-lg">💬</span>, label: "Tin nhắn" },
   ]
 
   const moreLinks = [
@@ -99,7 +101,7 @@ export default function Header() {
 
   return (
     <header className={cn(
-      "sticky top-0 z-50 w-full transition-all duration-300",
+      "w-full transition-all duration-300",
       isScrolled 
         ? "bg-background/80 backdrop-blur-xl shadow-lg shadow-black/5 border-b" 
         : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
@@ -219,67 +221,28 @@ export default function Header() {
             </Button>
           </Link>
 
-          {!isLoading && isLoggedIn && (
-            <NotificationCenter userId={authService.getCurrentUser()?.id} />
+          {!isLoading && (
+            <>
+              {isLoggedIn ? (
+                <>
+                  <NotificationCenter />
+                  <UserDropdown />
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" asChild className="hidden sm:flex hover:bg-primary/10">
+                    <Link href="/sign-in">Đăng nhập</Link>
+                  </Button>
+                  <Button size="sm" asChild className="hidden sm:flex bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white border-0">
+                    <Link href="/sign-up">Đăng ký</Link>
+                  </Button>
+                </>
+              )}
+            </>
           )}
-
-          {/* Post Button */}
-          <Link href="/post/new" className="hidden md:flex">
-            <Button 
-              size="sm" 
-              className="bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105 group"
-            >
-              <Sparkles className="h-4 w-4 mr-1.5 group-hover:animate-pulse" />
-              Đăng bài
-              <ArrowRight className="h-3.5 w-3.5 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-            </Button>
-          </Link>
-
-          {/* Auth Buttons */}
-          <div className="hidden md:flex items-center gap-2">
-            {!isLoading && !isLoggedIn ? (
-              <>
-                <Link href="/sign-in">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="hover:bg-primary/10 hover:text-primary"
-                  >
-                    Đăng nhập
-                  </Button>
-                </Link>
-                <Link href="/sign-up">
-                  <Button 
-                    size="sm"
-                    className="bg-gradient-to-r from-primary to-orange-500 hover:opacity-90 text-white"
-                  >
-                    Đăng ký
-                  </Button>
-                </Link>
-              </>
-            ) : !isLoading ? (
-              <UserDropdown />
-            ) : null}
-          </div>
-
-          {/* Mobile User */}
-          <div className="md:hidden">
-            {!isLoading && !isLoggedIn ? (
-              <Link href="/sign-in">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="hover:bg-primary/10"
-                >
-                  <User className="h-5 w-5" />
-                </Button>
-              </Link>
-            ) : !isLoading ? (
-              <UserDropdown />
-            ) : null}
-          </div>
         </div>
       </div>
+
 
       {/* Mobile menu */}
       <div className={cn(

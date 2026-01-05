@@ -1,4 +1,4 @@
-export const BASE_URL = "http://localhost:8080";
+export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
 
 export const COMMON_API = {
   // Auth
@@ -14,6 +14,11 @@ export const COMMON_API = {
   postView: (id: number) => `${BASE_URL}/api/v1/posts/${id}/view`,
   postImages: (id: number) => `${BASE_URL}/api/v1/posts/${id}/images`,
   postImageDelete: (postId: number, imageId: number) => `${BASE_URL}/api/v1/posts/${postId}/images/${imageId}`,
+  postReaction: (id: number, type?: string) =>
+    `${BASE_URL}/api/v1/posts/${id}/reactions${type ? `?type=${type}` : ""}`,
+  postFavorite: (id: number) => `${BASE_URL}/api/v1/posts/${id}/favorite`,
+  favoritePosts: `${BASE_URL}/api/v1/posts/favorites`,
+  postComments: (postId: number) => `${BASE_URL}/api/posts/${postId}/comments`,
 
   // Fundraising - /api/v1/fundraising
   fundraisingCampaigns: `${BASE_URL}/api/v1/fundraising/campaigns`,

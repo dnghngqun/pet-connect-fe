@@ -39,9 +39,6 @@ interface PostItem {
   createdAt: string;
 }
 
-// Favorites API not implemented yet
-const mockFavoritePosts: PostItem[] = [];
-
 interface PostCardProps {
   post: PostItem;
   isFavorited?: boolean;
@@ -114,7 +111,9 @@ export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [myPosts, setMyPosts] = useState<PostItem[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set(mockFavoritePosts.map(p => p.id)));
+  const [savedPosts, setSavedPosts] = useState<PostItem[]>([]);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(true);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
   const getInitials = (name: string) => {
@@ -126,18 +125,18 @@ export default function ProfilePage() {
       .slice(0, 2);
   };
 
-  const toggleFavorite = (postId: string) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(postId)) {
-      newFavorites.delete(postId);
-    } else {
-      newFavorites.add(postId);
+  const toggleFavorite = async (postId: string) => {
+    const idNum = Number(postId);
+    if (Number.isNaN(idNum)) return;
+    try {
+      await petPostService.toggleFavorite(idNum);
+      await fetchFavoritePosts(); // refresh saved list
+    } catch (err) {
+      console.error('Favorite toggle failed', err);
     }
-    setFavorites(newFavorites);
   };
 
-  useEffect(() => {
-    const fetchProfile = async () => {
+  const fetchProfile = async () => {
       setIsLoading(true);
       const currentUser = authService.getCurrentUser();
       if (!currentUser) {
@@ -183,50 +182,65 @@ export default function ProfilePage() {
       }
     };
 
-    const fetchMyPosts = async () => {
-      setIsLoadingPosts(true);
-      try {
-        const response = await petPostService.getMyPosts();
-        console.log('My Posts API Response:', response);
-        
-        // Handle different response formats (success:true OR code:'0000')
-        const isSuccess = response.success || (response as any).code === '0000';
-        let postsContent: any[] = [];
-        
-        if (isSuccess && response.data) {
-          // If data has content array (paginated)
-          if (Array.isArray(response.data.content)) {
-            postsContent = response.data.content;
-          } 
-          // If data is directly an array
-          else if (Array.isArray(response.data)) {
-            postsContent = response.data;
-          }
-        }
-        
-        console.log('Posts content:', postsContent);
-        
-        setMyPosts(postsContent.map((p: any) => ({
-          id: String(p.id),
-          title: p.title,
-          slug: p.slug,
-          image: p.image || p.thumbnail || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500',
-          status: (p.status || 'LOST').toUpperCase() as 'LOST' | 'FOUND' | 'FOR_ADOPTION' | 'RESCUE',
-          petType: p.petType || p.type || 'Thú cưng',
-          location: p.location || `${p.district || ''}, ${p.city || ''}`.replace(/^, |, $/g, '') || 'Chưa xác định',
-          views: p.views || 0,
-          createdAt: p.createdAt,
-        })));
-      } catch (err: any) {
-        console.error('Failed to load my posts:', err);
-        console.error('Error details:', err.response?.data);
-      } finally {
-        setIsLoadingPosts(false);
-      }
-    };
+  const normalizePosts = (postsContent: any[]): PostItem[] =>
+    postsContent.map((p: any) => ({
+      id: String(p.id),
+      title: p.title,
+      slug: p.slug,
+      image: p.image || p.thumbnail || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=500',
+      status: (p.status || 'LOST').toUpperCase() as 'LOST' | 'FOUND' | 'FOR_ADOPTION' | 'RESCUE',
+      petType: p.petType || p.type || 'Thú cưng',
+      location: p.location || `${p.district || ''}, ${p.city || ''}`.replace(/^, |, $/g, '') || 'Chưa xác định',
+      views: p.views || 0,
+      createdAt: p.createdAt,
+    }));
 
+  const fetchMyPosts = async () => {
+    setIsLoadingPosts(true);
+    try {
+      const response = await petPostService.getMyPosts();
+      const isSuccess = (response as any).success ?? (response as any).code === '0000';
+      let postsContent: any[] = [];
+
+      if (isSuccess && response.data) {
+        const payload: any = response.data;
+        if (Array.isArray(payload?.posts)) {
+          postsContent = payload.posts;
+        } else if (Array.isArray(payload?.content)) {
+          postsContent = payload.content;
+        } else if (Array.isArray(response.data)) {
+          postsContent = response.data;
+        }
+      }
+
+      setMyPosts(normalizePosts(postsContent));
+    } catch (err: any) {
+      console.error('Failed to load my posts:', err);
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  };
+
+  const fetchFavoritePosts = async () => {
+    setIsLoadingSaved(true);
+    try {
+      const response = await petPostService.getFavoritePosts();
+      const dto: any = response;
+      const posts = dto?.data?.posts || dto?.data?.content || [];
+      const normalized = normalizePosts(posts);
+      setSavedPosts(normalized);
+      setFavorites(new Set(normalized.map((p) => p.id)));
+    } catch (err) {
+      console.error('Failed to load saved posts', err);
+    } finally {
+      setIsLoadingSaved(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProfile();
     fetchMyPosts();
+    fetchFavoritePosts();
   }, []);
 
   if (isLoading) {
@@ -347,7 +361,7 @@ export default function ProfilePage() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="info">Thông tin cá nhân</TabsTrigger>
             <TabsTrigger value="posts">Bài đăng của tôi ({myPosts.length})</TabsTrigger>
-            <TabsTrigger value="favorites">Đã quan tâm ({mockFavoritePosts.length})</TabsTrigger>
+            <TabsTrigger value="favorites">Đã quan tâm ({savedPosts.length})</TabsTrigger>
           </TabsList>
 
           {/* Info Tab */}
@@ -496,16 +510,23 @@ export default function ProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {mockFavoritePosts.length === 0 ? (
+                {isLoadingSaved ? (
+                  <div className="text-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                    <p className="text-muted-foreground mt-2">Đang tải bài đã lưu...</p>
+                  </div>
+                ) : savedPosts.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">
                       Bạn chưa quan tâm bài đăng nào. Hãy khám phá các bài đăng!
                     </p>
-                    <Button variant="default">Duyệt bài đăng</Button>
+                    <Button variant="default" asChild>
+                      <Link href="/shop">Duyệt bài đăng</Link>
+                    </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {mockFavoritePosts.map((post) => (
+                    {savedPosts.map((post) => (
                       <PostCard
                         key={post.id}
                         post={post}

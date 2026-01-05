@@ -28,8 +28,10 @@ function LoadingFallback() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <ChatContent />
-    </Suspense>
+    <div className="min-h-screen bg-gray-100">
+      <Suspense fallback={<LoadingFallback />}>
+        <ChatContent />
+      </Suspense>
+    </div>
   );
 }

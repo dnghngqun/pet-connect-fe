@@ -54,6 +54,7 @@ export interface PostListItem {
   image: string;
   petType: string;
   status: string;
+  postType?: string;
   city: string;
   district: string;
   location: string;
@@ -66,6 +67,9 @@ export interface PostListItem {
   postedBy: Poster;
   pet: PetInfo | null;
   mediaCount: number;
+  reactionCount?: number;
+  favoriteCount?: number;
+  commentCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -77,6 +81,7 @@ export interface PostDetail {
   slug: string;
   petType: string;
   status: string;
+  postType?: string;
   location: string;
   city: string;
   district: string;
@@ -88,6 +93,11 @@ export interface PostDetail {
   featured: boolean;
   isActive: boolean;
   tags: string[];
+  meta?: Record<string, any>;
+  reactionCount?: number;
+  favoriteCount?: number;
+  userReaction?: string | null;
+  isFavorited?: boolean;
   postedBy: {
     id: number;
     name: string;
@@ -112,8 +122,17 @@ export interface PostDetail {
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
+  code?: string;
   message: string;
   data: T;
+  pagination?: {
+    currentPage: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+  };
 }
 
 // Paginated response
@@ -137,6 +156,9 @@ export interface GetPostsParams {
   city?: string;
   district?: string;
   search?: string;
+  q?: string;
+  type?: string;
+  tags?: string[];
   featured?: boolean;
   sort?: string;
 }
@@ -146,12 +168,14 @@ export interface CreatePostRequest {
   description: string;
   petType: string;
   status: string;
+  postType?: string;
   city: string;
   district: string;
   location?: string;
   latitude?: number;
   longitude?: number;
   tags?: string[];
+  meta?: Record<string, any>;
   petId?: number;
   pet?: {
     name?: string;
@@ -180,12 +204,14 @@ export interface UpdatePostRequest {
   title?: string;
   description?: string;
   status?: string;
+  postType?: string;
   city?: string;
   district?: string;
   location?: string;
   latitude?: number;
   longitude?: number;
   tags?: string[];
+  meta?: Record<string, any>;
   isActive?: boolean;
   pet?: {
      name?: string;
@@ -217,8 +243,8 @@ const petPostService = {
    * API 1: Get posts list with filters
    * GET /api/v1/posts
    */
-  async getPosts(params: GetPostsParams = {}): Promise<ApiResponse<PaginatedResponse<PostListItem>>> {
-    const response = await apiClient.get(COMMON_API.posts, {
+  async getPosts(params: GetPostsParams = {}): Promise<ApiResponse<{ posts: PostListItem[] }>> {
+    const response = await apiClient.get<ApiResponse<{ posts: PostListItem[] }>>(COMMON_API.posts, {
       params: {
         page: params.page || 0,
         size: params.size || 10,
@@ -226,12 +252,15 @@ const petPostService = {
         petType: params.petType,
         city: params.city,
         district: params.district,
-        search: params.search,
+        search: params.search || params.q,
+        q: params.q,
+        type: params.type,
+        tags: params.tags,
         featured: params.featured,
         sort: params.sort || 'createdAt,desc',
       },
     });
-    return response.data;
+    return response.data as ApiResponse<{ posts: PostListItem[] }>;
   },
 
   /**
@@ -247,11 +276,25 @@ const petPostService = {
    * API 3: Get current user's posts
    * GET /api/v1/posts/my-posts
    */
-  async getMyPosts(params: { status?: string; isActive?: boolean; page?: number; size?: number } = {}): Promise<ApiResponse<PaginatedResponse<PostListItem>>> {
-    const response = await apiClient.get(COMMON_API.myPosts, {
+  async getMyPosts(params: { status?: string; isActive?: boolean; page?: number; size?: number } = {}): Promise<ApiResponse<{ posts: PostListItem[] }>> {
+    const response = await apiClient.get<ApiResponse<{ posts: PostListItem[] }>>(COMMON_API.myPosts, {
       params: {
         status: params.status,
         isActive: params.isActive,
+        page: params.page || 0,
+        size: params.size || 10,
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * Get user's favorited/saved posts
+   * GET /api/v1/posts/favorites
+   */
+  async getFavoritePosts(params: { page?: number; size?: number } = {}): Promise<ApiResponse<{ posts: PostListItem[] }>> {
+    const response = await apiClient.get(COMMON_API.favoritePosts, {
+      params: {
         page: params.page || 0,
         size: params.size || 10,
       },
@@ -331,6 +374,63 @@ const petPostService = {
    */
   async increaseViews(id: number): Promise<ApiResponse<{ views: number; isNewView: boolean }>> {
     const response = await apiClient.post(COMMON_API.postView(id));
+    return response.data;
+  },
+
+  /**
+   * React / like post
+   */
+  async reactToPost(id: number, type: string = "LIKE"): Promise<ApiResponse<{ reaction?: string; reactionCount: number }>> {
+    const response = await apiClient.post(COMMON_API.postReaction(id, type));
+    return response.data;
+  },
+
+  /**
+   * Toggle favorite/save
+   */
+  async toggleFavorite(id: number): Promise<ApiResponse<{ isFavorited: boolean; favoriteCount: number }>> {
+    const response = await apiClient.post(COMMON_API.postFavorite(id));
+    return response.data;
+  },
+
+  /**
+   * Get comments for a post
+   * GET /api/posts/{postId}/comments
+   */
+  async getComments(postId: number, page: number = 1, limit: number = 50): Promise<ApiResponse<{ comments: any[]; pagination: any }>> {
+    const response = await apiClient.get(`/api/posts/${postId}/comments`, {
+      params: { page, limit }
+    });
+    return response.data;
+  },
+
+  /**
+   * Get replies for a comment
+   * GET /api/comments/{commentId}/replies
+   */
+  async getReplies(commentId: number, page: number = 1, limit: number = 10): Promise<ApiResponse<{ comments: any[]; pagination: any }>> {
+    const response = await apiClient.get(`/api/comments/${commentId}/replies`, {
+      params: { page, limit }
+    });
+    return response.data;
+  },
+
+  /**
+   * Add comment
+   */
+  async addComment(postId: number, payload: { content: string; parentCommentId?: number }): Promise<ApiResponse<any>> {
+    const response = await apiClient.post(COMMON_API.postComments(postId), payload);
+    return response.data;
+  },
+
+  /**
+   * Toggle reaction on a post
+   * POST /api/v1/posts/{id}/reactions
+   */
+  async toggleReaction(postId: number, reactionType: string | null): Promise<ApiResponse<void>> {
+    const response = await apiClient.post(`/api/v1/posts/${postId}/reactions`, {
+      reactionType: reactionType || 'LIKE'
+    });
     return response.data;
   },
 
@@ -447,4 +547,3 @@ const petPostService = {
 };
 
 export default petPostService;
-

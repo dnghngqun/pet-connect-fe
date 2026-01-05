@@ -1,67 +1,137 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Heart, MapPin, Users, MessageSquare, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import PetPostCard from '@/components/pet-post-card';
-import HeroSlider from '@/components/hero-slider';
+import PostCardSkeleton from '@/components/post-card-skeleton';
+import CreatePostModal from '@/components/create-post-modal';
+import PostDetailModal from '@/components/post-detail-modal';
+import { Button } from '@/components/ui/button';
+import { Home, Heart, Bookmark, TrendingUp } from 'lucide-react';
 import petPostService from '@/services/petPostService';
+import authService from '@/services/authService';
+import type { PetPost } from '@/lib/types';
+import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
-interface PetPost {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  image: string;
-  petType: string;
-  status: string;
-  location: string;
-  postedBy: {
-    id: string;
-    name: string;
-    phone: string;
-    avatar?: string;
-  };
-  createdAt: string;
-  tags: string[];
-  featured?: boolean;
-}
-
-export default function Home() {
+export default function FeedPage() {
   const [posts, setPosts] = useState<PetPost[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const [postTypeFilter, setPostTypeFilter] = useState<string>('');
+  const user = typeof window !== 'undefined' ? authService.getCurrentUser() : null;
+  const observer = useRef<IntersectionObserver | null>(null);
+  const router = useRouter();
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<PetPost | null>(null);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+
+  const handlePostCreated = (newPostData: any) => {
+    const newPost: PetPost = {
+      id: newPostData.id?.toString() || Date.now().toString(),
+      title: newPostData.title,
+      slug: newPostData.slug || '',
+      description: newPostData.description,
+      image: newPostData.images?.[0] || '',
+      petType: newPostData.petType,
+      status: newPostData.status,
+      postType: newPostData.postType,
+      location: newPostData.location || '',
+      city: newPostData.city,
+      district: newPostData.district,
+      postedBy: {
+        id: user?._id || '',
+        name: user?.name || 'Bạn',
+        phone: '',
+        avatar: user?.avatar,
+        isVerified: false,
+      },
+      createdAt: new Date().toISOString(),
+      tags: newPostData.tags || [],
+      views: 0,
+      featured: false,
+      reactionCount: 0,
+      favoriteCount: 0,
+      commentCount: 0,
+      userReaction: null,
+      isFavorited: false,
+      meta: newPostData.meta || {},
+    };
+    setPosts(prev => [newPost, ...prev]);
+    toast.success('🎉 Đã đăng bài thành công!');
+  };
+
+  const handlePostClick = (clickedPost: PetPost) => {
+    setSelectedPost(clickedPost);
+    setIsPostModalOpen(true);
+  };
+
+  const lastPostRef = useCallback((node: HTMLDivElement | null) => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => prev + 1);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore, page]);
 
   useEffect(() => {
     loadPosts();
-  }, []);
+  }, [page]);
+
+  useEffect(() => {
+    setPosts([]);
+    setPage(0);
+    setHasMore(true);
+  }, [postTypeFilter]);
 
   const loadPosts = async () => {
+    if (loading) return;
+    setLoading(true);
     try {
-      const response = await petPostService.getPosts({ size: 20 });
-      // Transform API response to match expected format
-      // Backend returns: postedBy { id, name, phone, avatar }
-      const transformedPosts = (response.data?.content || []).map((post: any) => ({
-        id: String(post.id),
+      const response = await petPostService.getPosts({
+        page,
+        size: 10,
+        sort: '-createdAt',
+        ...(postTypeFilter && { type: postTypeFilter }),
+      });
+
+      const newPosts = response.data.posts.map((post: any) => ({
+        id: post.id?.toString() || '',
         title: post.title,
         slug: post.slug,
         description: post.description,
-        image: post.image || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
+        image: post.images?.[0] || post.image || '',
         petType: post.petType,
-        status: post.status?.toLowerCase().replace('_', '-') || 'lost',
-        location: post.location || `${post.district || ''}, ${post.city || ''}`,
+        status: post.status,
+        postType: post.postType,
+        location: post.location || `${post.district}, ${post.city}`,
+        city: post.city,
+        district: post.district,
         postedBy: {
-          id: String(post.postedBy?.id || ''),
-          name: post.postedBy?.name || 'Người dùng',
+          id: post.postedBy?.id?.toString() || '',
+          name: post.postedBy?.name || 'Unknown',
           phone: post.postedBy?.phone || '',
           avatar: post.postedBy?.avatar,
+          isVerified: false, // postedBy doesn't have isVerified field
         },
         createdAt: post.createdAt,
         tags: post.tags || [],
+        views: post.views || 0,
         featured: post.featured,
+        reactionCount: post.reactionCount || 0,
+        favoriteCount: post.favoriteCount || 0,
+        commentCount: post.commentCount || 0,
+        userReaction: post.userReaction || null,
+        isFavorited: post.isFavorited || false,
+        meta: post.meta || {},
       }));
-      setPosts(transformedPosts);
+
+      setPosts(prev => page === 0 ? newPosts : [...prev, ...newPosts]);
+      setHasMore(newPosts.length === 10);
     } catch (error) {
       console.error('Failed to load posts:', error);
     } finally {
@@ -69,172 +139,206 @@ export default function Home() {
     }
   };
 
-  const featuredPosts = posts.filter(post => post.featured).slice(0, 8);
-  const recentPosts = [...posts]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 6);
+
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero Slider */}
-      <HeroSlider
-        slides={[
-          {
-            image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=1920&auto=format&fit=crop',
-            title: 'PetConnect - Mạng xã hội cứu hộ thú cưng',
-            description: 'Kết nối cộng đồng yêu động vật, đăng thú cưng thất lạc, tìm nhà cho thú cưng cần nhận nuôi.',
-            buttonText: 'Đăng bài ngay',
-            buttonLink: '/post/new',
-          },
-          {
-            image: 'https://images.unsplash.com/photo-1591946614720-90a587da4a36?q=80&w=1920&auto=format&fit=crop',
-            title: 'Cứu hộ động vật',
-            description: 'Tìm kiếm thú cưng thất lạc hoặc giúp đỡ các tổ chức cứu hộ.',
-            buttonText: 'Tìm kiếm',
-            buttonLink: '/shop?status=lost,rescue',
-          },
-          {
-            image: 'https://images.unsplash.com/photo-1560743641-3914f2c45636?q=80&w=1920&auto=format&fit=crop',
-            title: 'Nhận nuôi thú cưng',
-            description: 'Tìm bạn thân mến trong danh sách các thú cưng cần gia đình yêu thương.',
-            buttonText: 'Xem các bé',
-            buttonLink: '/shop?status=for-adoption',
-          },
-        ]}
+    <div className="min-h-screen bg-gray-50">
+      {/* Main Layout - 3 Columns */}
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-12 gap-4 px-4 py-4">
+          {/* Left Sidebar - Hidden on mobile */}
+          <aside className="hidden lg:block col-span-3 space-y-2 sticky top-20 h-fit">
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <h3 className="font-semibold mb-3">Menu</h3>
+              <div className="space-y-1">
+                {[
+                  { icon: Home, label: 'Trang chủ', href: '/' },
+                  { icon: TrendingUp, label: 'Thịnh hành', href: '/trending' },
+                  { icon: Heart, label: 'Đã thích', href: '/liked' },
+                  { icon: Bookmark, label: 'Đã lưu', href: '/saved' },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => router.push(item.href)}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                  >
+                    <item.icon className="h-5 w-5 text-gray-600" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 shadow-sm">
+              <h3 className="font-semibold mb-2">🎯 Khám phá</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Tìm những người bạn yêu thú cưng gần bạn
+              </p>
+              <Button size="sm" className="w-full">Xem ngay</Button>
+            </div>
+          </aside>
+
+          {/* Center Feed */}
+          <main className="col-span-12 lg:col-span-6 space-y-4">
+            {/* Create Post Box */}
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                  {user?.avatar ? (
+                    <img src={user.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-500/20" />
+                  )}
+                </div>
+                <button
+                  onClick={() => setOpenCreateModal(true)}
+                  className="flex-1 text-left px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
+                >
+                  Bạn đang nghĩ gì?
+                </button>
+              </div>
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                <Button variant="ghost" size="sm" className="flex-1 gap-2" onClick={() => setOpenCreateModal(true)}>
+                  🔍 Thất lạc
+                </Button>
+                <Button variant="ghost" size="sm" className="flex-1 gap-2" onClick={() => setOpenCreateModal(true)}>
+                  🏠 Nhận nuôi
+                </Button>
+                <Button variant="ghost" size="sm" className="flex-1 gap-2" onClick={() => setOpenCreateModal(true)}>
+                  ⭐ Review
+                </Button>
+              </div>
+            </div>
+
+            {/* Post Type Filters */}
+            <div className="bg-white rounded-lg shadow-sm p-3">
+              <div className="flex items-center gap-2 overflow-x-auto">
+                <button
+                  onClick={() => setPostTypeFilter('')}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    postTypeFilter === ''
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Tất cả
+                </button>
+                {[
+                  { value: 'LOST_FOUND', label: '🔍 Thất lạc', color: 'red' },
+                  { value: 'ADOPTION', label: '🏠 Nhận nuôi', color: 'green' },
+                  { value: 'REVIEW', label: '⭐ Review', color: 'purple' },
+                  { value: 'QNA', label: '❓ Hỏi đáp', color: 'blue' },
+                  { value: 'TIP', label: '💡 Mẹo hay', color: 'amber' },
+                  { value: 'MARKETPLACE', label: '🛒 Chợ đồ', color: 'cyan' },
+                  { value: 'BREEDING', label: '💕 Phối giống', color: 'pink' },
+                ].map((filter) => (
+                  <button
+                    key={filter.value}
+                    onClick={() => setPostTypeFilter(filter.value)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                      postTypeFilter === filter.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Posts Feed */}
+            {loading && posts.length === 0 ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <PostCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {posts.map((post, index) => (
+                  <motion.div
+                    key={post.id}
+                    ref={index === posts.length - 1 ? lastPostRef : null}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <PetPostCard post={post} onPostClick={handlePostClick} />
+                  </motion.div>
+                ))}
+                {loading && (
+                  <div className="text-center py-8">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
+                  </div>
+                )}
+                {!hasMore && posts.length > 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    🎉 Bạn đã xem hết rồi!
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+
+          {/* Right Sidebar - Hidden on mobile/tablet */}
+          <aside className="hidden xl:block col-span-3 space-y-4 sticky top-20 h-fit">
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <h3 className="font-semibold mb-3">📢 Gợi ý cho bạn</h3>
+              <div className="space-y-3">
+                {[
+                  { name: 'Trung Tâm Cứu Hộ ABC', tag: 'Tổ chức', verified: true },
+                  { name: 'BS. Nguyễn Văn A', tag: 'Bác sĩ thú y', verified: true },
+                  { name: 'Cộng Đồng Yêu Chó', tag: 'Nhóm', verified: false },
+                ].map((suggestion, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <p className="text-sm font-medium truncate">{suggestion.name}</p>
+                        {suggestion.verified && <span className="text-blue-500">✓</span>}
+                      </div>
+                      <p className="text-xs text-gray-500">{suggestion.tag}</p>
+                    </div>
+                    <Button size="sm" variant="outline">Theo dõi</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-4">
+              <h3 className="font-semibold mb-3">🔥 Trending</h3>
+              <div className="space-y-2">
+                {['#HuskyThatlac', '#NhanNuoiChoMeo', '#ReviewPhongKham', '#MeoDeThg'].map((tag, i) => {
+                  const postCounts = [847, 563, 421, 315, 289];
+                  return (
+                    <button key={i} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                      <p className="text-sm font-medium text-blue-600">{tag}</p>
+                      <p className="text-xs text-gray-500">{postCounts[i] || 150} bài viết</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        open={openCreateModal}
+        onOpenChange={setOpenCreateModal}
+        onPostCreated={handlePostCreated}
       />
 
-      {/* Features Section */}
-      <section className="py-12 bg-muted">
-        <div className="container px-4">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-white border-none shadow-sm">
-              <CardContent className="flex flex-col items-center text-center p-8">
-                <div className="p-3 rounded-full bg-primary/10 mb-4">
-                  <Heart className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold">Cứu hộ động vật</h3>
-                <p className="text-sm text-muted-foreground mt-2">Tìm kiếm và giúp đỡ những thú cưng thất lạc</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-none shadow-sm">
-              <CardContent className="flex flex-col items-center text-center p-8">
-                <div className="p-3 rounded-full bg-primary/10 mb-4">
-                  <MapPin className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold">Kết nối theo địa điểm</h3>
-                <p className="text-sm text-muted-foreground mt-2">Tìm các bài đăng gần vị trí của bạn</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-none shadow-sm">
-              <CardContent className="flex flex-col items-center text-center p-8">
-                <div className="p-3 rounded-full bg-primary/10 mb-4">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold">Cộng đồng yêu động vật</h3>
-                <p className="text-sm text-muted-foreground mt-2">Kết nối với những người cùng đam mê</p>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white border-none shadow-sm">
-              <CardContent className="flex flex-col items-center text-center p-8">
-                <div className="p-3 rounded-full bg-primary/10 mb-4">
-                  <MessageSquare className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold">Chat & Liên hệ</h3>
-                <p className="text-sm text-muted-foreground mt-2">Giao tiếp trực tiếp với người đăng bài</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Posts Section */}
-      <section className="py-16">
-        <div className="container px-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">Bài đăng nổi bật</h2>
-              <p className="text-muted-foreground mt-2">Những thú cưng cần sự giúp đỡ của bạn</p>
-            </div>
-            <Button asChild variant="link" className="text-primary mt-2 md:mt-0">
-              <Link href="/shop">Xem tất cả</Link>
-            </Button>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : featuredPosts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {featuredPosts.map((post) => (
-                <PetPostCard key={post.id} post={post as any} />
-              ))}
-            </div>
-          ) : recentPosts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {recentPosts.slice(0, 8).map((post) => (
-                <PetPostCard key={post.id} post={post as any} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              Chưa có bài đăng nào
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Recent Posts Section */}
-      <section className="py-16 bg-muted">
-        <div className="container px-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">Bài đăng gần đây</h2>
-              <p className="text-muted-foreground mt-2">Những cập nhật mới nhất từ cộng đồng</p>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : recentPosts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {recentPosts.map((post) => (
-                <PetPostCard key={post.id} post={post as any} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              Chưa có bài đăng nào
-            </div>
-          )}
-
-          <div className="mt-8 text-center">
-            <Button asChild size="lg">
-              <Link href="/shop">Xem tất cả bài đăng</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="py-16 bg-primary text-white">
-        <div className="container px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <Heart className="h-12 w-12 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold mb-4">Tham gia cộng đồng PetConnect</h2>
-            <p className="text-white/90 mb-6">Nhận thông báo về những bài đăng mới, tin tức cứu hộ, và các sự kiện cộng đồng.</p>
-            <form className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
-              <input type="email" placeholder="Địa chỉ email của bạn" className="px-4 py-2 rounded-md flex-1 text-black" required />
-              <Button className="bg-white text-primary hover:bg-white/90">Đăng ký</Button>
-            </form>
-          </div>
-        </div>
-      </section>
+      {/* Post Detail Modal */}
+      {selectedPost && (
+        <PostDetailModal
+          post={selectedPost}
+          open={isPostModalOpen}
+          onOpenChange={setIsPostModalOpen}
+        />
+      )}
     </div>
   );
 }

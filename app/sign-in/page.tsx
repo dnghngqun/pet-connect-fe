@@ -156,7 +156,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
+    <div className="relative min-h-screen bg-gray-100 flex items-center justify-center px-4 py-12">
       <motion.div
         className="w-full max-w-md"
         initial="hidden"

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowLeft,
   Eye,
@@ -90,6 +91,13 @@ interface PostData {
     phone: string;
     avatar?: string;
   };
+  comments?: Array<{
+    id: string;
+    userName: string;
+    userAvatar?: string;
+    content: string;
+    createdAt: string;
+  }>;
   pet?: {
     id: string;
     name: string;
@@ -120,21 +128,43 @@ interface PostData {
 }
 
 export default function PetDetailPage({ params }: PetDetailPageProps) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const [post, setPost] = useState<PostData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isOwner, setIsOwner] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [reactionCount, setReactionCount] = useState(0);
+  const [userReaction, setUserReaction] = useState<string | null>(null);
 
   useEffect(() => {
     loadPost();
   }, [resolvedParams.slug]);
 
+  const handleCommentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!post || !commentText.trim()) return;
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
+      router.push('/sign-in');
+      return;
+    }
+    try {
+      await petPostService.addComment(Number(post.id), { content: commentText });
+      setCommentText('');
+      await loadPost();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const loadPost = async () => {
     try {
       setLoading(true);
       const response = await petPostService.getPostBySlug(resolvedParams.slug);
-      const data = response.data;
+      const data = response.data?.data || response.data;
 
       if (data) {
         // Check if current user is the owner
@@ -171,6 +201,13 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
             phone: data.postedBy?.phone || '',
             avatar: data.postedBy?.avatar ?? undefined,
           },
+          comments: data.comments?.comments?.map((c: any) => ({
+            id: String(c.id),
+            userName: c.userName,
+            userAvatar: c.userAvatar,
+            content: c.content,
+            createdAt: c.createdAt,
+          })) || [],
           pet: data.pet ? {
             id: String(data.pet.id),
             name: data.pet.name,
@@ -208,6 +245,9 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
           } : undefined,
         };
         setPost(transformedPost);
+        setIsFavorited(Boolean(data.isFavorited));
+        setReactionCount(data.reactionCount || 0);
+        setUserReaction(data.userReaction || null);
 
         if (data.id) {
           petPostService.increaseViews(data.id).catch(() => {});
@@ -233,6 +273,46 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
     } catch (error) {
       // User cancelled share dialog - ignore
       console.log('Share cancelled or failed:', error);
+    }
+  };
+
+  const handleFavorite = async () => {
+    if (!post) return;
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
+      router.push('/sign-in');
+      return;
+    }
+    try {
+      const res = await petPostService.toggleFavorite(Number(post.id));
+      const nextState = (res.data as any)?.data?.isFavorited ?? (res.data as any)?.isFavorited;
+      setIsFavorited(typeof nextState === 'boolean' ? nextState : !isFavorited);
+    } catch (error) {
+      console.error('Toggle favorite failed', error);
+    }
+  };
+
+  const handleReaction = async () => {
+    if (!post) return;
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
+      router.push('/sign-in');
+      return;
+    }
+    try {
+      const reactionType = userReaction ? null : 'LIKE';
+      await petPostService.toggleReaction(Number(post.id), reactionType);
+      
+      // Update UI optimistically
+      if (userReaction) {
+        setUserReaction(null);
+        setReactionCount(prev => Math.max(0, prev - 1));
+      } else {
+        setUserReaction('LIKE');
+        setReactionCount(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('Toggle reaction failed', error);
     }
   };
 
@@ -388,9 +468,10 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
 
               {/* Tabs for Description & Details */}
               <Tabs defaultValue="description" className="w-full">
-                <TabsList className="w-full grid grid-cols-2">
+                <TabsList className="w-full grid grid-cols-3">
                   <TabsTrigger value="description">Mô tả</TabsTrigger>
                   <TabsTrigger value="details">Chi tiết</TabsTrigger>
+                  <TabsTrigger value="comments">Bình luận</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="description" className="mt-4">
@@ -434,6 +515,43 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                           <p className="font-medium">{post.district || 'Chưa xác định'}</p>
                         </div>
                       </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="comments" className="mt-4 space-y-4">
+                  <Card>
+                    <CardContent className="pt-6 space-y-3">
+                      {post.comments && post.comments.length > 0 ? (
+                        post.comments.map((c) => (
+                          <div key={c.id} className="flex items-start gap-3">
+                            <Avatar>
+                              <AvatarImage src={c.userAvatar} />
+                              <AvatarFallback>{c.userName?.charAt(0) || 'U'}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold">{c.userName}</p>
+                                <span className="text-xs text-muted-foreground">
+                                  {new Date(c.createdAt).toLocaleString('vi-VN')}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{c.content}</p>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Chưa có bình luận nào.</p>
+                      )}
+
+                      <form onSubmit={handleCommentSubmit} className="space-y-3">
+                        <Textarea
+                          placeholder="Viết bình luận..."
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                        />
+                        <Button type="submit">Gửi bình luận</Button>
+                      </form>
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -649,14 +767,22 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
               )}
 
               {/* Quick Actions */}
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={handleShare}>
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="outline" className="w-full" onClick={handleReaction}>
+                  <Heart className={`h-4 w-4 mr-2 ${userReaction ? "fill-red-500 text-red-500" : ""}`} />
+                  {reactionCount > 0 ? reactionCount : "Thích"}
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleShare}>
                   <Share2 className="h-4 w-4 mr-2" />
                   Chia sẻ
                 </Button>
-                <Button variant="outline" className="flex-1">
-                  <Heart className="h-4 w-4 mr-2" />
-                  Quan tâm
+                <Button
+                  variant={isFavorited ? "default" : "outline"}
+                  className="w-full"
+                  onClick={handleFavorite}
+                >
+                  <Heart className={`h-4 w-4 mr-2 ${isFavorited ? "fill-red-500 text-red-500" : ""}`} />
+                  {isFavorited ? "Đã lưu" : "Quan tâm"}
                 </Button>
               </div>
             </div>

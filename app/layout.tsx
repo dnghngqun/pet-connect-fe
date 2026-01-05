@@ -5,13 +5,11 @@ import PageBackground from "@/components/page-background";
 import { Toaster } from "@/components/ui/toaster";
 import { MiniChatProvider } from "@/contexts/mini-chat-context";
 import { MiniChatContainer } from "@/components/mini-chat/mini-chat-container";
-import { Inter } from "next/font/google";
+import { Toaster as HotToaster } from "react-hot-toast";
 import type { Metadata } from "next";
 import type React from "react";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "PetPals - What your pet needs, when they need it",
@@ -26,7 +24,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className} suppressHydrationWarning={true}>
+      <body className="font-sans" suppressHydrationWarning={true}>
         <PageBackground />
         <CartProvider>
           <MiniChatProvider>
@@ -37,10 +35,10 @@ export default function RootLayout({
             </div>
             <MiniChatContainer />
             <Toaster />
+            <HotToaster position="top-right" />
           </MiniChatProvider>
         </CartProvider>
       </body>
     </html>
   );
 }
-

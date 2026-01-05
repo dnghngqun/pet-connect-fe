@@ -14,6 +14,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import reportService from '@/services/reportService';
 
 interface ReportDialogProps {
   open: boolean;
@@ -22,6 +24,7 @@ interface ReportDialogProps {
   userId?: string;
   postTitle?: string;
   userName?: string;
+  onSubmit?: (reason: string, detail?: string) => Promise<void> | void;
 }
 
 const POST_REPORT_REASONS = [
@@ -51,7 +54,9 @@ export default function ReportDialog({
   userId,
   postTitle,
   userName,
+  onSubmit,
 }: ReportDialogProps) {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'post' | 'user'>('post');
   const [postReason, setPostReason] = useState<string>('');
   const [userReason, setUserReason] = useState<string>('');
@@ -60,6 +65,10 @@ export default function ReportDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handlePostReportSubmit = async () => {
+    if (!user) {
+      toast({ title: 'Vui lòng đăng nhập', variant: 'destructive' });
+      return;
+    }
     if (!postReason) {
       toast({
         title: 'Lỗi',
@@ -80,15 +89,16 @@ export default function ReportDialog({
 
     setIsSubmitting(true);
     try {
-      const reportData = {
-        type: 'post',
-        postId,
-        reason: postReason,
-        otherReason: postReason === 'other' ? postOtherReason : undefined,
-      };
-
-      // TODO: Call API to submit report
-      console.log('Post Report:', reportData);
+      const content = `Lý do: ${postReason}${postReason === 'other' ? ' - ' + postOtherReason : ''}`;
+      if (onSubmit) {
+        await onSubmit(content);
+      } else {
+        await reportService.createReport({
+          targetId: Number(postId),
+          targetType: "POST",
+          content,
+        });
+      }
 
       toast({
         title: 'Thành công',
@@ -111,6 +121,10 @@ export default function ReportDialog({
   };
 
   const handleUserReportSubmit = async () => {
+    if (!user) {
+      toast({ title: 'Vui lòng đăng nhập', variant: 'destructive' });
+      return;
+    }
     if (!userReason) {
       toast({
         title: 'Lỗi',
@@ -131,15 +145,16 @@ export default function ReportDialog({
 
     setIsSubmitting(true);
     try {
-      const reportData = {
-        type: 'user',
-        userId,
-        reason: userReason,
-        otherReason: userReason === 'other' ? userOtherReason : undefined,
-      };
-
-      // TODO: Call API to submit report
-      console.log('User Report:', reportData);
+      const content = `Lý do: ${userReason}${userReason === 'other' ? ' - ' + userOtherReason : ''}`;
+      if (onSubmit) {
+        await onSubmit(content);
+      } else {
+        await reportService.createReport({
+          targetId: Number(userId),
+          targetType: "USER",
+          content,
+        });
+      }
 
       toast({
         title: 'Thành công',
@@ -286,4 +301,3 @@ export default function ReportDialog({
     </Dialog>
   );
 }
-

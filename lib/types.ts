@@ -45,8 +45,11 @@ export interface PetPost {
   description: string
   image: string
   petType: string
-  status: "lost" | "found" | "for-adoption" | "rescue"
+  status: "lost" | "found" | "for-adoption" | "rescue" | "general"
+  postType?: string
   location: string
+  city?: string
+  district?: string
   // Optional: location object for geolocation features
   locationCoords?: {
     latitude: number
@@ -57,11 +60,18 @@ export interface PetPost {
     name: string
     phone: string
     avatar?: string
+    isVerified?: boolean
   }
   createdAt: string
-  tags: string[]
-  views?: number
+  tags?: string[]
+  views: number
   featured?: boolean
+  reactionCount?: number
+  favoriteCount?: number
+  commentCount: number
+  userReaction?: string | null
+  isFavorited?: boolean
+  meta?: Record<string, any> // Post-type specific metadata
   pet?: PetProfile // thông tin chi tiết pet liên quan
 }
 

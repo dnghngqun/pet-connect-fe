@@ -30,6 +30,10 @@ import {
   Plus,
   Trash2,
   Syringe,
+  Star,
+  DollarSign,
+  MessageSquare,
+  Info,
 } from 'lucide-react';
 import petPostService from '@/services/petPostService';
 import locationService from '@/services/locationService';
@@ -38,19 +42,23 @@ import ImageCropper from '@/components/image-cropper';
 
 // Step configuration
 const STEPS = [
-  { id: 1, title: 'Loại bài đăng', icon: FileText },
-  { id: 2, title: 'Thông tin bài viết', icon: FileText },
+  { id: 1, title: 'Loại bài', icon: FileText },
+  { id: 2, title: 'Nội dung chính', icon: MessageSquare },
   { id: 3, title: 'Thú cưng', icon: PawPrint },
   { id: 4, title: 'Hồ sơ y tế', icon: Heart },
   { id: 5, title: 'Hình ảnh', icon: ImageIcon },
 ];
 
-const POST_STATUS = [
-  { value: 'LOST', label: 'Thất lạc', description: 'Thú cưng của bạn bị mất', color: 'border-red-500 bg-red-50' },
-  { value: 'FOUND', label: 'Tìm thấy', description: 'Bạn tìm thấy thú cưng lạc', color: 'border-blue-500 bg-blue-50' },
-  { value: 'FOR_ADOPTION', label: 'Cần nhà', description: 'Tìm người nhận nuôi', color: 'border-green-500 bg-green-50' },
-  { value: 'RESCUE', label: 'Cứu hộ', description: 'Thú cưng cần được cứu hộ', color: 'border-orange-500 bg-orange-50' },
-];
+const STATUS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
+  LOST_FOUND: [
+    { value: 'LOST', label: 'Thất lạc' },
+    { value: 'FOUND', label: 'Tìm thấy' },
+  ],
+  ADOPTION: [
+    { value: 'FOR_ADOPTION', label: 'Cần nhà' },
+    { value: 'RESCUE', label: 'Cứu hộ' },
+  ],
+};
 
 const PET_SIZES = [
   { value: 'SMALL', label: 'Nhỏ (< 5kg)' },
@@ -63,7 +71,11 @@ const PET_GENDERS = [
   { value: 'FEMALE', label: 'Cái' },
 ];
 
-export default function NewPostPage() {
+interface NewPostPageProps {
+  presetType?: string;
+}
+
+export default function NewPostPage({ presetType }: NewPostPageProps) {
   const router = useRouter();
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -77,6 +89,8 @@ export default function NewPostPage() {
     description: '',
     petType: '',
     status: '',
+    postType: 'LOST_FOUND',
+    tagsInput: '',
     city: '',
     district: '',
     location: '',
@@ -94,12 +108,39 @@ export default function NewPostPage() {
     specialNeeds: '',  // special needs
     bio: '',           // bio
   });
+
+  const [structuredMeta, setStructuredMeta] = useState({
+    lastSeenLocation: '',
+    reward: '',
+    distinguishingMarks: '',
+    adoptionRequirements: '',
+    contact: '',
+    vaccinationStatus: '',
+    placeName: '',
+    serviceType: '',
+    rating: '',
+    priceRange: '',
+    address: '',
+    pros: '',
+    cons: '',
+    questionTopic: '',
+    context: '',
+    tipTopic: '',
+    breedingRequirements: '',
+    marketplaceItemName: '',
+    marketplaceCondition: '',
+    marketplacePrice: '',
+    marketplacePickup: '',
+  });
   
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [districts, setDistricts] = useState<string[]>([]);
+  const [enableLocation, setEnableLocation] = useState(false);
   const [petTypes] = useState(['Chó', 'Mèo', 'Chim', 'Hamster', 'Thỏ', 'Khác']);
+  const requiresPetInfo = ['LOST_FOUND', 'ADOPTION', 'BREEDING'].includes(formData.postType);
+  const shouldShowPetSteps = formData.postType === 'LOST_FOUND' || formData.postType === 'ADOPTION' || formData.postType === 'BREEDING';
   
   // Health record state (optional)
   const [healthRecord, setHealthRecord] = useState({
@@ -121,6 +162,9 @@ export default function NewPostPage() {
     const user = authService.getCurrentUser();
     setIsLoggedIn(!!user);
     setIsCheckingAuth(false);
+    if (presetType) {
+      setFormData((prev) => ({ ...prev, postType: presetType }));
+    }
     
     // Load cities
     locationService.getCities()
@@ -136,6 +180,25 @@ export default function NewPostPage() {
       setFormData(prev => ({ ...prev, district: '' }));
     }
   }, [formData.city]);
+
+  useEffect(() => {
+    const statuses = STATUS_BY_TYPE[formData.postType];
+    if (!statuses) {
+      if (formData.status) {
+        setFormData(prev => ({ ...prev, status: '' }));
+      }
+      return;
+    }
+    if (!statuses.some((s) => s.value === formData.status)) {
+      setFormData(prev => ({ ...prev, status: statuses[0]?.value || '' }));
+    }
+  }, [formData.postType]);
+
+  useEffect(() => {
+    if (!requiresPetInfo) {
+      setFormData((prev) => ({ ...prev, petType: prev.petType || 'Khác' }));
+    }
+  }, [requiresPetInfo]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -155,21 +218,26 @@ export default function NewPostPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        if (!formData.status) {
-          toast({ title: 'Lỗi', description: 'Vui lòng chọn loại bài đăng', variant: 'destructive' });
+        if (!formData.postType) {
+          toast({ title: 'Lỗi', description: 'Vui lòng chọn kiểu bài (mạng xã hội)', variant: 'destructive' });
           return false;
         }
         return true;
-      case 2:
+      case 2: {
+        const needsLocation = requiresPetInfo || enableLocation;
+        if ((formData.postType === 'LOST_FOUND' || formData.postType === 'ADOPTION') && !formData.status) {
+          toast({ title: 'Lỗi', description: 'Vui lòng chọn trạng thái phù hợp với loại bài', variant: 'destructive' });
+          return false;
+        }
         if (!formData.title.trim()) {
           toast({ title: 'Lỗi', description: 'Vui lòng nhập tiêu đề', variant: 'destructive' });
           return false;
         }
-        if (!formData.petType) {
+        if (requiresPetInfo && !formData.petType) {
           toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thú cưng', variant: 'destructive' });
           return false;
         }
-        if (!formData.city) {
+        if (needsLocation && !formData.city) {
           toast({ title: 'Lỗi', description: 'Vui lòng chọn thành phố', variant: 'destructive' });
           return false;
         }
@@ -178,8 +246,9 @@ export default function NewPostPage() {
           return false;
         }
         return true;
+      }
       case 3:
-        // Pet info is optional
+        // Pet info optional for social posts, required block already handled above
         return true;
       case 4:
         // Health record is optional
@@ -196,11 +265,19 @@ export default function NewPostPage() {
   };
   
   const canGoNext = (): boolean => {
+    const requiresStatus = !!STATUS_BY_TYPE[formData.postType];
+    const needsLocation = requiresPetInfo || enableLocation;
     switch (currentStep) {
       case 1:
-        return !!formData.status;
+        return !!formData.postType;
       case 2:
-        return !!(formData.title && formData.petType && formData.city && formData.description.length >= 20);
+        return !!(
+          formData.title &&
+          formData.description.length >= 20 &&
+          (!requiresPetInfo || !!formData.petType) &&
+          (!needsLocation || !!formData.city) &&
+          (!requiresStatus || !!formData.status)
+        );
       case 3:
         return true; // Optional step
       case 4:
@@ -213,12 +290,25 @@ export default function NewPostPage() {
   };
   
   const goToNextStep = () => {
-    if (validateStep(currentStep) && currentStep < 5) {
+    if (!validateStep(currentStep)) return;
+    if (currentStep === 2 && !shouldShowPetSteps) {
+      setCurrentStep(5);
+      return;
+    }
+    if (currentStep === 3 && !shouldShowPetSteps) {
+      setCurrentStep(5);
+      return;
+    }
+    if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
     }
   };
   
   const goToPrevStep = () => {
+    if (currentStep === 5 && !shouldShowPetSteps) {
+      setCurrentStep(2);
+      return;
+    }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
@@ -296,6 +386,68 @@ export default function NewPostPage() {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
   
+  const resolveStatus = () => {
+    if (formData.status) return formData.status;
+    if (formData.postType === 'LOST_FOUND') return 'LOST';
+    if (formData.postType === 'ADOPTION') return 'FOR_ADOPTION';
+    if (formData.postType === 'RESCUE') return 'RESCUE';
+    // Neutral status for social-style posts
+    return 'GENERAL';
+  };
+
+  const buildMeta = () => {
+    switch (formData.postType) {
+      case 'LOST_FOUND':
+        return {
+          lastSeenLocation: structuredMeta.lastSeenLocation,
+          contact: structuredMeta.contact,
+          reward: structuredMeta.reward,
+          distinguishingMarks: structuredMeta.distinguishingMarks,
+        };
+      case 'ADOPTION':
+        return {
+          adoptionRequirements: structuredMeta.adoptionRequirements,
+          contact: structuredMeta.contact,
+          vaccinationStatus: structuredMeta.vaccinationStatus,
+        };
+      case 'REVIEW':
+        return {
+          placeName: structuredMeta.placeName,
+          serviceType: structuredMeta.serviceType,
+          rating: structuredMeta.rating ? Number(structuredMeta.rating) : undefined,
+          priceRange: structuredMeta.priceRange,
+          address: structuredMeta.address,
+          pros: structuredMeta.pros,
+          cons: structuredMeta.cons,
+        };
+      case 'QNA':
+        return {
+          questionTopic: structuredMeta.questionTopic,
+          context: structuredMeta.context,
+        };
+      case 'TIP':
+        return {
+          topic: structuredMeta.tipTopic,
+          context: structuredMeta.context,
+        };
+      case 'BREEDING':
+        return {
+          requirements: structuredMeta.breedingRequirements,
+          contact: structuredMeta.contact,
+        };
+      case 'MARKETPLACE':
+        return {
+          itemName: structuredMeta.marketplaceItemName,
+          condition: structuredMeta.marketplaceCondition,
+          price: structuredMeta.marketplacePrice,
+          pickupMethod: structuredMeta.marketplacePickup,
+          contact: structuredMeta.contact,
+        };
+      default:
+        return {};
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateStep(5)) return;
     
@@ -342,15 +494,26 @@ export default function NewPostPage() {
           })) : undefined,
       } : undefined;
 
+      const tags = formData.tagsInput
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+      const meta = buildMeta();
+      const status = resolveStatus();
+      const petTypeToSend = requiresPetInfo ? formData.petType : (formData.petType || 'Khác');
+      const cityToSend = formData.city || 'Online';
+
       await petPostService.createPost({
         title: formData.title,
         description: formData.description,
-        petType: formData.petType,
-        status: formData.status,
-        city: formData.city,
+        petType: petTypeToSend,
+        status,
+        postType: formData.postType,
+        city: cityToSend,
         district: formData.district || '',
         location: formData.location || undefined,
-        tags: [], // Add empty tags if not managed
+        tags: tags.length ? tags : undefined,
+        meta,
         pet: petInfo, // Key fix: Sending 'pet' object with mapped fields
         healthRecord: healthRecordData,
       }, imageFiles);
@@ -360,7 +523,7 @@ export default function NewPostPage() {
         description: 'Bài đăng đã được tạo và hiển thị công khai.',
       });
       
-      router.push('/shop');
+      router.push('/');
     } catch (error) {
       toast({
         title: 'Lỗi',
@@ -402,7 +565,7 @@ export default function NewPostPage() {
   return (
     <div className="container px-4 py-8 max-w-3xl">
       <Button variant="ghost" asChild className="mb-6">
-        <Link href="/shop">
+        <Link href="/">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Quay lại
         </Link>
@@ -468,54 +631,80 @@ export default function NewPostPage() {
           </div>
 
           {/* Step 1: Post Type */}
-          {currentStep === 1 && (
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold">Bạn muốn đăng bài về gì?</h3>
-                <p className="text-muted-foreground text-sm">Chọn loại bài đăng phù hợp</p>
-              </div>
-              
-              <RadioGroup
-                value={formData.status}
-                onValueChange={(value) => handleSelectChange('status', value)}
-                className="grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
-                {POST_STATUS.map((status) => (
-                  <div key={status.value}>
-                    <RadioGroupItem
-                      value={status.value}
-                      id={status.value}
-                      className="peer sr-only"
-                    />
-                    <Label
-                      htmlFor={status.value}
+        {currentStep === 1 && (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-semibold">Bạn muốn đăng bài về gì?</h3>
+              <p className="text-muted-foreground text-sm">Chọn kiểu bài đăng (trạng thái sẽ chọn ở bước sau nếu cần).</p>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-semibold">Kiểu bài (postType)</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                    { value: 'LOST_FOUND', label: 'Lost/Found', desc: 'Thông báo thất lạc / tìm thấy' },
+                    { value: 'ADOPTION', label: 'Adoption/Rescue', desc: 'Nhận nuôi / Cứu hộ' },
+                    { value: 'REVIEW', label: 'Review', desc: 'Đánh giá dịch vụ/nơi chốn' },
+                    { value: 'QNA', label: 'Hỏi đáp', desc: 'Đặt câu hỏi cho cộng đồng' },
+                    { value: 'TIP', label: 'Mẹo', desc: 'Chia sẻ kinh nghiệm chăm thú' },
+                    { value: 'BREEDING', label: 'Breeding', desc: 'Giao phối/nhân giống' },
+                    { value: 'MARKETPLACE', label: 'Marketplace', desc: 'Phụ kiện/thức ăn' },
+                  ].map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => handleSelectChange('postType', type.value)}
                       className={cn(
-                        'flex flex-col p-6 border-2 rounded-xl cursor-pointer transition-all',
-                        'hover:shadow-md peer-data-[state=checked]:border-primary peer-data-[state=checked]:shadow-lg',
-                        formData.status === status.value && 'border-primary bg-primary/5'
+                        'p-3 rounded-lg border text-left hover:border-primary transition',
+                        formData.postType === type.value ? 'border-primary bg-primary/5' : 'border-muted'
                       )}
                     >
-                      <span className="text-lg font-semibold mb-1">{status.label}</span>
-                      <span className="text-sm text-muted-foreground">{status.description}</span>
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+                      <p className="font-semibold">{type.label}</p>
+                      <p className="text-xs text-muted-foreground">{type.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
           {/* Step 2: Post Details */}
           {currentStep === 2 && (
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold">Thông tin bài đăng</h3>
-                <p className="text-muted-foreground text-sm">Nhập thông tin chính về bài đăng</p>
-              </div>
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-semibold">Thông tin bài đăng</h3>
+              <p className="text-muted-foreground text-sm">
+                {requiresPetInfo
+                  ? 'Nội dung sẽ hiển thị trên bảng tin (giống post Facebook).'
+                  : 'Bài chia sẻ/review không cần thông tin thú cưng, bỏ qua bước 3-4.'}
+              </p>
+            </div>
 
-              {/* Title */}
+            {/* Status (only for LOST_FOUND / ADOPTION) */}
+            {STATUS_BY_TYPE[formData.postType] && (
               <div className="space-y-2">
-                <Label htmlFor="title">Tiêu đề *</Label>
-                <Input
+                <Label>Trạng thái</Label>
+                <RadioGroup
+                  value={formData.status}
+                  onValueChange={(value) => handleSelectChange('status', value)}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-3"
+                >
+                  {STATUS_BY_TYPE[formData.postType].map((item) => (
+                    <div key={item.value} className="border rounded-lg p-3 flex items-center gap-3">
+                      <RadioGroupItem value={item.value} id={`status-${item.value}`} />
+                      <Label htmlFor={`status-${item.value}`} className="cursor-pointer font-medium">
+                        {item.label}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
+
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title">Tiêu đề *</Label>
+              <Input
                   id="title"
                   name="title"
                   placeholder="Ví dụ: Chó Husky mất tích tại Q.1, TP.HCM"
@@ -524,74 +713,357 @@ export default function NewPostPage() {
                 />
               </div>
 
-              {/* Pet Type */}
-              <div className="space-y-2">
-                <Label>Loại thú cưng *</Label>
-                <Select
-                  value={formData.petType}
-                  onValueChange={(value) => handleSelectChange('petType', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn loại thú cưng" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {petTypes.map((type) => (
-                      <SelectItem key={type} value={type}>{type}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Tags */}
+            <div className="space-y-2">
+              <Label>Hashtag/Tag</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nhập tag, cách nhau bởi dấu phẩy (vd: lost,husky,urgent)"
+                  value={formData.tagsInput}
+                  onChange={(e) => handleSelectChange('tagsInput', e.target.value)}
+                />
               </div>
+              <div className="flex flex-wrap gap-2">
+                {formData.tagsInput.split(',').map(t => t.trim()).filter(Boolean).map((tag) => (
+                  <Badge key={tag} variant="secondary" className="text-xs">#{tag}</Badge>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">Dùng tag để lọc và gợi ý nội dung</p>
+            </div>
+
+            {/* Dynamic meta fields */}
+            {formData.postType === 'LOST_FOUND' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Vị trí thấy lần cuối</Label>
+                  <Input
+                    placeholder="Công viên Tao Đàn..."
+                    value={structuredMeta.lastSeenLocation}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, lastSeenLocation: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phần thưởng (nếu có)</Label>
+                  <Input
+                    placeholder="500,000 VND"
+                    value={structuredMeta.reward}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, reward: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Dấu hiệu nhận dạng</Label>
+                  <Input
+                    placeholder="Vòng cổ xanh, sẹo nhỏ trên tai..."
+                    value={structuredMeta.distinguishingMarks}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, distinguishingMarks: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Liên hệ</Label>
+                  <Input
+                    placeholder="SĐT / Zalo / FB"
+                    value={structuredMeta.contact}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, contact: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.postType === 'ADOPTION' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Yêu cầu nhận nuôi</Label>
+                  <Textarea
+                    placeholder="Có sân vườn, cam kết tiêm vaccine..."
+                    value={structuredMeta.adoptionRequirements}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, adoptionRequirements: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tình trạng tiêm phòng</Label>
+                  <Input
+                    placeholder="Đã tiêm 2 mũi"
+                    value={structuredMeta.vaccinationStatus}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, vaccinationStatus: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Liên hệ</Label>
+                  <Input
+                    placeholder="SĐT / Zalo / FB"
+                    value={structuredMeta.contact}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, contact: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.postType === 'REVIEW' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tên địa điểm</Label>
+                  <Input
+                    placeholder="PetCare Clinic"
+                    value={structuredMeta.placeName}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, placeName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Loại dịch vụ</Label>
+                  <Input
+                    placeholder="Phòng khám / Khách sạn / Spa..."
+                    value={structuredMeta.serviceType}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, serviceType: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Đánh giá sao</Label>
+                  <div className="flex gap-2 items-center">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    <Input
+                      type="number"
+                      min="1"
+                      max="5"
+                      step="0.5"
+                      value={structuredMeta.rating}
+                      onChange={(e) => setStructuredMeta(prev => ({ ...prev, rating: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Khoảng giá</Label>
+                  <div className="flex gap-2 items-center">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="300k - 500k"
+                      value={structuredMeta.priceRange}
+                      onChange={(e) => setStructuredMeta(prev => ({ ...prev, priceRange: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Địa chỉ</Label>
+                  <Input
+                    placeholder="123 Nguyễn Trãi, Q5, HCM"
+                    value={structuredMeta.address}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, address: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ưu điểm</Label>
+                  <Textarea
+                    placeholder="Nhân viên thân thiện, sạch sẽ..."
+                    value={structuredMeta.pros}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, pros: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nhược điểm</Label>
+                  <Textarea
+                    placeholder="Giá hơi cao..."
+                    value={structuredMeta.cons}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, cons: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.postType === 'QNA' && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Chủ đề câu hỏi</Label>
+                  <Input
+                    placeholder="Biểu hiện khi mèo động dục?"
+                    value={structuredMeta.questionTopic}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, questionTopic: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ngữ cảnh / mô tả</Label>
+                  <Textarea
+                    placeholder="Mèo cái 8 tháng, dạo này kêu nhiều..."
+                    value={structuredMeta.context}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, context: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.postType === 'TIP' && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Chủ đề mẹo</Label>
+                  <Input
+                    placeholder="Chăm sóc lông mùa nóng"
+                    value={structuredMeta.tipTopic}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, tipTopic: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ngữ cảnh / mô tả</Label>
+                  <Textarea
+                    placeholder="Chia sẻ cách tắm nhanh, sấy lông..."
+                    value={structuredMeta.context}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, context: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.postType === 'BREEDING' && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Yêu cầu phối giống</Label>
+                  <Textarea
+                    placeholder="Cần tìm partner giống corgi, tiêm đủ vaccine..."
+                    value={structuredMeta.breedingRequirements}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, breedingRequirements: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Liên hệ</Label>
+                  <Input
+                    placeholder="SĐT / Zalo / FB"
+                    value={structuredMeta.contact}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, contact: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.postType === 'MARKETPLACE' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tên sản phẩm</Label>
+                  <Input
+                    placeholder="Cây trèo mèo cũ"
+                    value={structuredMeta.marketplaceItemName}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, marketplaceItemName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Tình trạng</Label>
+                  <Input
+                    placeholder="95% mới"
+                    value={structuredMeta.marketplaceCondition}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, marketplaceCondition: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Giá</Label>
+                  <Input
+                    placeholder="500,000 VND"
+                    value={structuredMeta.marketplacePrice}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, marketplacePrice: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Cách nhận hàng</Label>
+                  <Input
+                    placeholder="Ship / gặp trực tiếp"
+                    value={structuredMeta.marketplacePickup}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, marketplacePickup: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Liên hệ</Label>
+                  <Input
+                    placeholder="SĐT / Zalo / FB"
+                    value={structuredMeta.contact}
+                    onChange={(e) => setStructuredMeta(prev => ({ ...prev, contact: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
+              {/* Pet Type */}
+              {requiresPetInfo && (
+                <div className="space-y-2">
+                  <Label>Loại thú cưng *</Label>
+                  <Select
+                    value={formData.petType}
+                    onValueChange={(value) => handleSelectChange('petType', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn loại thú cưng" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {petTypes.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               {/* Location */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Thành phố *</Label>
-                  <Select
-                    value={formData.city}
-                    onValueChange={(value) => handleSelectChange('city', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn thành phố" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.map((city) => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Quận/Huyện</Label>
-                  <Select
-                    value={formData.district}
-                    onValueChange={(value) => handleSelectChange('district', value)}
-                    disabled={!formData.city}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn quận/huyện" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {districts.map((district) => (
-                        <SelectItem key={district} value={district}>{district}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
+                {!requiresPetInfo && (
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">Thêm địa điểm cho bài chia sẻ?</div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEnableLocation((v) => !v)}
+                    >
+                      {enableLocation ? 'Ẩn địa điểm' : 'Thêm địa điểm'}
+                    </Button>
+                  </div>
+                )}
+                {(requiresPetInfo || enableLocation) && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>{requiresPetInfo ? 'Thành phố *' : 'Thành phố (tuỳ chọn)'}</Label>
+                        <Select
+                          value={formData.city}
+                          onValueChange={(value) => handleSelectChange('city', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn thành phố" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cities.map((city) => (
+                              <SelectItem key={city} value={city}>{city}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Quận/Huyện</Label>
+                        <Select
+                          value={formData.district}
+                          onValueChange={(value) => handleSelectChange('district', value)}
+                          disabled={!formData.city}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn quận/huyện" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {districts.map((district) => (
+                              <SelectItem key={district} value={district}>{district}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-              {/* Detailed Location */}
-              <div className="space-y-2">
-                <Label htmlFor="location">
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Địa chỉ chi tiết (tùy chọn)
-                </Label>
-                <Input
-                  id="location"
-                  name="location"
-                  placeholder="Ví dụ: Gần công viên Tao Đàn, đường Nguyễn Du"
-                  value={formData.location}
-                  onChange={handleChange}
-                />
+                    {/* Detailed Location */}
+                    <div className="space-y-2">
+                      <Label htmlFor="location">
+                        <MapPin className="h-4 w-4 inline mr-1" />
+                        Địa chỉ chi tiết (tùy chọn)
+                      </Label>
+                      <Input
+                        id="location"
+                        name="location"
+                        placeholder="Ví dụ: Gần công viên Tao Đàn, đường Nguyễn Du"
+                        value={formData.location}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Description */}
@@ -618,7 +1090,7 @@ export default function NewPostPage() {
           )}
 
           {/* Step 3: Pet Details (Optional) */}
-          {currentStep === 3 && (
+          {currentStep === 3 && shouldShowPetSteps && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h3 className="text-lg font-semibold">Thông tin thú cưng</h3>
@@ -757,7 +1229,7 @@ export default function NewPostPage() {
           )}
 
           {/* Step 4: Health Record (Optional) */}
-          {currentStep === 4 && (
+          {currentStep === 4 && shouldShowPetSteps && (
             <div className="space-y-6">
               <div className="text-center mb-6">
                 <h3 className="text-lg font-semibold">Hồ sơ y tế</h3>
@@ -1090,7 +1562,13 @@ export default function NewPostPage() {
                 <div className="mt-8 p-4 bg-muted/50 rounded-xl border">
                   <h4 className="font-semibold mb-3">Tóm tắt bài đăng</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-muted-foreground">Loại:</span> {POST_STATUS.find(s => s.value === formData.status)?.label}</div>
+                    <div>
+                      <span className="text-muted-foreground">Trạng thái:</span>{' '}
+                      {(() => {
+                        const statusItem = Object.values(STATUS_BY_TYPE).flat().find(s => s.value === formData.status);
+                        return statusItem?.label || (formData.status || 'Không yêu cầu');
+                      })()}
+                    </div>
                     <div><span className="text-muted-foreground">Thú cưng:</span> {formData.petType}</div>
                     <div className="col-span-2"><span className="text-muted-foreground">Tiêu đề:</span> {formData.title}</div>
                     <div><span className="text-muted-foreground">Vị trí:</span> {formData.district ? `${formData.district}, ${formData.city}` : formData.city}</div>
@@ -1106,7 +1584,7 @@ export default function NewPostPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={currentStep > 1 ? goToPrevStep : () => router.push('/shop')}
+              onClick={currentStep > 1 ? goToPrevStep : () => router.push('/')}
               disabled={isSubmitting}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />

@@ -24,6 +24,7 @@ export const petPosts: PetPost[] = [
     tags: ["lost", "husky", "urgent"],
     featured: true,
     views: 2450,
+    commentCount: 0,
     pet: {
       id: "pet1",
       name: "Max",
@@ -84,6 +85,7 @@ export const petPosts: PetPost[] = [
     tags: ["adoption", "golden-retriever", "healthy"],
     featured: true,
     views: 1890,
+    commentCount: 0,
     pet: {
       id: "pet2",
       name: "Buddy",
@@ -137,6 +139,7 @@ export const petPosts: PetPost[] = [
     tags: ["rescue", "cat", "need-support"],
     featured: false,
     views: 1340,
+    commentCount: 0,
     pet: {
       id: "pet3",
       name: "Luna",
@@ -191,6 +194,7 @@ export const petPosts: PetPost[] = [
     tags: ["found", "poodle"],
     featured: true,
     views: 890,
+    commentCount: 0,
     pet: {
       id: "pet4",
       name: "Tina",
@@ -245,6 +249,7 @@ export const petPosts: PetPost[] = [
     tags: ["adoption", "cat", "cute"],
     featured: false,
     views: 450,
+    commentCount: 0,
     pet: {
       id: "pet5",
       name: "Miu",
