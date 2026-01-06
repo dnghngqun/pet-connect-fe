@@ -473,7 +473,10 @@ export default function FeedPage() {
                         </p>
                         <span className="text-xs text-gray-400">#{i + 1}</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">{item.postCount > 0 ? `${item.postCount} bài viết` : 'Mới nổi'}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {item.postCount > 0 ? `${item.postCount} bài viết` : ''}
+                        {(item.searchCount + item.viewCount) > 0 ? `${item.postCount > 0 ? ' • ' : ''}${item.searchCount + item.viewCount} quan tâm` : (item.postCount === 0 ? 'Mới nổi' : '')}
+                      </p>
                     </button>
                   ))
                 ) : (

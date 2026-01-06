@@ -11,7 +11,7 @@ import ProfileIntro from '@/components/profile/profile-intro';
 import ProfilePhotos from '@/components/profile/profile-photos';
 import ProfileFriendsPreview from '@/components/profile/profile-friends-preview';
 import PetPostCard from '@/components/pet-post-card';
-import PostCreateModal from '@/components/post-create-modal';
+import CreatePostModal from '@/components/create-post-modal';
 import ProfileFriendsTab from '@/components/profile/profile-friends-tab';
 import ProfilePhotosTab from '@/components/profile/profile-photos-tab';
 import { Card } from '@/components/ui/card';
@@ -194,7 +194,13 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                         Bạn đang nghĩ gì thế?
                       </Button>
                     </div>
-                    <PostCreateModal open={createPostOpen} onOpenChange={setCreatePostOpen} />
+                    <CreatePostModal 
+                      open={createPostOpen} 
+                      onOpenChange={setCreatePostOpen}
+                      onPostCreated={(newPost) => {
+                        setPosts(prev => [newPost, ...prev]);
+                      }} 
+                    />
                   </Card>
                 )}
 
