@@ -52,6 +52,7 @@ export interface PostListItem {
   slug: string;
   description: string;
   image: string;
+  images?: string[];
   petType: string;
   status: string;
   postType?: string;
@@ -170,7 +171,7 @@ export interface CreatePostRequest {
   status: string;
   postType?: string;
   city: string;
-  district: string;
+  district?: string;
   location?: string;
   latitude?: number;
   longitude?: number;

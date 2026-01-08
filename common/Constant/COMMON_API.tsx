@@ -56,4 +56,13 @@ export const COMMON_API = {
   // Locations - /api/v1/locations
   cities: `${BASE_URL}/api/v1/locations/cities`,
   districts: `${BASE_URL}/api/v1/locations/districts`,
+
+  // Notifications - /api/notifications
+  notifications: `${BASE_URL}/api/notifications`,
+  notificationsUnread: `${BASE_URL}/api/notifications/unread`,
+  notificationsUnreadCount: `${BASE_URL}/api/notifications/unread/count`,
+  notificationRead: (id: string | number) => `${BASE_URL}/api/notifications/${id}/read`,
+  notificationsReadAll: `${BASE_URL}/api/notifications/read-all`,
+  notificationDelete: (id: string | number) => `${BASE_URL}/api/notifications/${id}`,
+  notificationsClear: `${BASE_URL}/api/notifications`,
 };

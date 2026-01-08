@@ -12,6 +12,9 @@ export type MessageType = {
   _id?: string;
   content?: string;
   image?: string;
+  localImagePreview?: string;
+  localImageFile?: File;
+  errorMessage?: string;
   sender: UserType;
   replyTo?: MessageType;
   chatId?: string;
@@ -44,7 +47,10 @@ export type CreateMessagePayload = {
   chatId: string;
   content?: string;
   image?: string;
+  imageFile?: File;
+  localImagePreview?: string;
   replyToId?: string;
+  postId?: string | number;
 };
 
 // API Response Types

@@ -74,7 +74,8 @@ export default function CreateFundraisingPage() {
   }
 
   return (
-    <div className="container px-4 py-8 max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-pink-50 to-white py-8">
+      <div className="container px-4 max-w-2xl">
       {/* Back Button */}
       <Button variant="ghost" asChild className="mb-6">
         <Link href="/fundraising">
@@ -83,16 +84,16 @@ export default function CreateFundraisingPage() {
         </Link>
       </Button>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl">Tạo chiến dịch gây quỹ</CardTitle>
-          <p className="text-muted-foreground mt-2">
-            Chia sẻ câu chuyện và kêu gọi sự giúp đỡ của cộng đồng
-          </p>
-        </CardHeader>
+      <Card className="border-orange-100 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-orange-50 via-pink-50 to-orange-50 border-b">
+          <CardTitle className="text-3xl bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">Tạo chiến dịch gây quỹ</CardTitle>
+            <p className="text-muted-foreground mt-2">
+              Chia sẻ câu chuyện và kêu gọi sự giúp đỡ của cộng đồng
+            </p>
+          </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>
               <label className="block text-sm font-semibold mb-2">
@@ -233,10 +234,11 @@ export default function CreateFundraisingPage() {
                 <li>Cập nhật tiến độ của chiến dịch thường xuyên</li>
                 <li>Cảm ơn mọi người đã đóng góp</li>
               </ul>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

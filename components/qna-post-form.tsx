@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ImageUpload from './image-upload';
 import { toast } from '@/components/ui/use-toast';
 import petPostService from '@/services/petPostService';
@@ -15,35 +14,18 @@ interface QnaPostFormProps {
   onSuccess: (newPost: any) => void;
 }
 
-const TOPICS = [
-  { value: 'health', label: '🏥 Sức khỏe' },
-  { value: 'training', label: '🎓 Huấn luyện' },
-  { value: 'nutrition', label: '🍖 Dinh dưỡng' },
-  { value: 'behavior', label: '🐾 Hành vi' },
-  { value: 'adoption', label: '🏠 Nhận nuôi' },
-  { value: 'other', label: '📌 Khác' },
-];
-
-const DIFFICULTIES = [
-  { value: 'easy', label: '🟢 Cơ bản' },
-  { value: 'intermediate', label: '🟡 Trung bình' },
-  { value: 'hard', label: '🔴 Phức tạp' },
-];
-
 export default function QnaPostForm({ onSuccess }: QnaPostFormProps) {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    topic: '',
-    difficulty: 'easy',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.topic) {
+    if (!formData.title || !formData.description) {
       toast({ title: 'Vui lòng điền đầy đủ thông tin', variant: 'destructive' });
       return;
     }
@@ -58,10 +40,10 @@ export default function QnaPostForm({ onSuccess }: QnaPostFormProps) {
         status: 'GENERAL',
         city: 'TP. Hồ Chí Minh',
         district: '',
-        tags: ['hoidap', formData.topic],
+        tags: ['hoidap'],
         meta: {
-          topic: formData.topic,
-          difficulty: formData.difficulty,
+          topic: 'general', // Default topic
+          difficulty: 'easy', // Default difficulty
           isAnswered: false,
           answerCount: 0,
           expertAnswered: false,
@@ -101,35 +83,7 @@ export default function QnaPostForm({ onSuccess }: QnaPostFormProps) {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label>📚 Chủ đề *</Label>
-          <Select value={formData.topic} onValueChange={(value) => setFormData(prev => ({ ...prev, topic: value }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn chủ đề" />
-            </SelectTrigger>
-            <SelectContent>
-              {TOPICS.map(topic => (
-                <SelectItem key={topic.value} value={topic.value}>{topic.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label>🎯 Độ khó</Label>
-          <Select value={formData.difficulty} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DIFFICULTIES.map(diff => (
-                <SelectItem key={diff.value} value={diff.value}>{diff.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      {/* Simplified: Removed Topic/Difficulty/Context fields as per request */}
 
       <ImageUpload images={images} onImagesChange={setImages} />
 

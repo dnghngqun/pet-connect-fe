@@ -16,6 +16,8 @@ import {
 import GroupCard from '@/components/group-card';
 import { getGroups, getPopularGroups, Group } from '@/services/groupService';
 import authService from '@/services/authService';
+import PageHeader from '@/components/page-header';
+import { Users } from 'lucide-react';
 
 export default function GroupsPage() {
   const router = useRouter();
@@ -107,34 +109,24 @@ export default function GroupsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-pink-50 to-white">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-orange-500 text-white">
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-4">Hội Nhóm</h1>
-            <p className="text-lg opacity-90 mb-6">
-              Tìm và tham gia các cộng đồng yêu thú cưng gần bạn
-            </p>
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={handleCreateGroup}
-              className="gap-2"
-            >
-              <Plus className="h-5 w-5" />
-              Tạo hội nhóm mới
-            </Button>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Hội Nhóm"
+        description="Tìm và tham gia các cộng đồng yêu thú cưng gần bạn"
+        icon={<Users className="h-8 w-8 text-white" />}
+        action={{
+          label: '+ Tạo hội nhóm mới',
+          onClick: handleCreateGroup,
+        }}
+      />
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Sidebar */}
             <div className="lg:col-span-1">
-              <Card className="p-4 sticky top-4">
+              <Card className="p-4 sticky top-4 shadow-lg border-orange-100">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
                   <Filter className="h-4 w-4" />
                   Bộ lọc

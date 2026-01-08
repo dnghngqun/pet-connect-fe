@@ -44,8 +44,28 @@ export default function PostDetailModal({
   const [comments, setComments] = useState<any[]>([]);
   const [fullPost, setFullPost] = useState<any>(null);
 
-  const postImages = post.image ? [post.image] : [];
-  const images = postImages.length > 0 ? postImages : [];
+  // Get images from post.images, fallback to post.image, then to fullPost.media
+  const getImages = (): string[] => {
+    // Priority 1: fullPost with media array
+    if (fullPost?.media && Array.isArray(fullPost.media) && fullPost.media.length > 0) {
+      return fullPost.media.map((m: any) => m.imageUrl || m);
+    }
+    // Priority 2: fullPost with images array
+    if (fullPost?.images && Array.isArray(fullPost.images) && fullPost.images.length > 0) {
+      return fullPost.images;
+    }
+    // Priority 3: post.images array
+    if (post.images && Array.isArray(post.images) && post.images.length > 0) {
+      return post.images;
+    }
+    // Priority 4: single post.image
+    if (post.image) {
+      return [post.image];
+    }
+    return [];
+  };
+  
+  const images = getImages();
 
   // Load full post data when modal opens
   useEffect(() => {

@@ -6,6 +6,7 @@ import PetPostCard from '@/components/pet-post-card';
 import PostCardSkeleton from '@/components/post-card-skeleton';
 import CreatePostModal from '@/components/create-post-modal';
 import PostDetailModal from '@/components/post-detail-modal';
+
 import { Button } from '@/components/ui/button';
 import { Home, Heart, Bookmark, TrendingUp, Loader2 } from 'lucide-react';
 import petPostService from '@/services/petPostService';
@@ -39,14 +40,20 @@ export default function FeedPage() {
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
   const [trendingTags, setTrendingTags] = useState<import('@/services/trendingService').TrendingStats[]>([]);
   const [loadingTrending, setLoadingTrending] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null); // For edit mode
 
   const handlePostCreated = (newPostData: any) => {
+    const imageUrl =
+      newPostData.image ||
+      newPostData.media?.[0]?.imageUrl ||
+      newPostData.images?.[0] ||
+      '';
     const newPost: PetPost = {
       id: newPostData.id?.toString() || Date.now().toString(),
       title: newPostData.title,
       slug: newPostData.slug || '',
       description: newPostData.description,
-      image: newPostData.images?.[0] || '',
+      image: imageUrl,
       petType: newPostData.petType,
       status: newPostData.status,
       postType: newPostData.postType,
@@ -91,6 +98,39 @@ export default function FeedPage() {
       const trendingService = (await import('@/services/trendingService')).default;
       await trendingService.trackSearch(tag);
       router.push(`/search?q=${encodeURIComponent(tag)}`);
+  };
+
+  const handleEditPost = async (post: PetPost) => {
+    try {
+      // Fetch full post detail for editing
+      const response = await petPostService.getPostBySlug(post.id?.toString() || post.slug);
+      if (response.success && response.data) {
+        setEditingPost(response.data);
+        setOpenCreateModal(true);
+      } else {
+        toast.error('Không thể tải thông tin bài đăng');
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi tải bài đăng');
+    }
+  };
+
+  const handleDeletePost = async (post: PetPost) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa bài đăng này không?')) {
+      return;
+    }
+    try {
+      const response = await petPostService.deletePost(Number(post.id));
+      if (response.success) {
+        // Remove the post from the list
+        setPosts(prev => prev.filter(p => p.id?.toString() !== post.id?.toString()));
+        toast.success('🗑️ Đã xóa bài đăng thành công!');
+      } else {
+        toast.error('Không thể xóa bài đăng');
+      }
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi xóa bài đăng');
+    }
   };
 
   const lastPostRef = useCallback((node: HTMLDivElement | null) => {
@@ -227,6 +267,7 @@ export default function FeedPage() {
         slug: post.slug,
         description: post.description,
         image: post.images?.[0] || post.image || '',
+        images: post.images || (post.image ? [post.image] : []), // Add images array for grid display
         petType: post.petType,
         status: post.status,
         postType: post.postType,
@@ -318,17 +359,6 @@ export default function FeedPage() {
                   Bạn đang nghĩ gì?
                 </button>
               </div>
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t">
-                <Button variant="ghost" size="sm" className="flex-1 gap-2" onClick={() => setOpenCreateModal(true)}>
-                  🔍 Thất lạc
-                </Button>
-                <Button variant="ghost" size="sm" className="flex-1 gap-2" onClick={() => setOpenCreateModal(true)}>
-                  🏠 Nhận nuôi
-                </Button>
-                <Button variant="ghost" size="sm" className="flex-1 gap-2" onClick={() => setOpenCreateModal(true)}>
-                  ⭐ Review
-                </Button>
-              </div>
             </div>
 
             {/* Post Type Filters */}
@@ -385,7 +415,12 @@ export default function FeedPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <PetPostCard post={post} onPostClick={handlePostClick} />
+                    <PetPostCard 
+                      post={post} 
+                      onPostClick={handlePostClick} 
+                      onEditClick={handleEditPost}
+                      onDeleteClick={handleDeletePost}
+                    />
                   </motion.div>
                 ))}
                 {loading && (
@@ -415,7 +450,17 @@ export default function FeedPage() {
                   [...suggestions.users, ...suggestions.groups]
                     .slice(0, 5)
                     .map((item, i) => (
-                      <div key={`${item.type}-${item.id}`} className="flex items-center gap-3">
+                      <div 
+                        key={`${item.type}-${item.id}`} 
+                        className={`flex items-center gap-3 p-2 -mx-2 rounded-lg transition-colors ${
+                          item.type === 'USER' ? 'cursor-pointer hover:bg-gray-50' : ''
+                        }`}
+                        onClick={() => {
+                          if (item.type === 'USER') {
+                            router.push(`/profile/${item.id}`);
+                          }
+                        }}
+                      >
                         <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 overflow-hidden flex-shrink-0">
                           {item.avatar && (
                             <img src={item.avatar} alt={item.name} className="w-full h-full object-cover" />
@@ -431,7 +476,10 @@ export default function FeedPage() {
                         <Button 
                           size="sm" 
                           variant={followingIds.has(item.id) ? "secondary" : "outline"}
-                          onClick={() => handleFollow(item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFollow(item);
+                          }}
                           disabled={processingIds.has(item.id)}
                         >
                           {processingIds.has(item.id) ? '...' : (
@@ -488,11 +536,26 @@ export default function FeedPage() {
         </div>
       </div>
 
-      {/* Create Post Modal */}
+      {/* Create/Edit Post Modal */}
       <CreatePostModal
         open={openCreateModal}
-        onOpenChange={setOpenCreateModal}
-        onPostCreated={handlePostCreated}
+        onOpenChange={(open) => {
+          setOpenCreateModal(open);
+          if (!open) setEditingPost(null); // Reset editing state when modal closes
+        }}
+        onPostCreated={(post) => {
+          if (editingPost) {
+            // Reload posts to get fresh data after update
+            setPosts([]);
+            setPage(0);
+            setHasMore(true);
+            toast.success('🎉 Đã cập nhật bài đăng thành công!');
+          } else {
+            handlePostCreated(post);
+          }
+          setEditingPost(null);
+        }}
+        initialPost={editingPost}
       />
 
       {/* Post Detail Modal */}

@@ -96,6 +96,7 @@ export const chatAPI = {
       content: payload.content,
       image: payload.image,
       replyToId: payload.replyToId ? Number(payload.replyToId) : undefined,
+      postId: payload.postId ? Number(payload.postId) : undefined,
     };
 
     // If WebSocket is connected, use it
@@ -103,6 +104,9 @@ export const chatAPI = {
       const message = {
         conversationId: backendPayload.conversationId,
         content: backendPayload.content,
+        image: backendPayload.image,
+        replyToId: backendPayload.replyToId,
+        postId: backendPayload.postId,
         type: payload.image ? "IMAGE" : "TEXT",
         timestamp: new Date().toISOString(),
       };
@@ -344,7 +348,7 @@ export function normalizeMessageResponse(data: any): MessageType {
     chatId,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
-    status: "sent",
+    status: data.status && data.status !== "sent" ? data.status : undefined,
     isRecalled: data.isRecalled || false,
   };
 }

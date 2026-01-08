@@ -18,6 +18,23 @@ import type {
 import { chatAPI, normalizeMessageResponse } from "@/services/chatService";
 import { useAuth } from "./useAuth";
 
+const SEND_TIMEOUT_MS = 30000;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  timeoutMessage: string
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), ms);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+}
+
 interface ChatContextType {
   // State
   chats: ChatType[];
@@ -39,6 +56,7 @@ interface ChatContextType {
   selectChat: (chatId: string) => Promise<void>;
   createChat: (payload: CreateChatPayload) => Promise<ChatType | null>;
   sendMessage: (payload: CreateMessagePayload) => Promise<MessageType | null>;
+  retryMessage: (message: MessageType) => Promise<void>;
   refreshMessages: () => Promise<void>;
 }
 
@@ -87,11 +105,70 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
   const [isUsersLoading, setIsUsersLoading] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
+  const messagesRef = useRef<MessageType[]>([]);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
   // Refs for callbacks
   const selectedChatIdRef = useRef(selectedChatId);
   useEffect(() => {
     selectedChatIdRef.current = selectedChatId;
   }, [selectedChatId]);
+
+  const pendingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const clearSendTimeout = useCallback((messageId: string) => {
+    const timeoutId = pendingTimeoutsRef.current.get(messageId);
+    if (timeoutId) clearTimeout(timeoutId);
+    pendingTimeoutsRef.current.delete(messageId);
+  }, []);
+
+  const markMessageFailed = useCallback(
+    (messageId: string, errorMessage: string) => {
+      clearSendTimeout(messageId);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === messageId && msg.status !== "sent"
+            ? { ...msg, status: "failed", errorMessage }
+            : msg
+        )
+      );
+    },
+    [clearSendTimeout]
+  );
+
+  const scheduleSendTimeout = useCallback(
+    (messageId: string) => {
+      clearSendTimeout(messageId);
+      const timeoutId = setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === messageId && msg.status !== "sent"
+              ? {
+                  ...msg,
+                  status: "failed",
+                  errorMessage:
+                    "Gửi tin nhắn quá thời gian. Vui lòng thử lại.",
+                }
+              : msg
+          )
+        );
+        pendingTimeoutsRef.current.delete(messageId);
+      }, SEND_TIMEOUT_MS);
+      pendingTimeoutsRef.current.set(messageId, timeoutId);
+    },
+    [clearSendTimeout]
+  );
+
+  useEffect(() => {
+    return () => {
+      pendingTimeoutsRef.current.forEach((timeoutId) =>
+        clearTimeout(timeoutId)
+      );
+      pendingTimeoutsRef.current.clear();
+    };
+  }, []);
 
   // WebSocket Handlers
   const handleWebSocketMessage = useCallback((response: any) => {
@@ -108,25 +185,35 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
         // 1. Update Messages if belongs to current chat
         // Use ref to get current selectedChatId
         if (normalized.chatId === selectedChatIdRef.current) {
+          let matchedTempId: string | null = null;
+
           setMessages((prev) => {
-            // Check logic for optimistic replacement
-            const index = prev.findIndex(m =>
-              m.status === 'sending' &&
-              m.content === normalized.content &&
-              m.chatId === normalized.chatId
-            );
+            const normalizedContent = normalized.content ?? "";
+            const hasImage = Boolean(normalized.image);
+
+            const index = prev.findIndex((m) => {
+              if (m.chatId !== normalized.chatId) return false;
+              if (m.status !== "sending" && m.status !== "failed") return false;
+              const messageContent = m.content ?? "";
+              if (messageContent !== normalizedContent) return false;
+              if (hasImage && !(m.image || m.localImagePreview)) return false;
+              return true;
+            });
 
             if (index !== -1) {
+              matchedTempId = prev[index]._id ?? null;
               const newMessages = [...prev];
-              newMessages[index] = normalized;
+              newMessages[index] = { ...normalized, status: "sent" };
               return newMessages;
             }
 
             // Avoid duplicates if already exists (via ID)
-            if (prev.some(m => m._id === normalized._id)) return prev;
+            if (prev.some((m) => m._id === normalized._id)) return prev;
 
             return [...prev, normalized];
           });
+
+          if (matchedTempId) clearSendTimeout(matchedTempId);
         }
 
         // 2. Update Chat List (Last Message)
@@ -427,33 +514,104 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     [currentUser?._id, demo]
   );
 
-  // Send message
-  const sendMessage = useCallback(
-    async (payload: CreateMessagePayload): Promise<MessageType | null> => {
-      if (!currentUser?._id || !selectedChatId) return null;
+  const sendMessageInternal = useCallback(
+    async (
+      payload: CreateMessagePayload,
+      options?: { existingMessage?: MessageType }
+    ): Promise<MessageType | null> => {
+      if (!currentUser?._id) return null;
+      const chatId = payload.chatId || selectedChatId;
+      if (!chatId) return null;
 
-      // Create optimistic message
+      const trimmedContent = payload.content?.trim();
+      const hasImage = Boolean(
+        payload.image ||
+          payload.imageFile ||
+          payload.localImagePreview ||
+          options?.existingMessage?.image ||
+          options?.existingMessage?.localImagePreview
+      );
+      if (!trimmedContent && !hasImage) return null;
+      const replyTo =
+        options?.existingMessage?.replyTo ||
+        (payload.replyToId
+          ? messagesRef.current.find(
+              (msg) => String(msg._id) === String(payload.replyToId)
+            )
+          : undefined);
+
+      const optimisticId =
+        options?.existingMessage?._id ??
+        `temp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const createdAt = options?.existingMessage?.createdAt ?? new Date().toISOString();
+      const updatedAt = new Date().toISOString();
+
       const optimisticMessage: MessageType = {
-        _id: `temp_${Date.now()}`,
-        content: payload.content || "",
+        _id: optimisticId,
+        content: trimmedContent,
         image: payload.image || undefined,
+        localImagePreview:
+          payload.localImagePreview || options?.existingMessage?.localImagePreview,
+        localImageFile: payload.imageFile || options?.existingMessage?.localImageFile,
         sender: currentUser as UserType,
-        chatId: selectedChatId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        chatId,
+        replyTo,
+        createdAt,
+        updatedAt,
         status: "sending",
+        errorMessage: undefined,
       };
 
-      setMessages((prev) => [...prev, optimisticMessage]);
+      if (options?.existingMessage) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === optimisticId
+              ? { ...msg, ...optimisticMessage, status: "sending", errorMessage: undefined }
+              : msg
+          )
+        );
+      } else {
+        setMessages((prev) => [...prev, optimisticMessage]);
+      }
+
+      scheduleSendTimeout(optimisticId);
       setIsSendingMessage(true);
 
       try {
         if (demo) {
-           // ... demo logic ...
-           return optimisticMessage;
+          clearSendTimeout(optimisticId);
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === optimisticId ? { ...optimisticMessage, status: "sent" } : msg
+            )
+          );
+          return optimisticMessage;
         }
 
-        const sentMessage = await chatAPI.sendMessage(payload);
+        let uploadedImageUrl = payload.image;
+        if (!uploadedImageUrl && optimisticMessage.localImageFile) {
+          uploadedImageUrl = await withTimeout(
+            chatAPI.uploadChatImage(optimisticMessage.localImageFile),
+            SEND_TIMEOUT_MS,
+            "Hết thời gian tải ảnh. Vui lòng thử lại."
+          );
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === optimisticId ? { ...msg, image: uploadedImageUrl } : msg
+            )
+          );
+        }
+
+        const sentMessage = await withTimeout(
+          chatAPI.sendMessage({
+            ...payload,
+            chatId,
+            content: trimmedContent,
+            image: uploadedImageUrl,
+          }),
+          SEND_TIMEOUT_MS,
+          "Hết thời gian gửi tin nhắn. Vui lòng thử lại."
+        );
 
         // If handled via WS (returnValue is null), we keep the optimistic message.
         // It will be replaced when the broadcast is received.
@@ -461,45 +619,75 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
           return optimisticMessage;
         }
 
-        // Replace optimistic message with real message
+        clearSendTimeout(optimisticId);
         setMessages((prev) =>
           prev.map((msg) =>
-            msg._id === optimisticMessage._id ? { ...sentMessage, status: "sent" } : msg
+            msg._id === optimisticId ? { ...sentMessage, status: "sent" } : msg
           )
         );
 
         // Update Chat List (Last Message) manually for REST
         setChats((prevChats) => {
-            const chatIndex = prevChats.findIndex(c => c._id === selectedChatId);
-            if (chatIndex !== -1) {
-              const newChats = [...prevChats];
-              // Update last message
-              newChats[chatIndex] = { 
-                ...newChats[chatIndex], 
-                lastMessage: sentMessage,
-                updatedAt: sentMessage.createdAt 
-              };
-              // Move to top
-              const updatedChat = newChats[chatIndex];
-              newChats.splice(chatIndex, 1);
-              newChats.unshift(updatedChat);
-              return newChats;
-            }
-            return prevChats;
+          const chatIndex = prevChats.findIndex((c) => c._id === chatId);
+          if (chatIndex !== -1) {
+            const newChats = [...prevChats];
+            newChats[chatIndex] = {
+              ...newChats[chatIndex],
+              lastMessage: sentMessage,
+              updatedAt: sentMessage.createdAt,
+            };
+            const updatedChat = newChats[chatIndex];
+            newChats.splice(chatIndex, 1);
+            newChats.unshift(updatedChat);
+            return newChats;
+          }
+          return prevChats;
         });
 
         return sentMessage;
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : "Failed to send message";
+        const errorMsg =
+          error instanceof Error && error.message.includes("thời gian")
+            ? error.message
+            : "Gửi tin nhắn thất bại";
         console.error("Failed to send message:", errorMsg);
-        // Mark message as failed
-        setMessages((prev) => prev.map((msg) => (msg._id === optimisticMessage._id ? { ...msg, status: "failed" } : msg)));
+        markMessageFailed(optimisticId, errorMsg);
         return null;
       } finally {
         setIsSendingMessage(false);
       }
     },
-    [currentUser?._id, selectedChatId, demo]
+    [
+      currentUser?._id,
+      selectedChatId,
+      demo,
+      scheduleSendTimeout,
+      clearSendTimeout,
+      markMessageFailed,
+    ]
+  );
+
+  const sendMessage = useCallback(
+    async (payload: CreateMessagePayload) => sendMessageInternal(payload),
+    [sendMessageInternal]
+  );
+
+  const retryMessage = useCallback(
+    async (message: MessageType) => {
+      if (!message.chatId) return;
+      await sendMessageInternal(
+        {
+          chatId: message.chatId,
+          content: message.content,
+          image: message.image,
+          imageFile: message.localImageFile,
+          localImagePreview: message.localImagePreview,
+          replyToId: message.replyTo?._id,
+        },
+        { existingMessage: message }
+      );
+    },
+    [sendMessageInternal]
   );
 
   // Fetch chats on mount (Polling for chats list retained as per typical requirements for "Other chats updated")
@@ -529,6 +717,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     selectChat,
     createChat,
     sendMessage,
+    retryMessage,
     refreshMessages,
   };
 

@@ -19,6 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
 import { createGroup } from '@/services/groupService';
 import Image from 'next/image';
+import PageHeader from '@/components/page-header';
 
 export default function CreateGroupPage() {
   const router = useRouter();
@@ -109,24 +110,20 @@ export default function CreateGroupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background">
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 via-pink-50 to-white">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-6"
-        >
+        <Button variant="ghost" onClick={() => router.back()} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Quay lại
         </Button>
 
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-orange-500 text-white mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 text-white mb-4 shadow-lg">
             <Users className="h-8 w-8" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-orange-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
             Tạo hội nhóm mới
           </h1>
           <p className="text-muted-foreground mt-2">
@@ -134,9 +131,8 @@ export default function CreateGroupPage() {
           </p>
         </div>
 
-        {/* Form Card */}
         <form onSubmit={handleSubmit}>
-          <Card className="border-primary/20 shadow-lg">
+          <Card className="border-orange-100 shadow-xl">
             <CardHeader className="bg-gradient-to-r from-primary/10 via-orange-500/10 to-primary/10 border-b">
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />

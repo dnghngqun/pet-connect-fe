@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Minus, Send, Paperclip, Loader2, Maximize2 } from "lucide-react";
+import { X, Minus, Send, Paperclip, Loader2, Maximize2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
@@ -15,6 +15,23 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+const SEND_TIMEOUT_MS = 30000;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  timeoutMessage: string
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(timeoutMessage)), ms);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
+}
+
 interface MiniChatWindowProps {
   chat: MiniChatItem;
   index: number;
@@ -27,12 +44,18 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [currentChat, setCurrentChat] = useState<ChatType | null>(null);
+  const lastSendRef = useRef<{ signature: string; time: number }>({
+    signature: "",
+    time: 0,
+  });
+  const pendingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
 
   // Calculate position from right
   const rightPosition = 20 + index * 340; // 340px per window (320px width + 20px gap)
@@ -47,6 +70,58 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const clearSendTimeout = useCallback((messageId: string) => {
+    const timeoutId = pendingTimeoutsRef.current.get(messageId);
+    if (timeoutId) clearTimeout(timeoutId);
+    pendingTimeoutsRef.current.delete(messageId);
+  }, []);
+
+  const markMessageFailed = useCallback(
+    (messageId: string, errorMessage: string) => {
+      clearSendTimeout(messageId);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === messageId && msg.status !== "sent"
+            ? { ...msg, status: "failed", errorMessage }
+            : msg
+        )
+      );
+    },
+    [clearSendTimeout]
+  );
+
+  const scheduleSendTimeout = useCallback(
+    (messageId: string) => {
+      clearSendTimeout(messageId);
+      const timeoutId = setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg._id === messageId && msg.status !== "sent"
+              ? {
+                  ...msg,
+                  status: "failed",
+                  errorMessage:
+                    "Gửi tin nhắn quá thời gian. Vui lòng thử lại.",
+                }
+              : msg
+          )
+        );
+        pendingTimeoutsRef.current.delete(messageId);
+      }, SEND_TIMEOUT_MS);
+      pendingTimeoutsRef.current.set(messageId, timeoutId);
+    },
+    [clearSendTimeout]
+  );
+
+  useEffect(() => {
+    return () => {
+      pendingTimeoutsRef.current.forEach((timeoutId) =>
+        clearTimeout(timeoutId)
+      );
+      pendingTimeoutsRef.current.clear();
+    };
+  }, []);
 
   // Create or load chat on mount
   useEffect(() => {
@@ -96,96 +171,227 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
       if (String(messageData.chatId) !== String(chatIdToListen)) return;
       
       const normalizedMsg = normalizeMessageResponse(messageData);
-      
-      // Add to messages if not already present (avoid duplicates)
+
+      let matchedTempId: string | null = null;
+
       setMessages((prev) => {
-        const exists = prev.some(
-          (m) => m._id === normalizedMsg._id || 
-                 (m._id?.startsWith('temp_') && m.content === normalizedMsg.content)
-        );
-        if (exists) {
-          // Update temp message with real one
-          return prev.map((m) =>
-            m._id?.startsWith('temp_') && m.content === normalizedMsg.content
-              ? { ...normalizedMsg, status: 'sent' }
-              : m
-          );
+        const normalizedContent = normalizedMsg.content ?? "";
+        const hasImage = Boolean(normalizedMsg.image);
+
+        const index = prev.findIndex((m) => {
+          if (m.chatId !== normalizedMsg.chatId) return false;
+          if (m.status !== "sending" && m.status !== "failed") return false;
+          const messageContent = m.content ?? "";
+          if (messageContent !== normalizedContent) return false;
+          if (hasImage && !(m.image || m.localImagePreview)) return false;
+          return true;
+        });
+
+        if (index !== -1) {
+          matchedTempId = prev[index]._id ?? null;
+          const newMessages = [...prev];
+          newMessages[index] = { ...normalizedMsg, status: "sent" };
+          return newMessages;
         }
+
+        if (prev.some((m) => m._id === normalizedMsg._id)) return prev;
+
         return [...prev, normalizedMsg];
       });
+
+      if (matchedTempId) clearSendTimeout(matchedTempId);
     };
 
     const cleanup = chatAPI.addMessageListener(handleNewMessage);
     return cleanup;
-  }, [chat.chatId, currentChat?._id]);
+  }, [chat.chatId, currentChat?._id, clearSendTimeout]);
 
-  const handleSend = useCallback(async () => {
-    const messageContent = content.trim();
-    // Prioritize context chat ID, then currentChat state
-    let chatIdToUse = chat.chatId;
-    if (!chatIdToUse && currentChat) {
-         chatIdToUse = currentChat._id || (currentChat.id ? String(currentChat.id) : null);
-    }
-    
-    if (!messageContent || !chatIdToUse || chatIdToUse === "undefined") {
-        console.error("Cannot send message: missing chat ID", { chat, currentChat });
+  const sendMessageWithOptimistic = useCallback(
+    async ({
+      content: rawContent,
+      imageFile,
+      imagePreview,
+      existingMessage,
+    }: {
+      content?: string;
+      imageFile?: File | null;
+      imagePreview?: string | null;
+      existingMessage?: MessageType;
+    }) => {
+      const messageContent = rawContent?.trim() ?? "";
+      let chatIdToUse = existingMessage?.chatId || chat.chatId;
+      if (!chatIdToUse && currentChat) {
+        chatIdToUse =
+          currentChat._id || (currentChat.id ? String(currentChat.id) : null);
+      }
+
+      const hasImage = Boolean(
+        imageFile ||
+          imagePreview ||
+          existingMessage?.image ||
+          existingMessage?.localImagePreview
+      );
+
+      if (
+        (!messageContent && !hasImage) ||
+        !chatIdToUse ||
+        chatIdToUse === "undefined"
+      ) {
+        console.error("Cannot send message: missing chat ID", {
+          chat,
+          currentChat,
+        });
         return;
-    }
-    if (isSending) return;
+      }
 
-    const optimisticMessage: MessageType = {
-      _id: `temp_${Date.now()}`,
-      content: messageContent,
-      sender: {
-        _id: user?._id || "",
-        name: user?.name || "",
-        email: user?.email || "",
-      },
-      chatId: chatIdToUse,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: "sending",
-    };
-
-    setMessages((prev) => [...prev, optimisticMessage]);
-    setContent("");
-    setIsSending(true);
-
-    try {
-      const sentMessage = await chatAPI.sendMessage({
+      const optimisticId =
+        existingMessage?._id ??
+        `temp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const optimisticMessage: MessageType = {
+        _id: optimisticId,
+        content: messageContent || undefined,
+        image: existingMessage?.image,
+        localImagePreview: imagePreview || existingMessage?.localImagePreview,
+        localImageFile: imageFile || existingMessage?.localImageFile,
+        sender: {
+          _id: user?._id || "",
+          name: user?.name || "",
+          email: user?.email || "",
+        },
         chatId: chatIdToUse,
-        content: messageContent,
-      });
+        createdAt: existingMessage?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        status: "sending",
+        errorMessage: undefined,
+      };
 
-      if (sentMessage) {
+      if (existingMessage) {
         setMessages((prev) =>
           prev.map((m) =>
-            m._id === optimisticMessage._id
-              ? { ...sentMessage, status: "sent" }
+            m._id === optimisticId
+              ? { ...m, ...optimisticMessage, status: "sending", errorMessage: undefined }
               : m
           )
         );
       } else {
-        // WebSocket handled it - mark as sent
-        setMessages((prev) =>
-          prev.map((m) =>
-            m._id === optimisticMessage._id
-              ? { ...m, status: "sent" }
-              : m
-          )
-        );
+        setMessages((prev) => [...prev, optimisticMessage]);
       }
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      setMessages((prev) =>
-        prev.map((m) =>
-          m._id === optimisticMessage._id ? { ...m, status: "failed" } : m
-        )
-      );
-    } finally {
-      setIsSending(false);
+
+      scheduleSendTimeout(optimisticId);
+
+      try {
+        let uploadedImageUrl = existingMessage?.image;
+        const fileToUpload =
+          imageFile || existingMessage?.localImageFile || null;
+
+        if (!uploadedImageUrl && fileToUpload) {
+          uploadedImageUrl = await withTimeout(
+            chatAPI.uploadChatImage(fileToUpload),
+            SEND_TIMEOUT_MS,
+            "Hết thời gian tải ảnh. Vui lòng thử lại."
+          );
+          setMessages((prev) =>
+            prev.map((m) =>
+              m._id === optimisticId ? { ...m, image: uploadedImageUrl } : m
+            )
+          );
+        }
+
+        const sentMessage = await withTimeout(
+          chatAPI.sendMessage({
+            chatId: chatIdToUse,
+            content: messageContent || undefined,
+            image: uploadedImageUrl,
+          }),
+          SEND_TIMEOUT_MS,
+          "Hết thời gian gửi tin nhắn. Vui lòng thử lại."
+        );
+
+        if (sentMessage) {
+          clearSendTimeout(optimisticId);
+          setMessages((prev) =>
+            prev.map((m) =>
+              m._id === optimisticId ? { ...sentMessage, status: "sent" } : m
+            )
+          );
+        }
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error && error.message.includes("thời gian")
+            ? error.message
+            : "Gửi tin nhắn thất bại";
+        console.error("Failed to send message:", errorMsg);
+        markMessageFailed(optimisticId, errorMsg);
+      }
+    },
+    [
+      chat,
+      chat.chatId,
+      currentChat,
+      user,
+      scheduleSendTimeout,
+      clearSendTimeout,
+      markMessageFailed,
+    ]
+  );
+
+  const handleSend = useCallback(() => {
+    const messageContent = content.trim();
+    if (!messageContent && !pendingImageFile && !pendingImagePreview) return;
+    const chatIdReady = Boolean(
+      chat.chatId || currentChat?._id || currentChat?.id
+    );
+    if (!chatIdReady) {
+      console.error("Cannot send message: missing chat ID", {
+        chat,
+        currentChat,
+      });
+      return;
     }
-  }, [content, chat.chatId, currentChat, user, isSending]);
+    const signature = `${messageContent}::${pendingImageFile?.name ?? ""}::${
+      pendingImageFile?.size ?? ""
+    }`;
+    const now = Date.now();
+    if (
+      signature === lastSendRef.current.signature &&
+      now - lastSendRef.current.time < 500
+    ) {
+      return;
+    }
+    lastSendRef.current = { signature, time: now };
+
+    void sendMessageWithOptimistic({
+      content: messageContent,
+      imageFile: pendingImageFile,
+      imagePreview: pendingImagePreview,
+    });
+
+    setContent("");
+    setPendingImageFile(null);
+    setPendingImagePreview(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = "";
+    }
+  }, [
+    content,
+    pendingImageFile,
+    pendingImagePreview,
+    sendMessageWithOptimistic,
+    chat,
+    currentChat,
+  ]);
+
+  const handleRetryMessage = useCallback(
+    (message: MessageType) => {
+      void sendMessageWithOptimistic({
+        content: message.content || "",
+        imageFile: message.localImageFile || null,
+        imagePreview: message.localImagePreview || null,
+        existingMessage: message,
+      });
+    },
+    [sendMessageWithOptimistic]
+  );
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -275,37 +481,80 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
             Bắt đầu cuộc trò chuyện!
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message._id}
-              className={cn(
-                "flex",
-                isCurrentUser(message) ? "justify-end" : "justify-start"
-              )}
-            >
+          messages.map((message) => {
+            const mine = isCurrentUser(message);
+            const imageSrc = message.image || message.localImagePreview;
+            const isLocalImage =
+              imageSrc?.startsWith("data:") || imageSrc?.startsWith("blob:");
+
+            return (
               <div
-                className={cn(
-                  "max-w-[80%] px-3 py-2 rounded-2xl text-sm",
-                  isCurrentUser(message)
-                    ? "bg-blue-500 text-white rounded-br-sm"
-                    : "bg-white text-gray-900 border rounded-bl-sm",
-                  message.status === "sending" && "opacity-60",
-                  message.status === "failed" && "bg-red-100 text-red-600"
-                )}
+                key={message._id}
+                className={cn("flex flex-col", mine ? "items-end" : "items-start")}
               >
-                <p>{message.content}</p>
-                {message.image && (
-                  <Image
-                    src={message.image}
-                    alt="Attached"
-                    width={200}
-                    height={150}
-                    className="rounded mt-1"
-                  />
+                <div
+                  className={cn(
+                    "max-w-[80%] px-3 py-2 rounded-2xl text-sm",
+                    mine
+                      ? "bg-blue-500 text-white rounded-br-sm"
+                      : "bg-white text-gray-900 border rounded-bl-sm",
+                    message.status === "sending" && "opacity-70",
+                    message.status === "failed" && "border border-red-500"
+                  )}
+                >
+                  {message.content && <p>{message.content}</p>}
+                  {imageSrc && (
+                    <div className="mt-1">
+                      {isLocalImage ? (
+                        <img
+                          src={imageSrc}
+                          alt="Attached"
+                          className="rounded"
+                        />
+                      ) : (
+                        <Image
+                          src={imageSrc}
+                          alt="Attached"
+                          width={200}
+                          height={150}
+                          className="rounded"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-1 flex items-center gap-2 text-[11px] text-gray-500">
+                  <span>
+                    {formatDistanceToNow(new Date(message.createdAt), {
+                      addSuffix: true,
+                      locale: vi,
+                    })}
+                  </span>
+                  {mine && message.status === "sending" && (
+                    <span>Đang gửi...</span>
+                  )}
+                  {mine && message.status === "sent" && (
+                    <span className="text-green-600">Đã gửi</span>
+                  )}
+                </div>
+                {message.status === "failed" && (
+                  <div className="mt-1 flex items-center gap-2 text-[11px] text-red-500">
+                    <span>{message.errorMessage || "Gửi tin nhắn thất bại"}</span>
+                    {mine && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-red-500"
+                        onClick={() => handleRetryMessage(message)}
+                      >
+                        <RefreshCcw className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -313,17 +562,23 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
       {/* Footer */}
       <div className="p-2 border-t bg-white">
         {/* Image preview */}
-        {pendingImage && (
+        {pendingImagePreview && (
           <div className="mb-2 relative inline-block">
             <Image
-              src={pendingImage}
+              src={pendingImagePreview}
               alt="Preview"
               width={80}
               height={60}
               className="rounded object-cover"
             />
             <button
-              onClick={() => setPendingImage(null)}
+              onClick={() => {
+                setPendingImageFile(null);
+                setPendingImagePreview(null);
+                if (imageInputRef.current) {
+                  imageInputRef.current.value = "";
+                }
+              }}
               className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
             >
               ×
@@ -337,7 +592,7 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={async (e) => {
+            onChange={(e) => {
               const file = e.target.files?.[0];
               if (!file) return;
               
@@ -345,18 +600,14 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
                 console.error('Only image files are allowed');
                 return;
               }
-              
-              setIsUploadingImage(true);
-              try {
-                const imageUrl = await chatAPI.uploadChatImage(file);
-                setPendingImage(imageUrl);
-              } catch (error) {
-                console.error('Failed to upload image:', error);
-              } finally {
-                setIsUploadingImage(false);
-                if (imageInputRef.current) {
-                  imageInputRef.current.value = '';
-                }
+
+              setPendingImageFile(file);
+              const reader = new FileReader();
+              reader.onloadend = () =>
+                setPendingImagePreview(reader.result as string);
+              reader.readAsDataURL(file);
+              if (imageInputRef.current) {
+                imageInputRef.current.value = "";
               }
             }}
           />
@@ -367,13 +618,9 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
             size="icon"
             className="h-9 w-9 rounded-full shrink-0"
             onClick={() => imageInputRef.current?.click()}
-            disabled={isUploadingImage || isLoading || (!chat.chatId && !currentChat)}
+            disabled={isLoading || (!chat.chatId && !currentChat)}
           >
-            {isUploadingImage ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Paperclip className="h-4 w-4" />
-            )}
+            <Paperclip className="h-4 w-4" />
           </Button>
           
           <Input
@@ -381,81 +628,18 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyPress={handleKeyPress}
-            disabled={isSending || isLoading || (!chat.chatId && !currentChat)}
+            disabled={isLoading || (!chat.chatId && !currentChat)}
             className="flex-1 h-9 rounded-full text-sm"
           />
           <Button
             size="icon"
             className="h-9 w-9 rounded-full"
-            onClick={async () => {
-              // Modified send to include image
-              const messageContent = content.trim();
-              let chatIdToUse = chat.chatId;
-              if (!chatIdToUse && currentChat) {
-                chatIdToUse = currentChat._id || (currentChat.id ? String(currentChat.id) : null);
-              }
-              
-              if ((!messageContent && !pendingImage) || !chatIdToUse || chatIdToUse === "undefined") {
-                return;
-              }
-              if (isSending) return;
-
-              const optimisticMessage: MessageType = {
-                _id: `temp_${Date.now()}`,
-                content: messageContent,
-                image: pendingImage || undefined,
-                sender: {
-                  _id: user?._id || "",
-                  name: user?.name || "",
-                  email: user?.email || "",
-                },
-                chatId: chatIdToUse,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                status: "sending",
-              };
-
-              setMessages((prev) => [...prev, optimisticMessage]);
-              setContent("");
-              setPendingImage(null);
-              setIsSending(true);
-
-              try {
-                const sentMessage = await chatAPI.sendMessage({
-                  chatId: chatIdToUse,
-                  content: messageContent || '',
-                  image: pendingImage || undefined,
-                });
-
-                if (sentMessage) {
-                  setMessages((prev) =>
-                    prev.map((m) =>
-                      m._id === optimisticMessage._id
-                        ? { ...sentMessage, status: "sent" }
-                        : m
-                    )
-                  );
-                } else {
-                  setMessages((prev) =>
-                    prev.map((m) =>
-                      m._id === optimisticMessage._id
-                        ? { ...m, status: "sent" }
-                        : m
-                    )
-                  );
-                }
-              } catch (error) {
-                console.error("Failed to send message:", error);
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m._id === optimisticMessage._id ? { ...m, status: "failed" } : m
-                  )
-                );
-              } finally {
-                setIsSending(false);
-              }
-            }}
-            disabled={isSending || (!content.trim() && !pendingImage) || isLoading || (!chat.chatId && !currentChat)}
+            onClick={handleSend}
+            disabled={
+              isLoading ||
+              (!chat.chatId && !currentChat) ||
+              (!content.trim() && !pendingImageFile && !pendingImagePreview)
+            }
           >
             <Send className="h-4 w-4" />
           </Button>

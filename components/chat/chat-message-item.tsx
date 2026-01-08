@@ -5,7 +5,7 @@ import { useChat } from "@/hooks/useChat";
 import type { MessageType } from "@/lib/chat.types";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Reply, MoreVertical, RotateCcw } from "lucide-react";
+import { Reply, MoreVertical, RotateCcw, RefreshCcw } from "lucide-react";
 import Image from "next/image";
 import { chatAPI } from "@/services/chatService";
 import {
@@ -23,11 +23,12 @@ interface Props {
 }
 
 export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
-  const { currentUser } = useChat();
+  const { currentUser, retryMessage } = useChat();
   const [isRecalling, setIsRecalling] = useState(false);
   
   // Compare as strings to handle number/string ID mismatch
   const isCurrentUser = String(currentUser?._id) === String(message.sender._id);
+  const isTempMessage = message._id?.startsWith("temp_");
   
   // Check if message is within 5 minutes (can recall)
   const messageTime = new Date(message.createdAt).getTime();
@@ -35,11 +36,22 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
   const fiveMinutesMs = 5 * 60 * 1000;
   const isWithin5Minutes = (now - messageTime) <= fiveMinutesMs;
   
-  const canRecall = isCurrentUser && !message.isRecalled && message.status !== "sending" && isWithin5Minutes;
+  const canRecall =
+    isCurrentUser &&
+    !isTempMessage &&
+    !message.isRecalled &&
+    message.status !== "sending" &&
+    message.status !== "failed" &&
+    isWithin5Minutes;
   const canReply = onReply && !message.isRecalled && message.status !== "sending";
+  const canRetry = isCurrentUser && message.status === "failed";
 
   // Show dropdown only if there are options
   const hasDropdownOptions = canRecall || canReply;
+
+  const imageSrc = message.image || message.localImagePreview;
+  const isLocalImage =
+    imageSrc?.startsWith("data:") || imageSrc?.startsWith("blob:");
 
   const handleRecall = async () => {
     if (!message._id || isRecalling) return;
@@ -58,6 +70,12 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
   const handleReply = () => {
     if (onReply && !message.isRecalled) {
       onReply(message);
+    }
+  };
+
+  const handleRetry = () => {
+    if (canRetry) {
+      retryMessage(message);
     }
   };
 
@@ -96,6 +114,16 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
         )}
 
         <div className="flex items-center gap-1">
+          {canRetry && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-red-500"
+              onClick={handleRetry}
+            >
+              <RefreshCcw className="h-4 w-4" />
+            </Button>
+          )}
           {/* Actions menu - shown on hover */}
           {hasDropdownOptions && (
             <DropdownMenu>
@@ -130,6 +158,8 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
               isCurrentUser
                 ? "bg-blue-500 text-white rounded-br-none"
                 : "bg-gray-200 text-gray-900 rounded-bl-none"
+            } ${message.status === "sending" ? "opacity-70" : ""} ${
+              message.status === "failed" ? "border border-red-500" : ""
             }`}
           >
             {message.replyTo && (
@@ -139,15 +169,23 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
               </div>
             )}
 
-            {message.image && (
+            {imageSrc && (
               <div className="mb-2">
-                <Image
-                  src={message.image}
-                  alt="Message image"
-                  width={200}
-                  height={200}
-                  className="rounded max-h-64"
-                />
+                {isLocalImage ? (
+                  <img
+                    src={imageSrc}
+                    alt="Message image"
+                    className="rounded max-h-64"
+                  />
+                ) : (
+                  <Image
+                    src={imageSrc}
+                    alt="Message image"
+                    width={200}
+                    height={200}
+                    className="rounded max-h-64"
+                  />
+                )}
               </div>
             )}
 
@@ -164,11 +202,18 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
               locale: vi,
             })}
           </span>
-          {message.status === "sending" && <span>Đang gửi...</span>}
-          {message.status === "failed" && (
-            <span className="text-red-500">Lỗi</span>
+          {isCurrentUser && message.status === "sending" && (
+            <span>Đang gửi...</span>
+          )}
+          {isCurrentUser && message.status === "sent" && (
+            <span className="text-green-600">Đã gửi</span>
           )}
         </div>
+        {message.status === "failed" && (
+          <div className="mt-1 text-xs text-red-500">
+            {message.errorMessage || "Gửi tin nhắn thất bại"}
+          </div>
+        )}
       </div>
     </div>
   );

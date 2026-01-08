@@ -3,12 +3,11 @@
 import { useChat } from "@/hooks/useChat";
 import type { MessageType } from "@/lib/chat.types";
 import { useState, useRef } from "react";
-import { Send, Paperclip, X, Loader2 } from "lucide-react";
+import { Send, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { toast } from "@/components/ui/use-toast";
-import { chatAPI } from "@/services/chatService";
 
 interface Props {
   onReplyCancel?: () => void;
@@ -16,12 +15,15 @@ interface Props {
 }
 
 export function ChatFooter({ onReplyCancel, replyTo }: Props) {
-  const { sendMessage, isSendingMessage, selectedChatId } = useChat();
+  const { sendMessage, selectedChatId } = useChat();
   const [content, setContent] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const lastSendRef = useRef<{ signature: string; time: number }>({
+    signature: "",
+    time: 0,
+  });
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,33 +55,26 @@ export function ChatFooter({ onReplyCancel, replyTo }: Props) {
 
   const handleSend = async () => {
     if (!selectedChatId) return;
-    if (!content.trim() && !imageFile) return;
-    if (isSendingMessage || isUploading) return;
+    const trimmedContent = content.trim();
+    if (!trimmedContent && !imageFile) return;
 
-    let uploadedImageUrl: string | undefined = undefined;
-
-    // Upload image first if exists
-    if (imageFile) {
-      setIsUploading(true);
-      try {
-        uploadedImageUrl = await chatAPI.uploadChatImage(imageFile);
-      } catch (error) {
-        console.error("Failed to upload image:", error);
-        toast({
-          title: "Upload ảnh thất bại",
-          description: "Vui lòng thử lại",
-          variant: "destructive",
-        });
-        setIsUploading(false);
-        return;
-      }
-      setIsUploading(false);
+    const signature = `${trimmedContent}::${imageFile?.name ?? ""}::${
+      imageFile?.size ?? ""
+    }::${replyTo?._id ?? ""}`;
+    const now = Date.now();
+    if (
+      signature === lastSendRef.current.signature &&
+      now - lastSendRef.current.time < 500
+    ) {
+      return;
     }
+    lastSendRef.current = { signature, time: now };
 
-    await sendMessage({
+    void sendMessage({
       chatId: selectedChatId,
-      content: content.trim() || undefined,
-      image: uploadedImageUrl,
+      content: trimmedContent || undefined,
+      imageFile: imageFile || undefined,
+      localImagePreview: imagePreview || undefined,
       replyToId: replyTo?._id,
     });
 
@@ -94,8 +89,6 @@ export function ChatFooter({ onReplyCancel, replyTo }: Props) {
       handleSend();
     }
   };
-
-  const isBusy = isSendingMessage || isUploading;
 
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10 border-t border-white/20 bg-white/60 backdrop-blur-md p-4 space-y-3">
@@ -144,7 +137,7 @@ export function ChatFooter({ onReplyCancel, replyTo }: Props) {
           size="icon"
           variant="outline"
           onClick={() => imageInputRef.current?.click()}
-          disabled={isBusy}
+          disabled={!selectedChatId}
         >
           <Paperclip className="w-4 h-4" />
         </Button>
@@ -153,18 +146,14 @@ export function ChatFooter({ onReplyCancel, replyTo }: Props) {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyPress={handleKeyPress}
-          disabled={isBusy}
+          disabled={!selectedChatId}
         />
         <Button
           size="icon"
           onClick={handleSend}
-          disabled={isBusy || (!content.trim() && !imageFile)}
+          disabled={!selectedChatId || (!content.trim() && !imageFile)}
         >
-          {isUploading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
+          <Send className="w-4 h-4" />
         </Button>
       </div>
     </div>

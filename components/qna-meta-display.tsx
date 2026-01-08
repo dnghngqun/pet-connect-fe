@@ -63,7 +63,7 @@ export default function QnaMetaDisplay({
               📚 {topic}
             </Badge>
           )}
-          {difficulty && (
+          {difficulty && difficultyConfig[difficulty] && (
             <Badge variant="outline" className={`border ${difficultyConfig[difficulty].color}`}>
               {difficultyConfig[difficulty].label}
             </Badge>

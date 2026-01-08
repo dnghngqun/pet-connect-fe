@@ -51,6 +51,18 @@ apiClient.interceptors.response.use(
         
         // Nếu 401 và chưa thử refresh
         if (error.response?.status === 401 && !originalRequest._retry) {
+            // Check if user is logged in first
+            const userStr = localStorage.getItem(STORAGE_KEY);
+            
+            // If no user data, don't attempt refresh - just redirect to login
+            if (!userStr) {
+                if (!window.location.pathname.includes('/sign-in') && 
+                    !window.location.pathname.includes('/sign-up')) {
+                    window.location.href = '/sign-in';
+                }
+                return Promise.reject(error);
+            }
+            
             // Nếu đang refresh, queue request này lại
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
@@ -65,9 +77,6 @@ apiClient.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const userStr = localStorage.getItem(STORAGE_KEY);
-                if (!userStr) throw new Error('No user data');
-                
                 const user = JSON.parse(userStr);
                 const refreshToken = user?.refreshToken;
                 
@@ -78,11 +87,16 @@ apiClient.interceptors.response.use(
                     refreshToken
                 });
 
-                // Lấy access token mới
-                const newAccessToken = response.data.accessToken;
+                // Get tokens from ResponseDTO structure
+                const { data } = response.data;
+                const newAccessToken = data.accessToken || data.token;
+                const newRefreshToken = data.refreshToken;
                 
                 // Cập nhật localStorage
                 user.token = newAccessToken;
+                if (newRefreshToken) {
+                    user.refreshToken = newRefreshToken;
+                }
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
 
                 // Process các request đang chờ
@@ -96,7 +110,9 @@ apiClient.interceptors.response.use(
                 processQueue(refreshError, null);
                 // Refresh thất bại -> logout
                 localStorage.removeItem(STORAGE_KEY);
-                window.location.href = '/sign-in';
+                if (!window.location.pathname.includes('/sign-in')) {
+                    window.location.href = '/sign-in';
+                }
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

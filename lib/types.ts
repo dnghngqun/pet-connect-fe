@@ -44,6 +44,7 @@ export interface PetPost {
   slug: string
   description: string
   image: string
+  images?: string[] // List of all images
   petType: string
   status: "lost" | "found" | "for-adoption" | "rescue" | "general"
   postType?: string
@@ -139,15 +140,17 @@ export interface RescueCenter {
 }
 
 export interface Notification {
-  id: string
-  userId: string
-  type: "pet-found" | "pet-lost" | "rescue-update" | "nearby-pets"
+  id: number
+  type: string
   title: string
-  message: string
-  relatedPostId?: string
-  read: boolean
+  content: string
+  link?: string
+  isRead: boolean
   createdAt: string
-  actionUrl?: string
+  fromUserId?: number
+  fromUserName?: string
+  fromUserAvatar?: string
+  postId?: number
 }
 
 export interface Order {

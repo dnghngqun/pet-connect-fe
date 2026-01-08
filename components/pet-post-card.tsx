@@ -38,9 +38,11 @@ interface PetPostCardProps {
   post: PetPost;
   onFavoriteToggle?: (postId: string, isFavorited: boolean) => void;
   onPostClick?: (post: PetPost) => void;
+  onEditClick?: (post: PetPost) => void;
+  onDeleteClick?: (post: PetPost) => void;
 }
 
-export default function PetPostCard({ post, onFavoriteToggle, onPostClick }: PetPostCardProps) {
+export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEditClick, onDeleteClick }: PetPostCardProps) {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reactionCount, setReactionCount] = useState(post.reactionCount || 0);
   const [favoriteCount, setFavoriteCount] = useState(post.favoriteCount || 0);
@@ -173,6 +175,36 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick }: Pet
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              {(user?.id?.toString() === post.postedBy?.id?.toString() || user?._id?.toString() === post.postedBy?.id?.toString()) && (
+                <>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onEditClick?.(post);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <span className="flex items-center">
+                      <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                      Sửa bài đăng
+                    </span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDeleteClick?.(post);
+                    }}
+                    className="text-red-600 cursor-pointer"
+                  >
+                    <span className="flex items-center">
+                      <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                      Xóa bài đăng
+                    </span>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuItem
                 onClick={(e) => {
                   e.preventDefault();
@@ -219,26 +251,124 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick }: Pet
             </div>
           </div>
 
-          {/* Image */}
+          {/* Images Grid - Facebook Style */}
           <div className="relative bg-muted">
-            <Image
-              src={post.image || '/placeholder.svg'}
-              alt={post.title}
-              width={600}
-              height={400}
-              className="w-full aspect-[4/3] object-cover"
-            />
-            <Badge className={`${statusConf.color} absolute top-3 left-3`}>
+            {(() => {
+              const images = post.images && post.images.length > 0 ? post.images : (post.image ? [post.image] : []);
+              const count = images.length;
+
+              if (count === 0) {
+                 return (
+                   <div className="w-full aspect-[4/3] flex items-center justify-center bg-gray-100">
+                     <Image src="/placeholder.svg" alt="Placeholder" width={600} height={400} className="w-full h-full object-cover opacity-50" />
+                   </div>
+                 );
+              }
+
+              // 1 Image
+              if (count === 1) {
+                return (
+                  <Image
+                    src={images[0]}
+                    alt={post.title}
+                    width={600}
+                    height={400}
+                    className="w-full aspect-[4/3] object-cover"
+                  />
+                );
+              }
+
+              // 2 Images
+              if (count === 2) {
+                return (
+                  <div className="grid grid-cols-2 gap-1 aspect-[4/3]">
+                    {images.map((img, idx) => (
+                      <div key={idx} className="relative w-full h-full">
+                         <Image src={img} alt={`${post.title} ${idx+1}`} fill className="object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
+              // 3 Images
+              if (count === 3) {
+                 return (
+                   <div className="grid grid-cols-2 gap-1 aspect-[4/3]">
+                     <div className="relative w-full h-full">
+                       <Image src={images[0]} alt={`${post.title} 1`} fill className="object-cover" />
+                     </div>
+                     <div className="grid grid-rows-2 gap-1 h-full">
+                       <div className="relative w-full h-full">
+                         <Image src={images[1]} alt={`${post.title} 2`} fill className="object-cover" />
+                       </div>
+                       <div className="relative w-full h-full">
+                         <Image src={images[2]} alt={`${post.title} 3`} fill className="object-cover" />
+                       </div>
+                     </div>
+                   </div>
+                 );
+              }
+
+              // 4 Images
+              if (count === 4) {
+                return (
+                  <div className="grid grid-cols-2 grid-rows-2 gap-1 aspect-[4/3]">
+                    {images.map((img, idx) => (
+                      <div key={idx} className="relative w-full h-full">
+                         <Image src={img} alt={`${post.title} ${idx+1}`} fill className="object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+
+              // 5+ Images
+              return (
+                <div className="grid grid-cols-2 gap-1 aspect-[4/3]">
+                  <div className="relative w-full h-full">
+                    <Image src={images[0]} alt={`${post.title} 1`} fill className="object-cover" />
+                  </div>
+                  <div className="grid grid-cols-2 grid-rows-2 gap-1 h-full">
+                    <div className="relative w-full h-full col-span-2">
+                       <Image src={images[1]} alt={`${post.title} 2`} fill className="object-cover" />
+                    </div>
+                    <div className="relative w-full h-full">
+                       <Image src={images[2]} alt={`${post.title} 3`} fill className="object-cover" />
+                    </div>
+                    <div className="relative w-full h-full">
+                       <Image src={images[3]} alt={`${post.title} 4`} fill className="object-cover" />
+                       {count > 4 && (
+                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-bold text-xl">
+                           +{count - 4}
+                         </div>
+                       )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <Badge className={`${statusConf.color} absolute top-3 left-3 z-10`}>
               {statusConf.label}
             </Badge>
           </div>
 
           {/* Meta info */}
           <div className="px-4 py-3 space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
-              <span className="line-clamp-1">{post.location || `${post.district}, ${post.city}`}</span>
-            </div>
+            {/* Location - only show if valid and not "null" */}
+            {((post.location && !post.location.includes('null')) || (post.city && !post.city.includes('null') && post.city !== 'Online')) && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <span className="line-clamp-1">
+                  {post.location && !post.location.includes('null') 
+                    ? post.location 
+                    : `${post.city && !post.city.includes('null') ? post.city : ''}${
+                        post.district && !post.district.includes('null') ? `, ${post.district}` : ''
+                      }`}
+                </span>
+              </div>
+            )}
             
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="text-xs">

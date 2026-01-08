@@ -40,7 +40,7 @@ export default function PetMascot() {
 
   return (
     <motion.div
-      className="fixed z-[9999] pointer-events-none"
+      className="fixed z-[999999999] pointer-events-none"
       animate={{
         x: position.x,
         y: position.y,

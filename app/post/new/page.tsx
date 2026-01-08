@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -33,21 +35,21 @@ import {
   Star,
   DollarSign,
   MessageSquare,
-  Info,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import petPostService from '@/services/petPostService';
-import locationService from '@/services/locationService';
 import authService from '@/services/authService';
 import ImageCropper from '@/components/image-cropper';
 
-// Step configuration
-const STEPS = [
-  { id: 1, title: 'Loại bài', icon: FileText },
-  { id: 2, title: 'Nội dung chính', icon: MessageSquare },
-  { id: 3, title: 'Thú cưng', icon: PawPrint },
-  { id: 4, title: 'Hồ sơ y tế', icon: Heart },
-  { id: 5, title: 'Hình ảnh', icon: ImageIcon },
-];
+type StepKind = 'type' | 'details' | 'pet' | 'health' | 'images';
+
+const STEP_CONFIG: Record<StepKind, { title: string; icon: LucideIcon }> = {
+  type: { title: 'Loại bài', icon: FileText },
+  details: { title: 'Nội dung', icon: MessageSquare },
+  pet: { title: 'Thú cưng', icon: PawPrint },
+  health: { title: 'Hồ sơ y tế', icon: Heart },
+  images: { title: 'Hình ảnh', icon: ImageIcon },
+};
 
 const STATUS_BY_TYPE: Record<string, { value: string; label: string }[]> = {
   LOST_FOUND: [
@@ -73,15 +75,17 @@ const PET_GENDERS = [
 
 interface NewPostPageProps {
   presetType?: string;
+  onPostCreated?: (post: any) => void;
+  onCancel?: () => void;
 }
 
-export default function NewPostPage({ presetType }: NewPostPageProps) {
+export default function NewPostPage({ presetType, onPostCreated, onCancel }: NewPostPageProps) {
   const router = useRouter();
   
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -104,7 +108,7 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
     petWeight: '',     // weight
     isNeutered: false, // is_neutered
     isVaccinated: false, // is_vaccinated
-    personality: [] as string[], // personality traits
+    petPersonality: '', // personality traits (comma separated)
     specialNeeds: '',  // special needs
     bio: '',           // bio
   });
@@ -135,24 +139,22 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
   
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
-  const [districts, setDistricts] = useState<string[]>([]);
   const [enableLocation, setEnableLocation] = useState(false);
   const [petTypes] = useState(['Chó', 'Mèo', 'Chim', 'Hamster', 'Thỏ', 'Khác']);
   const requiresPetInfo = ['LOST_FOUND', 'ADOPTION', 'BREEDING'].includes(formData.postType);
-  const shouldShowPetSteps = formData.postType === 'LOST_FOUND' || formData.postType === 'ADOPTION' || formData.postType === 'BREEDING';
+  const shouldShowPetSteps = requiresPetInfo;
   
   // Health record state (optional)
   const [healthRecord, setHealthRecord] = useState({
     notes: '',
     allergies: [] as string[],
     weight: '',
-    vaccinations: [] as Array<{ name: string; date: string; nextDueDate?: string }>,
-    medicalHistory: [] as Array<{ condition: string; treatment: string; date: string; notes?: string; weight?: string }>,
+    vaccinations: [] as Array<{ name: string; date: string }>,
+    medicalHistory: [] as Array<{ condition: string; treatment: string; date: string; notes?: string }>,
   });
   const [newAllergy, setNewAllergy] = useState('');
-  const [newVaccine, setNewVaccine] = useState({ name: '', date: '', nextDueDate: '' });
-  const [newMedical, setNewMedical] = useState({ condition: '', treatment: '', date: '', notes: '', weight: '' });
+  const [newVaccine, setNewVaccine] = useState({ name: '', date: '' });
+  const [newMedical, setNewMedical] = useState({ condition: '', treatment: '', date: '', notes: '' });
   
   // Image cropper state
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -165,21 +167,22 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
     if (presetType) {
       setFormData((prev) => ({ ...prev, postType: presetType }));
     }
-    
-    // Load cities
-    locationService.getCities()
-      .then(res => setCities(res.data || []))
-      .catch(() => setCities(['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng']));
   }, []);
   
-  useEffect(() => {
-    if (formData.city) {
-      locationService.getDistricts(formData.city)
-        .then(res => setDistricts(res.data || []))
-        .catch(() => setDistricts([]));
-      setFormData(prev => ({ ...prev, district: '' }));
+  const steps = useMemo<StepKind[]>(() => {
+    const base: StepKind[] = ['type', 'details'];
+    if (shouldShowPetSteps) {
+      base.push('pet', 'health');
     }
-  }, [formData.city]);
+    base.push('images');
+    return base;
+  }, [shouldShowPetSteps]);
+
+  useEffect(() => {
+    if (currentStep >= steps.length) {
+      setCurrentStep(Math.max(steps.length - 1, 0));
+    }
+  }, [steps, currentStep]);
 
   useEffect(() => {
     const statuses = STATUS_BY_TYPE[formData.postType];
@@ -215,15 +218,23 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
   };
   
   // Validation for each step
-  const validateStep = (step: number): boolean => {
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      router.push('/');
+    }
+  };
+
+  const validateStep = (step: StepKind): boolean => {
     switch (step) {
-      case 1:
+      case 'type':
         if (!formData.postType) {
-          toast({ title: 'Lỗi', description: 'Vui lòng chọn kiểu bài (mạng xã hội)', variant: 'destructive' });
+          toast({ title: 'Lỗi', description: 'Vui lòng chọn loại bài đăng', variant: 'destructive' });
           return false;
         }
         return true;
-      case 2: {
+      case 'details': {
         const needsLocation = requiresPetInfo || enableLocation;
         if ((formData.postType === 'LOST_FOUND' || formData.postType === 'ADOPTION') && !formData.status) {
           toast({ title: 'Lỗi', description: 'Vui lòng chọn trạng thái phù hợp với loại bài', variant: 'destructive' });
@@ -237,23 +248,20 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
           toast({ title: 'Lỗi', description: 'Vui lòng chọn loại thú cưng', variant: 'destructive' });
           return false;
         }
-        if (needsLocation && !formData.city) {
-          toast({ title: 'Lỗi', description: 'Vui lòng chọn thành phố', variant: 'destructive' });
+        if (needsLocation && !formData.city.trim()) {
+          toast({ title: 'Lỗi', description: 'Vui lòng nhập thành phố', variant: 'destructive' });
           return false;
         }
-        if (!formData.description.trim() || formData.description.length < 20) {
+        if (formData.description.trim().length < 20) {
           toast({ title: 'Lỗi', description: 'Mô tả phải có ít nhất 20 ký tự', variant: 'destructive' });
           return false;
         }
         return true;
       }
-      case 3:
-        // Pet info optional for social posts, required block already handled above
+      case 'pet':
+      case 'health':
         return true;
-      case 4:
-        // Health record is optional
-        return true;
-      case 5:
+      case 'images':
         if (imageFiles.length === 0) {
           toast({ title: 'Lỗi', description: 'Vui lòng thêm ít nhất 1 ảnh', variant: 'destructive' });
           return false;
@@ -267,22 +275,22 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
   const canGoNext = (): boolean => {
     const requiresStatus = !!STATUS_BY_TYPE[formData.postType];
     const needsLocation = requiresPetInfo || enableLocation;
-    switch (currentStep) {
-      case 1:
+    const currentKind = steps[currentStep];
+    switch (currentKind) {
+      case 'type':
         return !!formData.postType;
-      case 2:
+      case 'details':
         return !!(
-          formData.title &&
-          formData.description.length >= 20 &&
+          formData.title.trim() &&
+          formData.description.trim().length >= 20 &&
           (!requiresPetInfo || !!formData.petType) &&
-          (!needsLocation || !!formData.city) &&
+          (!needsLocation || !!formData.city.trim()) &&
           (!requiresStatus || !!formData.status)
         );
-      case 3:
-        return true; // Optional step
-      case 4:
-        return true; // Optional step (health record)
-      case 5:
+      case 'pet':
+      case 'health':
+        return true;
+      case 'images':
         return imageFiles.length > 0;
       default:
         return false;
@@ -290,27 +298,16 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
   };
   
   const goToNextStep = () => {
-    if (!validateStep(currentStep)) return;
-    if (currentStep === 2 && !shouldShowPetSteps) {
-      setCurrentStep(5);
-      return;
-    }
-    if (currentStep === 3 && !shouldShowPetSteps) {
-      setCurrentStep(5);
-      return;
-    }
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
+    const currentKind = steps[currentStep];
+    if (!validateStep(currentKind)) return;
+    if (currentStep < steps.length - 1) {
+      setCurrentStep((prev) => prev + 1);
     }
   };
   
   const goToPrevStep = () => {
-    if (currentStep === 5 && !shouldShowPetSteps) {
-      setCurrentStep(2);
-      return;
-    }
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+    if (currentStep > 0) {
+      setCurrentStep((prev) => prev - 1);
     }
   };
   
@@ -395,94 +392,113 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
     return 'GENERAL';
   };
 
+  const cleanMeta = (meta: Record<string, any>) =>
+    Object.fromEntries(
+      Object.entries(meta).filter(([, value]) => {
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'number' && Number.isNaN(value)) return false;
+        if (typeof value === 'string' && value.trim() === '') return false;
+        return true;
+      })
+    );
+
   const buildMeta = () => {
     switch (formData.postType) {
       case 'LOST_FOUND':
-        return {
+        return cleanMeta({
           lastSeenLocation: structuredMeta.lastSeenLocation,
           contact: structuredMeta.contact,
           reward: structuredMeta.reward,
           distinguishingMarks: structuredMeta.distinguishingMarks,
-        };
+        });
       case 'ADOPTION':
-        return {
+        return cleanMeta({
           adoptionRequirements: structuredMeta.adoptionRequirements,
           contact: structuredMeta.contact,
           vaccinationStatus: structuredMeta.vaccinationStatus,
-        };
+        });
       case 'REVIEW':
-        return {
+        return cleanMeta({
           placeName: structuredMeta.placeName,
           serviceType: structuredMeta.serviceType,
-          rating: structuredMeta.rating ? Number(structuredMeta.rating) : undefined,
+          rating: structuredMeta.rating.trim()
+            ? Number(structuredMeta.rating.trim())
+            : undefined,
           priceRange: structuredMeta.priceRange,
           address: structuredMeta.address,
           pros: structuredMeta.pros,
           cons: structuredMeta.cons,
-        };
+        });
       case 'QNA':
-        return {
+        return cleanMeta({
           questionTopic: structuredMeta.questionTopic,
           context: structuredMeta.context,
-        };
+        });
       case 'TIP':
-        return {
+        return cleanMeta({
           topic: structuredMeta.tipTopic,
           context: structuredMeta.context,
-        };
+        });
       case 'BREEDING':
-        return {
+        return cleanMeta({
           requirements: structuredMeta.breedingRequirements,
           contact: structuredMeta.contact,
-        };
+        });
       case 'MARKETPLACE':
-        return {
+        return cleanMeta({
           itemName: structuredMeta.marketplaceItemName,
           condition: structuredMeta.marketplaceCondition,
           price: structuredMeta.marketplacePrice,
           pickupMethod: structuredMeta.marketplacePickup,
           contact: structuredMeta.contact,
-        };
+        });
       default:
         return {};
     }
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(5)) return;
+    if (!validateStep('images')) return;
     
     setIsSubmitting(true);
     try {
       // Build health record data if any field is filled
       
-      // Construct Pet Info object
+      const personality = formData.petPersonality
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+      const parsedAge = formData.petAge ? Number.parseInt(formData.petAge, 10) : Number.NaN;
+      const parsedPetWeight = formData.petWeight ? Number.parseFloat(formData.petWeight) : Number.NaN;
       const petInfo = {
-        name: formData.petName,
-        breed: formData.petBreed,
-        age: formData.petAge ? parseInt(formData.petAge) : undefined,
-        gender: formData.petGender, // MALE/FEMALE
-        color: formData.petColor,
-        size: formData.petSize, // SMALL/MEDIUM/LARGE
-        weight: formData.petWeight ? parseFloat(formData.petWeight) : undefined,
-        isNeutered: formData.isNeutered,
-        isVaccinated: formData.isVaccinated,
-        personality: formData.personality.length > 0 ? formData.personality : undefined,
-        specialNeeds: formData.specialNeeds || undefined,
-        bio: formData.bio || undefined,
+        ...(formData.petName.trim() ? { name: formData.petName.trim() } : {}),
+        ...(formData.petBreed.trim() ? { breed: formData.petBreed.trim() } : {}),
+        ...(!Number.isNaN(parsedAge) ? { age: parsedAge } : {}),
+        ...(formData.petGender ? { gender: formData.petGender } : {}),
+        ...(formData.petColor.trim() ? { color: formData.petColor.trim() } : {}),
+        ...(formData.petSize ? { size: formData.petSize } : {}),
+        ...(!Number.isNaN(parsedPetWeight) ? { weight: parsedPetWeight } : {}),
+        ...(formData.isNeutered ? { isNeutered: true } : {}),
+        ...(formData.isVaccinated ? { isVaccinated: true } : {}),
+        ...(personality.length ? { personality } : {}),
+        ...(formData.specialNeeds.trim() ? { specialNeeds: formData.specialNeeds.trim() } : {}),
+        ...(formData.bio.trim() ? { bio: formData.bio.trim() } : {}),
       };
+      const petInfoData = Object.keys(petInfo).length ? petInfo : undefined;
 
       // Construct Health Record object if any data exists
       const hasHealthData = 
         healthRecord.allergies.length > 0 ||
         healthRecord.vaccinations.length > 0 ||
         healthRecord.medicalHistory.length > 0 ||
-        healthRecord.weight ||
-        healthRecord.notes;
+        healthRecord.weight.trim() ||
+        healthRecord.notes.trim();
 
+      const parsedHealthWeight = healthRecord.weight ? Number.parseFloat(healthRecord.weight) : Number.NaN;
       const healthRecordData = hasHealthData ? {
-          weight: healthRecord.weight ? parseFloat(healthRecord.weight) : undefined,
+          weight: !Number.isNaN(parsedHealthWeight) ? parsedHealthWeight : undefined,
           allergies: healthRecord.allergies.length > 0 ? healthRecord.allergies : undefined,
-          notes: healthRecord.notes || undefined,
+          notes: healthRecord.notes.trim() ? healthRecord.notes.trim() : undefined,
           vaccinations: healthRecord.vaccinations.length > 0 ? healthRecord.vaccinations.map(v => ({
             name: v.name,
             date: v.date
@@ -490,7 +506,8 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
           medicalHistory: healthRecord.medicalHistory.length > 0 ? healthRecord.medicalHistory.map(m => ({
             condition: m.condition,
             treatment: m.treatment,
-            date: m.date
+            date: m.date,
+            notes: m.notes || undefined,
           })) : undefined,
       } : undefined;
 
@@ -499,22 +516,24 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
         .map(t => t.trim())
         .filter(Boolean);
       const meta = buildMeta();
+      const metaData = Object.keys(meta).length ? meta : undefined;
       const status = resolveStatus();
+      const needsLocation = requiresPetInfo || enableLocation;
       const petTypeToSend = requiresPetInfo ? formData.petType : (formData.petType || 'Khác');
-      const cityToSend = formData.city || 'Online';
+      const cityToSend = formData.city.trim() || (needsLocation ? '' : 'Online');
 
-      await petPostService.createPost({
-        title: formData.title,
-        description: formData.description,
+      const response = await petPostService.createPost({
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         petType: petTypeToSend,
         status,
         postType: formData.postType,
         city: cityToSend,
-        district: formData.district || '',
-        location: formData.location || undefined,
+        district: formData.district.trim() || undefined,
+        location: formData.location.trim() || undefined,
         tags: tags.length ? tags : undefined,
-        meta,
-        pet: petInfo, // Key fix: Sending 'pet' object with mapped fields
+        meta: metaData,
+        pet: petInfoData,
         healthRecord: healthRecordData,
       }, imageFiles);
       
@@ -522,8 +541,12 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
         title: 'Thành công!',
         description: 'Bài đăng đã được tạo và hiển thị công khai.',
       });
-      
-      router.push('/');
+
+      if (onPostCreated) {
+        onPostCreated(response.data);
+      } else {
+        router.push('/');
+      }
     } catch (error) {
       toast({
         title: 'Lỗi',
@@ -534,6 +557,9 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
       setIsSubmitting(false);
     }
   };
+
+  const currentStepKey = steps[currentStep];
+  const descriptionLength = formData.description.trim().length;
   
   if (isCheckingAuth) {
     return (
@@ -564,64 +590,84 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
 
   return (
     <div className="container px-4 py-8 max-w-3xl">
-      <Button variant="ghost" asChild className="mb-6">
-        <Link href="/">
+      {onCancel ? (
+        <Button variant="ghost" className="mb-6" onClick={handleCancel}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Quay lại
-        </Link>
-      </Button>
+        </Button>
+      ) : (
+        <Button variant="ghost" asChild className="mb-6">
+          <Link href="/">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Quay lại
+          </Link>
+        </Button>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <PawPrint className="h-6 w-6 text-primary" />
-            Đăng bài mới
+      <Card className="border-0 shadow-xl bg-gradient-to-br from-white via-orange-50/30 to-pink-50/30 overflow-hidden relative">
+        {/* Decorative Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-orange-200/20 to-pink-200/20 rounded-full blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-2xl" />
+          <span className="absolute top-4 right-4 text-4xl opacity-10">🐾</span>
+          <span className="absolute bottom-4 left-4 text-3xl opacity-10">🐕</span>
+        </div>
+        
+        <CardHeader className="relative z-10 pb-2">
+          <CardTitle className="flex items-center gap-3 text-2xl">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 text-white shadow-lg">
+              <PawPrint className="h-6 w-6" />
+            </div>
+            <span className="bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+              Đăng bài mới
+            </span>
           </CardTitle>
-          <CardDescription>
-            Điền thông tin theo từng bước để đăng bài về thú cưng
+          <CardDescription className="text-base mt-1">
+            Điền thông tin theo từng bước để đăng bài về thú cưng 🐾
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center gap-1 mb-8">
-            {STEPS.map((step, index) => {
+        <CardContent className="relative z-10">
+          {/* Enhanced Step Indicator */}
+          <div className="flex items-center justify-center gap-0 mb-10 px-2">
+            {steps.map((stepKey, index) => {
+              const step = STEP_CONFIG[stepKey];
               const StepIcon = step.icon;
-              const isActive = currentStep === step.id;
-              const isCompleted = currentStep > step.id;
+              const isActive = currentStep === index;
+              const isCompleted = currentStep > index;
 
               return (
-                <div key={step.id} className="flex items-center">
+                <div key={stepKey} className="flex items-center">
                   <div className="flex flex-col items-center">
                     <div
                       className={cn(
-                        'w-12 h-12 rounded-full flex items-center justify-center transition-all border-2',
-                        isActive && 'border-primary bg-primary text-primary-foreground',
-                        isCompleted && 'border-green-500 bg-green-500 text-white',
-                        !isActive && !isCompleted && 'border-muted bg-muted text-muted-foreground'
+                        'w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-md',
+                        isActive && 'bg-gradient-to-br from-orange-400 to-pink-500 text-white scale-110 shadow-lg shadow-orange-200',
+                        isCompleted && 'bg-gradient-to-br from-green-400 to-emerald-500 text-white',
+                        !isActive && !isCompleted && 'bg-white/80 border-2 border-gray-200 text-gray-400'
                       )}
                     >
                       {isCompleted ? (
-                        <Check className="h-6 w-6" />
+                        <Check className="h-6 w-6" strokeWidth={3} />
                       ) : (
-                        <StepIcon className="h-5 w-5" />
+                        <StepIcon className="h-6 w-6" />
                       )}
                     </div>
                     <span
                       className={cn(
-                        'text-xs mt-2 font-medium text-center max-w-[80px]',
-                        isActive && 'text-primary',
-                        isCompleted && 'text-green-600',
-                        !isActive && !isCompleted && 'text-muted-foreground'
+                        'text-xs mt-2 font-semibold text-center max-w-[70px] transition-colors duration-300',
+                        isActive && 'text-orange-600',
+                        isCompleted && 'text-emerald-600',
+                        !isActive && !isCompleted && 'text-gray-400'
                       )}
                     >
                       {step.title}
                     </span>
                   </div>
-                  {index < STEPS.length - 1 && (
+                  {index < steps.length - 1 && (
                     <div
                       className={cn(
-                        'w-8 md:w-16 h-1 mx-1 mt-[-24px] rounded',
-                        isCompleted ? 'bg-green-500' : 'bg-muted'
+                        'w-8 md:w-12 h-1.5 mx-1 mt-[-20px] rounded-full transition-all duration-500',
+                        isCompleted ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gray-200'
                       )}
                     />
                   )}
@@ -631,52 +677,77 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
           </div>
 
           {/* Step 1: Post Type */}
-        {currentStep === 1 && (
+        {currentStepKey === 'type' && (
           <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-lg font-semibold">Bạn muốn đăng bài về gì?</h3>
-              <p className="text-muted-foreground text-sm">Chọn kiểu bài đăng (trạng thái sẽ chọn ở bước sau nếu cần).</p>
+            <div className="text-center mb-8">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                Bạn muốn đăng bài về gì? 🤔
+              </h3>
+              <p className="text-muted-foreground text-sm mt-1">Chọn kiểu bài đăng phù hợp với nội dung của bạn</p>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-sm font-semibold">Kiểu bài (postType)</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                    { value: 'LOST_FOUND', label: 'Lost/Found', desc: 'Thông báo thất lạc / tìm thấy' },
-                    { value: 'ADOPTION', label: 'Adoption/Rescue', desc: 'Nhận nuôi / Cứu hộ' },
-                    { value: 'REVIEW', label: 'Review', desc: 'Đánh giá dịch vụ/nơi chốn' },
-                    { value: 'QNA', label: 'Hỏi đáp', desc: 'Đặt câu hỏi cho cộng đồng' },
-                    { value: 'TIP', label: 'Mẹo', desc: 'Chia sẻ kinh nghiệm chăm thú' },
-                    { value: 'BREEDING', label: 'Breeding', desc: 'Giao phối/nhân giống' },
-                    { value: 'MARKETPLACE', label: 'Marketplace', desc: 'Phụ kiện/thức ăn' },
-                  ].map((type) => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      onClick={() => handleSelectChange('postType', type.value)}
-                      className={cn(
-                        'p-3 rounded-lg border text-left hover:border-primary transition',
-                        formData.postType === type.value ? 'border-primary bg-primary/5' : 'border-muted'
-                      )}
-                    >
-                      <p className="font-semibold">{type.label}</p>
-                      <p className="text-xs text-muted-foreground">{type.desc}</p>
-                    </button>
-                  ))}
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                  { value: 'LOST_FOUND', label: 'Thất lạc', desc: 'Thông báo thất lạc hoặc tìm thấy', emoji: '🔍', gradient: 'from-red-400 to-orange-400', bgLight: 'bg-red-50' },
+                  { value: 'ADOPTION', label: 'Nhận nuôi', desc: 'Tìm chủ mới hoặc cứu hộ', emoji: '🏠', gradient: 'from-green-400 to-emerald-400', bgLight: 'bg-green-50' },
+                  { value: 'REVIEW', label: 'Đánh giá', desc: 'Review dịch vụ/địa điểm', emoji: '⭐', gradient: 'from-yellow-400 to-amber-400', bgLight: 'bg-yellow-50' },
+                  { value: 'QNA', label: 'Hỏi đáp', desc: 'Đặt câu hỏi cho cộng đồng', emoji: '❓', gradient: 'from-blue-400 to-cyan-400', bgLight: 'bg-blue-50' },
+                  { value: 'TIP', label: 'Mẹo hay', desc: 'Chia sẻ kinh nghiệm', emoji: '💡', gradient: 'from-purple-400 to-pink-400', bgLight: 'bg-purple-50' },
+                  { value: 'BREEDING', label: 'Phối giống', desc: 'Tìm đối tác phối giống', emoji: '💕', gradient: 'from-pink-400 to-rose-400', bgLight: 'bg-pink-50' },
+                  { value: 'MARKETPLACE', label: 'Chợ thú cưng', desc: 'Mua bán đồ dùng', emoji: '🛒', gradient: 'from-indigo-400 to-violet-400', bgLight: 'bg-indigo-50' },
+                ].map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => handleSelectChange('postType', type.value)}
+                    className={cn(
+                      'group relative p-5 rounded-2xl text-left transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]',
+                      formData.postType === type.value 
+                        ? `${type.bgLight} ring-2 ring-offset-2 shadow-lg` 
+                        : 'bg-white/70 hover:bg-white border border-gray-100 hover:shadow-md',
+                      formData.postType === type.value && (type.gradient.includes('red') ? 'ring-red-400' : type.gradient.includes('green') ? 'ring-green-400' : type.gradient.includes('yellow') ? 'ring-amber-400' : type.gradient.includes('blue') ? 'ring-blue-400' : type.gradient.includes('purple') ? 'ring-purple-400' : type.gradient.includes('pink') ? 'ring-pink-400' : 'ring-indigo-400')
+                    )}
+                  >
+                    <div className={cn(
+                      'text-4xl mb-3 transition-transform duration-300 group-hover:scale-110',
+                      formData.postType === type.value && 'animate-bounce'
+                    )}>
+                      {type.emoji}
+                    </div>
+                    <p className={cn(
+                      'font-bold text-base mb-1 transition-colors',
+                      formData.postType === type.value ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'
+                    )}>
+                      {type.label}
+                    </p>
+                    <p className="text-xs text-gray-500 leading-relaxed">{type.desc}</p>
+                    
+                    {/* Selection indicator */}
+                    {formData.postType === type.value && (
+                      <div className={cn(
+                        'absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br shadow-md',
+                        type.gradient
+                      )}>
+                        <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
           {/* Step 2: Post Details */}
-          {currentStep === 2 && (
+          {currentStepKey === 'details' && (
           <div className="space-y-6">
-            <div className="text-center mb-6">
-              <h3 className="text-lg font-semibold">Thông tin bài đăng</h3>
-              <p className="text-muted-foreground text-sm">
+            <div className="text-center mb-8">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                Thông tin bài đăng ✍️
+              </h3>
+              <p className="text-muted-foreground text-sm mt-1">
                 {requiresPetInfo
-                  ? 'Nội dung sẽ hiển thị trên bảng tin (giống post Facebook).'
-                  : 'Bài chia sẻ/review không cần thông tin thú cưng, bỏ qua bước 3-4.'}
+                  ? 'Nội dung sẽ hiển thị trên bảng tin của cộng đồng'
+                  : 'Bài chia sẻ/review không cần thông tin thú cưng'}
               </p>
             </div>
 
@@ -1000,51 +1071,40 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
               <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
                 {!requiresPetInfo && (
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">Thêm địa điểm cho bài chia sẻ?</div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setEnableLocation((v) => !v)}
-                    >
-                      {enableLocation ? 'Ẩn địa điểm' : 'Thêm địa điểm'}
-                    </Button>
+                    <div className="space-y-0.5">
+                      <Label className="text-sm font-medium">Thêm địa điểm</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Bài chia sẻ có thể thêm địa điểm tuỳ chọn
+                      </p>
+                    </div>
+                    <Switch
+                      checked={enableLocation}
+                      onCheckedChange={(checked) => setEnableLocation(checked)}
+                    />
                   </div>
                 )}
                 {(requiresPetInfo || enableLocation) && (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>{requiresPetInfo ? 'Thành phố *' : 'Thành phố (tuỳ chọn)'}</Label>
-                        <Select
+                        <Label htmlFor="city">{requiresPetInfo ? 'Thành phố *' : 'Thành phố'}</Label>
+                        <Input
+                          id="city"
+                          name="city"
+                          placeholder="Ví dụ: TP. Hồ Chí Minh"
                           value={formData.city}
-                          onValueChange={(value) => handleSelectChange('city', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Chọn thành phố" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {cities.map((city) => (
-                              <SelectItem key={city} value={city}>{city}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          onChange={handleChange}
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label>Quận/Huyện</Label>
-                        <Select
+                        <Label htmlFor="district">Quận/Huyện</Label>
+                        <Input
+                          id="district"
+                          name="district"
+                          placeholder="Ví dụ: Quận 1"
                           value={formData.district}
-                          onValueChange={(value) => handleSelectChange('district', value)}
-                          disabled={!formData.city}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Chọn quận/huyện" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {districts.map((district) => (
-                              <SelectItem key={district} value={district}>{district}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
 
@@ -1052,7 +1112,7 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                     <div className="space-y-2">
                       <Label htmlFor="location">
                         <MapPin className="h-4 w-4 inline mr-1" />
-                        Địa chỉ chi tiết (tùy chọn)
+                        Địa chỉ chi tiết
                       </Label>
                       <Input
                         id="location"
@@ -1081,14 +1141,14 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                 />
                 <div className="flex justify-between items-center text-xs">
                   <span className={cn(
-                    formData.description.length >= 20 ? "text-green-600" : "text-muted-foreground"
+                    descriptionLength >= 20 ? "text-green-600" : "text-muted-foreground"
                   )}>
-                    {formData.description.length >= 20 ? "Đã đạt tối thiểu 20 ký tự ✓" : `Tối thiểu 20 ký tự (${formData.description.length}/20)`}
+                    {descriptionLength >= 20 ? "Đã đạt tối thiểu 20 ký tự ✓" : `Tối thiểu 20 ký tự (${descriptionLength}/20)`}
                   </span>
                   <span className={cn(
-                    formData.description.length >= 2000 ? "text-destructive" : "text-muted-foreground"
+                    descriptionLength >= 2000 ? "text-destructive" : "text-muted-foreground"
                   )}>
-                    {formData.description.length}/2000
+                    {descriptionLength}/2000
                   </span>
                 </div>
               </div>
@@ -1096,18 +1156,21 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
           )}
 
           {/* Step 3: Pet Details (Optional) */}
-          {currentStep === 3 && shouldShowPetSteps && (
+          {currentStepKey === 'pet' && shouldShowPetSteps && (
             <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold">Thông tin thú cưng</h3>
-                <p className="text-muted-foreground text-sm">
-                  Thông tin chi tiết giúp tăng khả năng tìm kiếm (không bắt buộc)
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                  Thông tin thú cưng 🐾
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Thông tin chi tiết giúp bài đăng rõ ràng và đầy đủ hơn
                 </p>
               </div>
 
-              <div className="p-4 bg-muted/50 rounded-lg border mb-6">
-                <p className="text-sm text-muted-foreground">
-                  💡 Bạn có thể bỏ qua bước này nếu không có đủ thông tin
+              <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 mb-6">
+                <p className="text-sm text-blue-700 flex items-center gap-2">
+                  <span className="text-lg">💡</span>
+                  Bạn có thể bỏ qua bước này nếu không có đủ thông tin
                 </p>
               </div>
 
@@ -1123,7 +1186,7 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="petBreed">Giống (breed)</Label>
+                  <Label htmlFor="petBreed">Giống</Label>
                   <Input
                     id="petBreed"
                     name="petBreed"
@@ -1207,6 +1270,17 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="petPersonality">Tính cách (cách nhau bởi dấu phẩy)</Label>
+                <Input
+                  id="petPersonality"
+                  name="petPersonality"
+                  placeholder="Hiền lành, hoạt bát..."
+                  value={formData.petPersonality}
+                  onChange={handleChange}
+                />
+              </div>
+
               {/* Special Needs */}
               <div className="space-y-2">
                 <Label htmlFor="specialNeeds">Nhu cầu đặc biệt</Label>
@@ -1221,7 +1295,7 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
 
               {/* Bio */}
               <div className="space-y-2">
-                <Label htmlFor="bio">Mô tả về thú cưng (Bio)</Label>
+                <Label htmlFor="bio">Mô tả thêm</Label>
                 <Textarea
                   id="bio"
                   name="bio"
@@ -1231,23 +1305,61 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                   rows={3}
                 />
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <Label className="text-sm font-medium">Đã triệt sản</Label>
+                  <Switch
+                    checked={formData.isNeutered}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({ ...prev, isNeutered: checked }))
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-3">
+                  <Label className="text-sm font-medium">Đã tiêm phòng</Label>
+                  <Switch
+                    checked={formData.isVaccinated}
+                    onCheckedChange={(checked) =>
+                      setFormData(prev => ({ ...prev, isVaccinated: checked }))
+                    }
+                  />
+                </div>
+              </div>
             </div>
           )}
 
           {/* Step 4: Health Record (Optional) */}
-          {currentStep === 4 && shouldShowPetSteps && (
+          {currentStepKey === 'health' && shouldShowPetSteps && (
             <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold">Hồ sơ y tế</h3>
-                <p className="text-muted-foreground text-sm">
-                  Thêm thông tin sức khỏe để người nhận nuôi biết rõ hơn (không bắt buộc)
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                  Hồ sơ y tế 🩺
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Thêm thông tin sức khỏe để người nhận nuôi biết rõ hơn
                 </p>
               </div>
 
-              <div className="p-4 bg-muted/50 rounded-lg border mb-6">
-                <p className="text-sm text-muted-foreground">
-                  💡 Bước này không bắt buộc. Bạn có thể bỏ qua hoặc thêm sau.
+              <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-100 mb-6">
+                <p className="text-sm text-green-700 flex items-center gap-2">
+                  <span className="text-lg">💡</span>
+                  Bước này không bắt buộc. Bạn có thể bỏ qua hoặc thêm sau.
                 </p>
+              </div>
+
+              {/* Weight */}
+              <div className="space-y-2">
+                <Label htmlFor="healthWeight">Cân nặng (kg)</Label>
+                <Input
+                  id="healthWeight"
+                  type="number"
+                  value={healthRecord.weight}
+                  onChange={(e) => setHealthRecord(prev => ({ ...prev, weight: e.target.value }))}
+                  placeholder="5"
+                  step="0.1"
+                  min="0"
+                />
               </div>
 
               {/* Allergies */}
@@ -1333,24 +1445,17 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                       onChange={(e) => setNewVaccine(prev => ({ ...prev, date: e.target.value }))}
                     />
                   </div>
-                  <div className="w-36">
-                    <Label className="text-xs text-muted-foreground">Lần tới</Label>
-                    <Input
-                      type="date"
-                      value={newVaccine.nextDueDate}
-                      onChange={(e) => setNewVaccine(prev => ({ ...prev, nextDueDate: e.target.value }))}
-                    />
-                  </div>
                   <Button
                     type="button"
                     size="icon"
                     onClick={() => {
-                      if (newVaccine.name.trim() && newVaccine.date) {
+                      const name = newVaccine.name.trim();
+                      if (name && newVaccine.date) {
                         setHealthRecord(prev => ({
                           ...prev,
-                          vaccinations: [...prev.vaccinations, { ...newVaccine }]
+                          vaccinations: [...prev.vaccinations, { name, date: newVaccine.date }]
                         }));
-                        setNewVaccine({ name: '', date: '', nextDueDate: '' });
+                        setNewVaccine({ name: '', date: '' });
                       }
                     }}
                   >
@@ -1366,11 +1471,6 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                           <span className="text-sm text-muted-foreground ml-2">
                             Ngày tiêm: {new Date(vac.date).toLocaleDateString('vi-VN')}
                           </span>
-                          {vac.nextDueDate && (
-                            <span className="text-sm text-muted-foreground ml-2">
-                              | Lần tới: {new Date(vac.nextDueDate).toLocaleDateString('vi-VN')}
-                            </span>
-                          )}
                         </div>
                         <Button
                           type="button"
@@ -1421,28 +1521,17 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                       placeholder="Ghi chú..."
                     />
                   </div>
-                  <div className="w-20">
-                    <Label className="text-xs text-muted-foreground">Cân nặng</Label>
-                    <Input
-                      type="number"
-                      value={newMedical.weight}
-                      onChange={(e) => setNewMedical(prev => ({ ...prev, weight: e.target.value }))}
-                      placeholder="Kg"
-                      step="0.1"
-                      min="0"
-                    />
-                  </div>
                   <Button
                     type="button"
                     size="icon"
                     className="self-end"
                     onClick={() => {
-                      if (newMedical.condition.trim() && newMedical.treatment.trim()) {
+                      if (newMedical.condition.trim() && newMedical.treatment.trim() && newMedical.date) {
                         setHealthRecord(prev => ({
                           ...prev,
                           medicalHistory: [...prev.medicalHistory, { ...newMedical }]
                         }));
-                        setNewMedical({ condition: '', treatment: '', date: '', notes: '', weight: '' });
+                        setNewMedical({ condition: '', treatment: '', date: '', notes: '' });
                       }
                     }}
                   >
@@ -1460,9 +1549,6 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                             <span className="text-sm text-muted-foreground ml-2">
                               ({new Date(med.date).toLocaleDateString('vi-VN')})
                             </span>
-                          )}
-                          {med.weight && (
-                            <span className="text-sm text-green-600 ml-2">• {med.weight} kg</span>
                           )}
                           {med.notes && (
                             <span className="text-sm text-muted-foreground ml-2">- {med.notes}</span>
@@ -1500,16 +1586,18 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
           )}
 
           {/* Step 5: Images */}
-          {currentStep === 5 && (
+          {currentStepKey === 'images' && (
             <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-lg font-semibold">Thêm hình ảnh</h3>
-                <p className="text-muted-foreground text-sm">
+              <div className="text-center mb-8">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
+                  Thêm hình ảnh 📸
+                </h3>
+                <p className="text-muted-foreground text-sm mt-1">
                   Thêm ảnh để mọi người dễ nhận diện thú cưng
                 </p>
               </div>
 
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 px-1">
                 <span className="text-sm font-medium">Hình ảnh * (tối đa 5 ảnh)</span>
                 <span className={cn(
                   "text-sm",
@@ -1586,22 +1674,24 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t">
+          <div className="flex items-center justify-between mt-10 pt-6 border-t border-gray-100">
             <Button
               type="button"
               variant="outline"
-              onClick={currentStep > 1 ? goToPrevStep : () => router.push('/')}
+              onClick={currentStep > 0 ? goToPrevStep : handleCancel}
               disabled={isSubmitting}
+              className="rounded-xl px-6 border-gray-200 hover:bg-gray-50 transition-all"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              {currentStep > 1 ? 'Quay lại' : 'Hủy'}
+              {currentStep > 0 ? 'Quay lại' : 'Hủy'}
             </Button>
 
-            {currentStep < 5 ? (
+            {currentStep < steps.length - 1 ? (
               <Button
                 type="button"
                 onClick={goToNextStep}
                 disabled={!canGoNext()}
+                className="rounded-xl px-8 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-lg shadow-orange-200/50 transition-all disabled:opacity-50 disabled:shadow-none"
               >
                 Tiếp theo
                 <ChevronRight className="h-4 w-4 ml-1" />
@@ -1611,7 +1701,7 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !canGoNext()}
-                className="min-w-[140px]"
+                className="min-w-[160px] rounded-xl px-8 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-200/50 transition-all disabled:opacity-50 disabled:shadow-none"
               >
                 {isSubmitting ? (
                   <>
@@ -1621,7 +1711,7 @@ export default function NewPostPage({ presetType }: NewPostPageProps) {
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    Đăng bài
+                    Đăng bài 🎉
                   </>
                 )}
               </Button>

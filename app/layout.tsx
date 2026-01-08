@@ -1,3 +1,4 @@
+
 import { CartProvider } from "@/components/cart-provider";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
@@ -9,6 +10,7 @@ import { MiniChatContainer } from "@/components/mini-chat/mini-chat-container";
 import AuthManager from "@/components/auth-manager";
 import { Toaster as HotToaster } from "react-hot-toast";
 import PetMascot from "@/components/pet-mascot";
+import AuthGuard from "@/components/auth-guard";
 import type { Metadata } from "next";
 import type React from "react";
 import "./globals.css";
@@ -19,6 +21,8 @@ export const metadata: Metadata = {
   description: "Premium pet products for cats and dogs with same-day delivery",
   generator: "v0.dev",
 };
+
+import { PostModalProvider } from "@/components/post-modal-provider";
 
 export default function RootLayout({
   children,
@@ -32,16 +36,20 @@ export default function RootLayout({
         <CartProvider>
           <ChatProvider>
             <MiniChatProvider>
-              <div className="flex min-h-screen flex-col">
-                <AuthManager />
-                <Header />
-                <main className="flex-1">{children}</main>
-                <Footer />
-              </div>
-              <PetMascot />
-              <MiniChatContainer />
-              <Toaster />
-              <HotToaster position="top-right" />
+              <AuthGuard>
+                <PostModalProvider>
+                  <div className="flex min-h-screen flex-col">
+                    <AuthManager />
+                    <Header />
+                    <main className="flex-1">{children}</main>
+                    <Footer />
+                  </div>
+                  <PetMascot />
+                  <MiniChatContainer />
+                  <Toaster />
+                  <HotToaster position="top-right" />
+                </PostModalProvider>
+              </AuthGuard>
             </MiniChatProvider>
           </ChatProvider>
         </CartProvider>

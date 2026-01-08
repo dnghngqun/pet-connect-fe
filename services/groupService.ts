@@ -2,6 +2,19 @@ import apiClient from '@/common/apiClient';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
+// Helper to get token from user storage (fixes auth issue)
+const getToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  const userStr = localStorage.getItem('pet-connect-user');
+  if (!userStr) return null;
+  try {
+    const user = JSON.parse(userStr);
+    return user?.token || null;
+  } catch {
+    return null;
+  }
+};
+
 export interface Group {
   id: number;
   name: string;
@@ -23,7 +36,7 @@ export interface Group {
   creatorName: string;
   creatorAvatar?: string;
   isMember: boolean;
-  memberRole?: 'ADMIN' | 'MODERATOR' | 'MEMBER';
+  memberRole?: 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'PENDING';
   joinedAt?: string;
   admins?: GroupMember[];
   recentMembers?: GroupMember[];
@@ -34,7 +47,7 @@ export interface GroupMember {
   userId: number;
   userName: string;
   userAvatar?: string;
-  role: 'ADMIN' | 'MODERATOR' | 'MEMBER';
+  role: 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'PENDING';
   joinedAt: string;
 }
 
@@ -80,7 +93,7 @@ export const getGroups = async (params: {
     queryParams.append('page', (params.page || 0).toString());
     queryParams.append('size', (params.size || 20).toString());
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('pet-connect-token') : null;
+    const token = getToken();
     
     const response = await fetch(`${API_URL}/api/v1/groups?${queryParams}`, {
       headers: {
@@ -101,7 +114,7 @@ export const getGroups = async (params: {
  */
 export const getGroupBySlug = async (slug: string) => {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('pet-connect-token') : null;
+    const token = getToken();
     
     const response = await fetch(`${API_URL}/api/v1/groups/${slug}`, {
       headers: {
@@ -122,7 +135,7 @@ export const getGroupBySlug = async (slug: string) => {
  */
 export const createGroup = async (request: CreateGroupRequest) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
+    const token = getToken();
     
     const response = await fetch(`${API_URL}/api/v1/groups`, {
       method: 'POST',
@@ -146,7 +159,7 @@ export const createGroup = async (request: CreateGroupRequest) => {
  */
 export const updateGroup = async (groupId: number, request: UpdateGroupRequest) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
+    const token = getToken();
     
     const response = await fetch(`${API_URL}/api/v1/groups/${groupId}`, {
       method: 'PUT',
@@ -170,7 +183,7 @@ export const updateGroup = async (groupId: number, request: UpdateGroupRequest) 
  */
 export const deleteGroup = async (groupId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
+    const token = getToken();
     
     const response = await fetch(`${API_URL}/api/v1/groups/${groupId}`, {
       method: 'DELETE',
@@ -192,7 +205,7 @@ export const deleteGroup = async (groupId: number) => {
  */
 export const joinGroup = async (groupId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
+    const token = getToken();
     
     const response = await fetch(`${API_URL}/api/v1/groups/${groupId}/join`, {
       method: 'POST',
@@ -214,7 +227,7 @@ export const joinGroup = async (groupId: number) => {
  */
 export const leaveGroup = async (groupId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
+    const token = getToken();
     
     const response = await fetch(`${API_URL}/api/v1/groups/${groupId}/leave`, {
       method: 'POST',
@@ -236,7 +249,7 @@ export const leaveGroup = async (groupId: number) => {
  */
 export const getGroupMembers = async (groupId: number, page = 0, size = 20) => {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('pet-connect-token') : null;
+    const token = getToken();
     
     const response = await fetch(
       `${API_URL}/api/v1/groups/${groupId}/members?page=${page}&size=${size}`,
@@ -260,7 +273,7 @@ export const getGroupMembers = async (groupId: number, page = 0, size = 20) => {
  */
 export const getMyGroups = async (page = 0, size = 20) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
+    const token = getToken();
     
     const response = await fetch(
       `${API_URL}/api/v1/groups/my-groups?page=${page}&size=${size}`,
@@ -284,7 +297,7 @@ export const getMyGroups = async (page = 0, size = 20) => {
  */
 export const getPopularGroups = async (limit = 10) => {
   try {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('pet-connect-token') : null;
+    const token = getToken();
     
     const response = await fetch(`${API_URL}/api/v1/groups/popular?limit=${limit}`, {
       headers: {
@@ -309,7 +322,7 @@ export const updateMemberRole = async (
   role: 'ADMIN' | 'MODERATOR' | 'MEMBER'
 ) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
+    const token = getToken();
     
     const response = await fetch(
       `${API_URL}/api/v1/groups/${groupId}/members/${memberId}/role`,
@@ -336,7 +349,7 @@ export const updateMemberRole = async (
  */
 export const removeMember = async (groupId: number, userId: number) => {
   try {
-    const token = localStorage.getItem('pet-connect-token');
+    const token = getToken();
     
     const response = await fetch(
       `${API_URL}/api/v1/groups/${groupId}/members/${userId}`,
@@ -356,6 +369,80 @@ export const removeMember = async (groupId: number, userId: number) => {
   }
 };
 
+/**
+ * Get pending join requests for a group (admin only)
+ */
+export const getPendingMembers = async (groupId: number) => {
+  try {
+    const token = getToken();
+    
+    const response = await fetch(
+      `${API_URL}/api/v1/groups/${groupId}/pending-members`,
+      {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching pending members:', error);
+    throw error;
+  }
+};
+
+/**
+ * Approve a pending member request (admin only)
+ */
+export const approveMember = async (groupId: number, userId: number) => {
+  try {
+    const token = getToken();
+    
+    const response = await fetch(
+      `${API_URL}/api/v1/groups/${groupId}/members/${userId}/approve`,
+      {
+        method: 'POST',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error approving member:', error);
+    throw error;
+  }
+};
+
+/**
+ * Reject a pending member request (admin only)
+ */
+export const rejectMember = async (groupId: number, userId: number) => {
+  try {
+    const token = getToken();
+    
+    const response = await fetch(
+      `${API_URL}/api/v1/groups/${groupId}/members/${userId}/reject`,
+      {
+        method: 'POST',
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error rejecting member:', error);
+    throw error;
+  }
+};
+
 export default {
   getGroups,
   getGroupBySlug,
@@ -369,4 +456,8 @@ export default {
   getPopularGroups,
   updateMemberRole,
   removeMember,
+  getPendingMembers,
+  approveMember,
+  rejectMember,
 };
+

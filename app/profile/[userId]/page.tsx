@@ -17,6 +17,7 @@ import ProfilePhotosTab from '@/components/profile/profile-photos-tab';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
 interface ProfilePageProps {
@@ -75,7 +76,10 @@ export default function ProfilePage({ params }: ProfilePageProps) {
              avatarUrl: f.friendAvatar || f.userAvatar || f.avatar || '',
            })).filter((f: any) => f.id !== null);
            
-           setFriendsPreview(mappedFriends);
+           // Deduplicate friends by ID
+           const uniqueFriends = Array.from(new Map(mappedFriends.map((f: any) => [f.id, f])).values());
+           
+           setFriendsPreview(uniqueFriends);
         }
       } catch (err) {
         console.error('Error fetching friends preview:', err);
@@ -211,7 +215,16 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                 ) : posts.length > 0 ? (
                   <div className="space-y-4">
                     {posts.map((post) => (
-                      <PetPostCard key={post.id} post={post} />
+                      <PetPostCard 
+                        key={post.id} 
+                        post={post} 
+                        onEditClick={() => {
+                          toast({
+                            title: "Tính năng đang phát triển",
+                            description: "Bạn sẽ sớm có thể sửa bài viết này! 🛠️",
+                          });
+                        }}
+                      />
                     ))}
                   </div>
                 ) : (
