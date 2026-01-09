@@ -23,7 +23,6 @@ export const metadata: Metadata = {
 };
 
 import { PostModalProvider } from "@/components/post-modal-provider";
-import { WebSocketProvider } from "@/components/websocket-provider";
 
 export default function RootLayout({
   children,
@@ -35,26 +34,24 @@ export default function RootLayout({
       <body className="font-sans" suppressHydrationWarning={true}>
         <PageBackground />
         <CartProvider>
-          <AuthGuard>
-            <WebSocketProvider>
-              <ChatProvider>
-                <MiniChatProvider>
-                  <PostModalProvider>
-                    <div className="flex min-h-screen flex-col">
-                      <AuthManager />
-                      <Header />
-                      <main className="flex-1">{children}</main>
-                      <Footer />
-                    </div>
-                    <PetMascot />
-                    <MiniChatContainer />
-                    <Toaster />
-                    <HotToaster position="top-right" />
-                  </PostModalProvider>
-                </MiniChatProvider>
-              </ChatProvider>
-            </WebSocketProvider>
-          </AuthGuard>
+          <ChatProvider>
+            <MiniChatProvider>
+              <AuthGuard>
+                <PostModalProvider>
+                  <div className="flex min-h-screen flex-col">
+                    <AuthManager />
+                    <Header />
+                    <main className="flex-1">{children}</main>
+                    <Footer />
+                  </div>
+                  <PetMascot />
+                  <MiniChatContainer />
+                  <Toaster />
+                  <HotToaster position="top-right" />
+                </PostModalProvider>
+              </AuthGuard>
+            </MiniChatProvider>
+          </ChatProvider>
         </CartProvider>
       </body>
     </html>

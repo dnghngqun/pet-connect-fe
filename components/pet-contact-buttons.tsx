@@ -30,7 +30,7 @@ export default function PetContactButtons({ postedBy }: PetContactButtonsProps) 
 
   return (
     <>
-      
+      {/* Contact Buttons */}
       <div className="space-y-2 pt-4 border-t">
         <Button className="w-full" onClick={handleCall}>
           <Phone className="h-4 w-4 mr-2" />
@@ -39,7 +39,7 @@ export default function PetContactButtons({ postedBy }: PetContactButtonsProps) 
         <ChatButton postedBy={postedBy} />
       </div>
 
-      
+      {/* Actions */}
       <div className="space-y-2 mt-6">
         <Button variant="outline" className="w-full" onClick={handleShare}>
           <Share2 className="h-4 w-4 mr-2" />
@@ -53,3 +53,4 @@ export default function PetContactButtons({ postedBy }: PetContactButtonsProps) 
     </>
   );
 }
+

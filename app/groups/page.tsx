@@ -110,7 +110,7 @@ export default function GroupsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-pink-50 to-white">
-      
+      {/* Header */}
       <PageHeader
         title="Hội Nhóm"
         description="Tìm và tham gia các cộng đồng yêu thú cưng gần bạn"
@@ -124,7 +124,7 @@ export default function GroupsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            
+            {/* Sidebar */}
             <div className="lg:col-span-1">
               <Card className="p-4 sticky top-4 shadow-lg border-orange-100">
                 <h3 className="font-semibold mb-4 flex items-center gap-2">
@@ -132,7 +132,7 @@ export default function GroupsPage() {
                   Bộ lọc
                 </h3>
 
-                
+                {/* Search */}
                 <div className="mb-4">
                   <label className="text-sm font-medium mb-2 block">
                     Tìm kiếm
@@ -148,7 +148,7 @@ export default function GroupsPage() {
                   </div>
                 </div>
 
-                
+                {/* Category Filter */}
                 <div className="mb-4">
                   <label className="text-sm font-medium mb-2 block">
                     Danh mục
@@ -168,7 +168,7 @@ export default function GroupsPage() {
                   </Select>
                 </div>
 
-                
+                {/* City Filter */}
                 <div className="mb-4">
                   <label className="text-sm font-medium mb-2 block">
                     Thành phố
@@ -187,7 +187,7 @@ export default function GroupsPage() {
                   </Select>
                 </div>
 
-                
+                {/* Popular Groups */}
                 {popularGroups.length > 0 && (
                   <div className="mt-6 pt-6 border-t">
                     <h3 className="font-semibold mb-3">Phổ biến</h3>
@@ -212,7 +212,7 @@ export default function GroupsPage() {
               </Card>
             </div>
 
-            
+            {/* Main Content */}
             <div className="lg:col-span-3">
               {loading && groups.length === 0 ? (
                 <div className="text-center py-12">

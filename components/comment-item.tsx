@@ -60,7 +60,7 @@ export default function CommentItem({
   return (
     <div className={`${comment.depth > 0 ? 'ml-12' : ''}`}>
       <div className="flex gap-2 group">
-        
+        {/* Avatar */}
         <div 
           className="flex-shrink-0 cursor-pointer hover:opacity-80 transition"
           onClick={handleAvatarClick}
@@ -73,7 +73,7 @@ export default function CommentItem({
           </Avatar>
         </div>
 
-        
+        {/* Comment Content */}
         <div className="flex-1 min-w-0">
           <div className="bg-gray-100 rounded-2xl px-3 py-2 inline-block max-w-full">
             <div 
@@ -87,7 +87,7 @@ export default function CommentItem({
             </p>
           </div>
 
-          
+          {/* Action Buttons */}
           <div className="flex items-center gap-4 mt-1 px-3 text-xs text-gray-500">
             <button
               onClick={() => setLiked(!liked)}
@@ -98,7 +98,7 @@ export default function CommentItem({
               Thích {comment.likes > 0 && `(${comment.likes})`}
             </button>
 
-            
+            {/* Only show Reply button for top-level comments (depth 0) */}
             {comment.depth === 0 && (
               <button
                 onClick={handleReplyClick}
@@ -111,7 +111,7 @@ export default function CommentItem({
             <span className="text-gray-400">{timeAgo}</span>
           </div>
 
-          
+          {/* Show Replies Toggle (only for top-level comments with replies) */}
           {comment.depth === 0 && comment.replyCount > 0 && (
             <button
               onClick={handleToggleReplies}
@@ -124,7 +124,7 @@ export default function CommentItem({
             </button>
           )}
 
-          
+          {/* Render Replies */}
           {repliesVisible && comment.replies && comment.replies.length > 0 && (
             <div className="mt-2 space-y-2">
               {comment.replies.map((reply) => (
@@ -139,7 +139,7 @@ export default function CommentItem({
           )}
         </div>
 
-        
+        {/* More Options */}
         <button className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition p-1 hover:bg-gray-100 rounded-full h-fit">
           <MoreHorizontal className="h-4 w-4 text-gray-500" />
         </button>

@@ -17,6 +17,8 @@ export default function ForgotPasswordPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+
+    // Simulate password reset request
     setTimeout(() => {
       setIsLoading(false)
       toast({

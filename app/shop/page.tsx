@@ -80,7 +80,7 @@ function ShopContent() {
         title: post.title,
         slug: post.slug,
         description: post.description,
-        image: post.image || 'https:
+        image: post.image || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
         petType: post.petType,
         status: post.status?.toLowerCase().replace('_', '-') || 'general',
         postType: post.postType,

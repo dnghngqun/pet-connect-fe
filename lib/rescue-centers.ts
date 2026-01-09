@@ -119,3 +119,4 @@ export function findNearbyRescueCenters(
     .sort((a, b) => a.distance - b.distance)
     .slice(0, limit)
 }
+

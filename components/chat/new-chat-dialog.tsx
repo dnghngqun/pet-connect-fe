@@ -23,14 +23,16 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [friends, setFriends] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch friends when dialog opens
   useEffect(() => {
     if (open) {
       const fetchFriends = async () => {
         setIsLoading(true);
         try {
-          const response = await getFriends(0, 50);
-          if (response.success && response.data) {
-            setFriends(Array.isArray(response.data) ? response.data : []);
+          const response = await getFriends(0, 50); // Fetch first 50 friends
+          if (response.code === "0000" && response.data) {
+            setFriends(response.data.content || []);
           }
         } catch (error) {
           console.error("Failed to fetch friends:", error);
@@ -42,10 +44,9 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
     }
   }, [open]);
 
-  const filteredUsers = friends.filter((friend) => {
-     const name = friend.friendName || friend.userName || "";
-     return name.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const filteredUsers = friends.filter((friend) =>
+    friend.userName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleCreateChat = async () => {
     if (!selectedUserId) return;
@@ -90,14 +91,14 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
           </DialogHeader>
 
           <div className="space-y-4">
-            
+            {/* Search */}
             <Input
               placeholder="Tìm kiếm bạn bè..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-            
+            {/* User List */}
             <div className="max-h-64 overflow-y-auto space-y-2">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -108,45 +109,38 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
                   {searchTerm ? "Không tìm thấy bạn bè" : "Bạn chưa kết bạn với ai"}
                 </div>
               ) : (
-                filteredUsers.map((friend) => {
-
-                  const friendId = friend.friendId || friend.userId;
-                  const friendName = friend.friendName || friend.userName;
-                  const friendAvatar = friend.friendAvatar || friend.userAvatar;
-                  
-                  return (
+                filteredUsers.map((friend) => (
                   <button
-                    key={friend.id || friendId}
-                    onClick={() => setSelectedUserId(String(friendId))}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${selectedUserId === String(friendId)
+                    key={friend.userId}
+                    onClick={() => setSelectedUserId(String(friend.userId))}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${selectedUserId === String(friend.userId)
                         ? "bg-blue-100 border border-blue-500"
                         : "hover:bg-gray-100 border border-transparent"
                       }`}
                   >
-                    {friendAvatar ? (
+                    {friend.userAvatar ? (
                       <Image
-                        src={friendAvatar}
-                        alt={friendName}
+                        src={friend.userAvatar}
+                        alt={friend.userName}
                         width={40}
                         height={40}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white font-semibold">
-                        {friendName?.charAt(0).toUpperCase()}
+                        {friend.userName.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 text-left">
-                      <p className="font-semibold text-gray-900">{friendName}</p>
+                      <p className="font-semibold text-gray-900">{friend.userName}</p>
                       <p className="text-xs text-gray-500">{friend.userCity || "Bạn bè"}</p>
                     </div>
                   </button>
-                  );
-                })
+                ))
               )}
             </div>
 
-            
+            {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"

@@ -6,7 +6,7 @@ export const petPosts: PetPost[] = [
     title: "Chó Husky mất tích tại quận 1, TP.HCM",
     slug: "cho-husky-mat-tich-quan-1",
     description: "Con chó Husky bốc lông trắng xám, mắc vòng cổ xanh, mất tích vào ngày 3/11 tại khu vực Nguyễn Hữu Cảnh. Nếu ai nhìn thấy vui lòng liên hệ ngay. Cảm ơn!",
-    image: "https:
+    image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop",
     petType: "Husky",
     status: "lost",
     location: "Quận 1, TP.HCM",
@@ -18,7 +18,7 @@ export const petPosts: PetPost[] = [
       id: "user1",
       name: "Nguyễn Văn A",
       phone: "0912345678",
-      avatar: "https:
+      avatar: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=100&auto=format&fit=crop"
     },
     createdAt: "2024-11-04T10:30:00Z",
     tags: ["lost", "husky", "urgent"],
@@ -58,7 +58,7 @@ export const petPosts: PetPost[] = [
         notes: "Cần tập thể dục thường xuyên, thích chơi ở công viên"
       },
       photos: [
-        "https:
+        "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop"
       ]
     }
   },
@@ -67,7 +67,7 @@ export const petPosts: PetPost[] = [
     title: "Chó con Golden Retriever cần nhà yêu thương",
     slug: "cho-golden-retriever-can-nha",
     description: "Bé Golden Retriever 2 tháng tuổi, khỏe mạnh, đã tiêm vaccine đầy đủ. Gia đình bị chuyển công tác nên cần tìm gia đình tốt để nuôi. Được huấn luyện cơ bản, rất thân thiện.",
-    image: "https:
+    image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop",
     petType: "Golden Retriever",
     status: "for-adoption",
     location: "Quận 7, TP.HCM",
@@ -79,7 +79,7 @@ export const petPosts: PetPost[] = [
       id: "user2",
       name: "Trần Thị B",
       phone: "0987654321",
-      avatar: "https:
+      avatar: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=100&auto=format&fit=crop"
     },
     createdAt: "2024-11-03T14:20:00Z",
     tags: ["adoption", "golden-retriever", "healthy"],
@@ -116,7 +116,7 @@ export const petPosts: PetPost[] = [
         notes: "Bé rất khỏe, cần tiếp tục tiêm vaccine đầy đủ theo lịch"
       },
       photos: [
-        "https:
+        "https://images.unsplash.com/photo-1633566137282-a8c8c0c1c2f0?q=80&w=800&auto=format&fit=crop"
       ]
     }
   },
@@ -125,7 +125,7 @@ export const petPosts: PetPost[] = [
     title: "Mèo mèo hoang bị thương được cứu hộ",
     slug: "meo-hoang-bi-thuong",
     description: "Mèo mèo hoang bị xe cộ cán được đội cứu hộ PetAid cứu hộ. Đã được chữa trị, tiêm vaccine. Tìm gia đình để nuôi hoặc tài trợ cho trạm cứu hộ.",
-    image: "https:
+    image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop",
     petType: "Mèo",
     status: "rescue",
     location: "Quận 2, TP.HCM",
@@ -133,7 +133,7 @@ export const petPosts: PetPost[] = [
       id: "org1",
       name: "Trạm Cứu Hộ PetAid",
       phone: "0868888888",
-      avatar: "https:
+      avatar: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=100&auto=format&fit=crop"
     },
     createdAt: "2024-11-02T09:15:00Z",
     tags: ["rescue", "cat", "need-support"],
@@ -171,7 +171,7 @@ export const petPosts: PetPost[] = [
         notes: "Đã được khử trùng, cần kiểm tra vết thương hàng tuần trong tháng đầu"
       },
       photos: [
-        "https:
+        "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop"
       ]
     }
   },
@@ -180,7 +180,7 @@ export const petPosts: PetPost[] = [
     title: "Chó Poodle trắng tìm thấy tại công viên Tao Đàn",
     slug: "cho-poodle-tim-thay",
     description: "Tìm thấy chó Poodle trắng, 3-4 tuổi, khỏe mạnh, không có vòng cổ. Nếu là chủ hãy liên hệ để nhận. Hiện đang được chăm sóc tại nhà tạm thời.",
-    image: "https:
+    image: "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?q=80&w=800&auto=format&fit=crop",
     petType: "Poodle",
     status: "found",
     location: "Công viên Tao Đàn, Q1",
@@ -188,7 +188,7 @@ export const petPosts: PetPost[] = [
       id: "user3",
       name: "Phạm Minh C",
       phone: "0901234567",
-      avatar: "https:
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100&auto=format&fit=crop"
     },
     createdAt: "2024-11-02T16:45:00Z",
     tags: ["found", "poodle"],
@@ -225,9 +225,9 @@ export const petPosts: PetPost[] = [
         notes: "Cần tắm rửa và cắt lông gấp ngay"
       },
       photos: [
-        "https:
+        "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?q=80&w=800&auto=format&fit=crop"
       ],
-      qrCodeUrl: "http:
+      qrCodeUrl: "http://localhost:8080/api/pets/pet4/qr-code"
     }
   },
   {
@@ -235,7 +235,7 @@ export const petPosts: PetPost[] = [
     title: "Mèo Ba Tư đen nhỏ cần nhà",
     slug: "meo-ba-tu-den",
     description: "Mèo Ba Tư đen nhỏ 6 tháng tuổi, vô cùng dễ thương và hiền lành. Đã khử trùng, tiêm vaccine. Tìm gia đình yêu thương cho bé.",
-    image: "https:
+    image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop",
     petType: "Mèo Ba Tư",
     status: "for-adoption",
     location: "Quận 3, TP.HCM",
@@ -243,7 +243,7 @@ export const petPosts: PetPost[] = [
       id: "user4",
       name: "Võ Hoàng D",
       phone: "0923456789",
-      avatar: "https:
+      avatar: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=100&auto=format&fit=crop"
     },
     createdAt: "2024-11-01T11:20:00Z",
     tags: ["adoption", "cat", "cute"],
@@ -280,9 +280,9 @@ export const petPosts: PetPost[] = [
         notes: "Mèo rất khỏe, thích đồ chơi và bạn bè"
       },
       photos: [
-        "https:
+        "https://images.unsplash.com/photo-1574158622682-e40e69881006?q=80&w=800&auto=format&fit=crop"
       ],
-      qrCodeUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAeFBMVEX/
+      qrCodeUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAeFBMVEX///8AAAB4eHgnJye7u7vo6OiioqJwcHDy8vLBwcFnZ2evr6/i4uKHh4dVVVWcnJy1tbU1NTXS0tKVlZWpqamOjo7Y2Nh/f3/Hx8dMTEzx8fH4+Phra2sbGxtHR0fg4OA8PDwREREwMDBcXFwiIiIYGBgxMTFBQUH/lneRAAAKh0lEQVR4nO2df0OyMBDH0xBFU0nwJ6SWVu//HT7ujie/eAyHYFrd9y8a27GP6ca22+3hQaVSqVQqlUqlUqlUKpVKpVKpVCpVpn9lFgUCI6E3/AAAAABJRU5ErkJggg=="
     }
   }
 ]

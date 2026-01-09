@@ -42,8 +42,8 @@ export default function QnaPostForm({ onSuccess }: QnaPostFormProps) {
         district: '',
         tags: ['hoidap'],
         meta: {
-          topic: 'general',
-          difficulty: 'easy',
+          topic: 'general', // Default topic
+          difficulty: 'easy', // Default difficulty
           isAnswered: false,
           answerCount: 0,
           expertAnswered: false,
@@ -83,7 +83,7 @@ export default function QnaPostForm({ onSuccess }: QnaPostFormProps) {
         />
       </div>
 
-      
+      {/* Simplified: Removed Topic/Difficulty/Context fields as per request */}
 
       <ImageUpload images={images} onImagesChange={setImages} />
 

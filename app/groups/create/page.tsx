@@ -72,8 +72,8 @@ export default function CreateGroupPage() {
     try {
       setCreating(true);
       
-
-
+      // TODO: Upload avatar file first if exists
+      // For now, create without avatar
       const response = await createGroup({
         name: formData.name,
         description: formData.description || undefined,
@@ -112,13 +112,13 @@ export default function CreateGroupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-pink-50 to-white">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        
+        {/* Back Button */}
         <Button variant="ghost" onClick={() => router.back()} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Quay lại
         </Button>
 
-        
+        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 text-white mb-4 shadow-lg">
             <Users className="h-8 w-8" />
@@ -144,7 +144,7 @@ export default function CreateGroupPage() {
             </CardHeader>
             
             <CardContent className="space-y-6 pt-6">
-              
+              {/* Avatar Upload */}
               <div className="space-y-3">
                 <Label htmlFor="avatar" className="text-sm font-semibold">
                   Ảnh đại diện nhóm
@@ -198,7 +198,7 @@ export default function CreateGroupPage() {
                 </div>
               </div>
 
-              
+              {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="name">
                   Tên nhóm <span className="text-destructive">*</span>
@@ -215,7 +215,7 @@ export default function CreateGroupPage() {
                 />
               </div>
 
-              
+              {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description">Mô tả</Label>
                 <Textarea
@@ -230,7 +230,7 @@ export default function CreateGroupPage() {
                 />
               </div>
 
-              
+              {/* Category */}
               <div className="space-y-2">
                 <Label htmlFor="category">Danh mục</Label>
                 <Select
@@ -252,7 +252,7 @@ export default function CreateGroupPage() {
                 </Select>
               </div>
 
-              
+              {/* Location */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="city">Thành phố</Label>
@@ -281,7 +281,7 @@ export default function CreateGroupPage() {
                 </div>
               </div>
 
-              
+              {/* Privacy */}
               <div className="flex items-center justify-between p-4 rounded-lg border border-primary/20 bg-primary/5">
                 <div className="space-y-0.5">
                   <Label className="text-base font-semibold">Nhóm riêng tư</Label>
@@ -297,7 +297,7 @@ export default function CreateGroupPage() {
                 />
               </div>
 
-              
+              {/* Rules */}
               <div className="space-y-2">
                 <Label htmlFor="rules">Nội quy nhóm</Label>
                 <Textarea
@@ -315,7 +315,7 @@ export default function CreateGroupPage() {
                 </p>
               </div>
 
-              
+              {/* Submit */}
               <div className="flex gap-3 pt-4">
                 <Button
                   type="button"

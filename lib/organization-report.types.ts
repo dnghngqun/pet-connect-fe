@@ -1,4 +1,6 @@
+// Organization Report Types
 
+// Matching DB: reports.status - CREATED (chờ xử lý) -> RESOLVED/REFUSED (đã xử lý/từ chối)
 export type ReportStatus = 'CREATED' | 'RESOLVED' | 'REFUSED';
 
 export interface Organization {
@@ -29,7 +31,7 @@ export interface OrganizationReport {
   reason: string;
   reasonLabel: string;
   content: string;
-  evidence?: string[];
+  evidence?: string[]; // URLs of uploaded images
   status: ReportStatus;
   adminResponse?: AdminResponse;
   createdAt: string;
@@ -45,8 +47,11 @@ export const REPORT_REASONS = [
   { id: 'bad_service', label: 'Dịch vụ kém chất lượng' },
   { id: 'other', label: 'Lý do khác' },
 ] as const;
+
+// Status flow: CREATED (chờ xử lý) -> RESOLVED (đã xử lý) hoặc REFUSED (từ chối)
 export const STATUS_CONFIG: Record<ReportStatus, { label: string; color: string; bgColor: string }> = {
   CREATED: { label: 'Chờ xử lý', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
   RESOLVED: { label: 'Đã xử lý', color: 'text-green-700', bgColor: 'bg-green-100' },
   REFUSED: { label: 'Từ chối', color: 'text-red-700', bgColor: 'bg-red-100' },
 };
+

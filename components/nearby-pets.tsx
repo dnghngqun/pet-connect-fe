@@ -24,6 +24,8 @@ interface NearbyPetsProps {
   maxResults?: number
   isLoading?: boolean
 }
+
+// Helper function to format time ago
 function getTimeAgo(dateString: string): string {
   const now = new Date()
   const date = new Date(dateString)
@@ -42,7 +44,7 @@ export default function NearbyPets({
   maxResults = 5,
   isLoading = false,
 }: NearbyPetsProps) {
-
+  // Calculate nearby pets based on location
   const nearbyPets = useMemo(() => {
     if (!userLocation || pets.length === 0) return []
 
@@ -87,6 +89,8 @@ export default function NearbyPets({
       </Card>
     )
   }
+
+
   return (
     <Card>
       <CardHeader>
@@ -173,3 +177,4 @@ export default function NearbyPets({
     </Card>
   )
 }
+

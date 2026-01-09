@@ -30,7 +30,7 @@ export default function UserDropdown() {
   const router = useRouter()
 
   useEffect(() => {
-
+    // Get user from localStorage on mount
     const userData = authService.getCurrentUser()
     setUser(userData)
     setIsLoading(false)
@@ -65,7 +65,7 @@ export default function UserDropdown() {
               src={user.avatarUrl || undefined}
               alt={user.fullName}
               onError={(e) => {
-
+                // If image fails to load, show fallback
                 e.currentTarget.style.display = "none"
               }}
             />
@@ -100,3 +100,4 @@ export default function UserDropdown() {
     </DropdownMenu>
   )
 }
+

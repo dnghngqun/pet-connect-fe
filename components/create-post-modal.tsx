@@ -4,6 +4,8 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
+
+// Use lightweight compact wizard for modal, full wizard still available at /post/new
 const CompactPostWizard = dynamic(() => import('./compact-post-wizard'), {
   ssr: false,
   loading: () => (
@@ -18,7 +20,7 @@ interface CreatePostModalProps {
   onOpenChange: (open: boolean) => void;
   onPostCreated?: (newPost: any) => void;
   presetType?: string;
-  initialPost?: any;
+  initialPost?: any; // For edit mode
 }
 
 export default function CreatePostModal({

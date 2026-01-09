@@ -15,7 +15,7 @@ export function calculateDistance(
   coord1: Coordinates,
   coord2: Coordinates
 ): number {
-  const R = 6371
+  const R = 6371 // Bán kính Trái Đất (km)
   const dLat = toRad(coord2.latitude - coord1.latitude)
   const dLon = toRad(coord2.longitude - coord1.longitude)
   const a =
@@ -71,7 +71,7 @@ export async function getAddressFromCoordinates(
 ): Promise<string> {
   try {
     const response = await fetch(
-      `https:
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
       {
         headers: {
           'Accept-Language': 'vi-VN',
@@ -118,3 +118,4 @@ export function getTimeAgo(dateString: string): string {
   if (seconds < 2592000) return `${Math.floor(seconds / 86400)} ngày trước`
   return `${Math.floor(seconds / 2592000)} tháng trước`
 }
+

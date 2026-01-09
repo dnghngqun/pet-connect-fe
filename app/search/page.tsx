@@ -3,6 +3,8 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import SearchPageContent from './search-content';
+
+// Wrapper to handle Suspense boundary for useSearchParams
 export default function SearchPage() {
   return (
     <Suspense fallback={

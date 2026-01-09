@@ -32,7 +32,7 @@ interface NearbyRescueCentersProps {
   radiusKm?: number
   limit?: number
   isLoading?: boolean
-  rescueCentersData?: RescueCenter[]
+  rescueCentersData?: RescueCenter[] // New prop to accept data from API
 }
 
 export default function NearbyRescueCenters({
@@ -42,13 +42,13 @@ export default function NearbyRescueCenters({
   isLoading = false,
   rescueCentersData,
 }: NearbyRescueCentersProps) {
-
+  // Use provided data or fall back to mock data
   const centers = useMemo(() => {
-
+    // If external data is provided, use it
     if (rescueCentersData && rescueCentersData.length > 0) {
       return rescueCentersData.slice(0, limit)
     }
-
+    // Otherwise, fall back to mock data
     if (!userLocation) return []
     return findNearbyRescueCenters(
       userLocation.latitude,
@@ -111,18 +111,18 @@ export default function NearbyRescueCenters({
                 <div>
                   <h3 className="font-semibold text-lg mb-3">{center.name}</h3>
 
-                  
+                  {/* Distance */}
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <MapPin className="h-4 w-4" />
                     <span>{center.distance?.toFixed(1) || '?'} km</span>
                   </div>
 
-                  
+                  {/* Address */}
                   <p className="text-sm text-muted-foreground mb-3">
                     {center.location?.address || 'Chưa có địa chỉ'}
                   </p>
 
-                  
+                  {/* Contact Info */}
                   <div className="space-y-2 mb-3">
                     {center.phone && (
                       <div className="flex items-center gap-2 text-sm">
@@ -150,7 +150,7 @@ export default function NearbyRescueCenters({
                     )}
                   </div>
 
-                  
+                  {/* Specialties */}
                   {center.specialties && center.specialties.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {center.specialties.map((specialty: string) => (
@@ -169,3 +169,4 @@ export default function NearbyRescueCenters({
     </Card>
   )
 }
+

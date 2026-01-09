@@ -62,16 +62,20 @@ export default function GroupDetailPage() {
   const [joining, setJoining] = useState(false);
   const [approving, setApproving] = useState<number | null>(null);
   const currentUser = authService.getCurrentUser();
+
+  // Load group first, then load members using group.id
   useEffect(() => {
     if (slug) {
       loadGroup();
     }
   }, [slug]);
+
+  // Load members AFTER group is loaded (fixes the bug!)
   useEffect(() => {
     if (group?.id) {
       loadMembers(group.id);
       
-
+      // Load pending members if user is admin/moderator
       if (group.memberRole === 'ADMIN' || group.memberRole === 'MODERATOR') {
         loadPendingMembers(group.id);
       }
@@ -91,6 +95,8 @@ export default function GroupDetailPage() {
       setLoading(false);
     }
   };
+
+  // Fixed: use groupId parameter instead of parseInt(slug)
   const loadMembers = async (groupId: number) => {
     try {
       setLoadingMembers(true);
@@ -104,6 +110,8 @@ export default function GroupDetailPage() {
       setLoadingMembers(false);
     }
   };
+
+  // Load pending members for admins/moderators
   const loadPendingMembers = async (groupId: number) => {
     try {
       setLoadingPending(true);
@@ -117,17 +125,19 @@ export default function GroupDetailPage() {
       setLoadingPending(false);
     }
   };
+
+  // Handle approve member
   const handleApproveMember = async (userId: number) => {
     if (!group) return;
     try {
       setApproving(userId);
       const response = await approveMember(group.id, userId);
       if (response.success) {
-
+        // Remove from pending list
         setPendingMembers(prev => prev.filter(m => m.userId !== userId));
-
+        // Reload members
         loadMembers(group.id);
-
+        // Reload group to update member count
         loadGroup();
       }
     } catch (error) {
@@ -136,13 +146,15 @@ export default function GroupDetailPage() {
       setApproving(null);
     }
   };
+
+  // Handle reject member
   const handleRejectMember = async (userId: number) => {
     if (!group) return;
     try {
       setApproving(userId);
       const response = await rejectMember(group.id, userId);
       if (response.success) {
-
+        // Remove from pending list
         setPendingMembers(prev => prev.filter(m => m.userId !== userId));
       }
     } catch (error) {
@@ -167,7 +179,7 @@ export default function GroupDetailPage() {
       } else {
         await joinGroup(group.id);
       }
-
+      // Reload group to update member status
       await loadGroup();
     } catch (error) {
       console.error('Error joining/leaving group:', error);
@@ -208,14 +220,14 @@ export default function GroupDetailPage() {
 
   const categoryInfo = CATEGORY_LABELS[group.category] || CATEGORY_LABELS.OTHER;
   
-
-
+  // Check if user can view detailed content
+  // For private groups, only members (not pending) can see members/posts tabs
   const canViewContent = !group.isPrivate || 
     (group.isMember && group.memberRole !== 'PENDING');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50/50 via-white to-pink-50/50">
-      
+      {/* Cover Image with Gradient Overlay */}
       <div className="relative h-72 md:h-80">
         {group.coverImageUrl ? (
           <img
@@ -226,10 +238,10 @@ export default function GroupDetailPage() {
         ) : (
           <div className={`w-full h-full bg-gradient-to-r ${categoryInfo.color}`} />
         )}
-        
+        {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
         
-        
+        {/* Decorative Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <span className="absolute top-6 right-6 text-5xl opacity-20">🐾</span>
           <span className="absolute bottom-20 left-6 text-4xl opacity-20">🐕</span>
@@ -238,12 +250,12 @@ export default function GroupDetailPage() {
 
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto">
-          
+          {/* Group Header - Overlapping Cover */}
           <div className="relative -mt-24 mb-6">
             <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm overflow-hidden">
               <CardContent className="p-6 md:p-8">
                 <div className="flex flex-col md:flex-row items-start gap-6">
-                  
+                  {/* Avatar with Ring */}
                   <div className="relative">
                     <div className={`p-1 rounded-2xl bg-gradient-to-br ${categoryInfo.color}`}>
                       <Avatar className="h-28 w-28 md:h-36 md:w-36 rounded-xl border-4 border-white">
@@ -253,13 +265,13 @@ export default function GroupDetailPage() {
                         </AvatarFallback>
                       </Avatar>
                     </div>
-                    
+                    {/* Online indicator */}
                     <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
                       <span className="text-white text-xs">✓</span>
                     </div>
                   </div>
 
-                  
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="space-y-3">
@@ -267,7 +279,7 @@ export default function GroupDetailPage() {
                           {group.name}
                         </h1>
                         
-                        
+                        {/* Badges */}
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge className={`bg-gradient-to-r ${categoryInfo.color} text-white border-0 px-3 py-1`}>
                             {categoryInfo.emoji} {categoryInfo.label}
@@ -298,7 +310,7 @@ export default function GroupDetailPage() {
                           )}
                         </div>
                         
-                        
+                        {/* Stats */}
                         <div className="flex items-center gap-5 text-sm text-gray-600 flex-wrap">
                           <div className="flex items-center gap-1.5 font-medium">
                             <div className="p-1.5 rounded-lg bg-orange-100">
@@ -323,11 +335,11 @@ export default function GroupDetailPage() {
                         </div>
                       </div>
 
-                      
+                      {/* Actions */}
                       <div className="flex gap-3 flex-wrap">
                         {currentUser && (
                           <>
-                            
+                            {/* Handle three states: member, pending, or non-member */}
                             {group.memberRole === 'PENDING' ? (
                               <Button
                                 disabled
@@ -376,7 +388,7 @@ export default function GroupDetailPage() {
             </Card>
           </div>
 
-          
+          {/* Content Tabs - Social Media Style */}
           <Tabs defaultValue="about" className="space-y-6">
             <Card className="border-0 shadow-lg overflow-hidden">
               <TabsList className="w-full justify-start rounded-none bg-white p-0 h-auto border-b">
@@ -408,10 +420,10 @@ export default function GroupDetailPage() {
               </TabsList>
             </Card>
 
-            
+            {/* About Tab */}
             <TabsContent value="about" className="space-y-6 mt-0">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
+                {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
                   <Card className="border-0 shadow-lg overflow-hidden">
                     <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
@@ -444,9 +456,9 @@ export default function GroupDetailPage() {
                   )}
                 </div>
 
-                
+                {/* Sidebar */}
                 <div className="space-y-6">
-                  
+                  {/* Admins */}
                   {group.admins && group.admins.length > 0 && (
                     <Card className="border-0 shadow-lg overflow-hidden">
                       <CardHeader className="bg-gradient-to-r from-yellow-50 to-amber-50 border-b py-4">
@@ -479,7 +491,7 @@ export default function GroupDetailPage() {
                     </Card>
                   )}
 
-                  
+                  {/* Pending Members - Admin Panel */}
                   {(group.memberRole === 'ADMIN' || group.memberRole === 'MODERATOR') && (
                     <Card className="border-0 shadow-lg overflow-hidden border-l-4 border-l-orange-400">
                       <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b py-4">
@@ -561,7 +573,7 @@ export default function GroupDetailPage() {
               </div>
             </TabsContent>
 
-            
+            {/* Members Tab */}
             <TabsContent value="members" className="mt-0">
               <Card className="border-0 shadow-lg overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
@@ -623,7 +635,7 @@ export default function GroupDetailPage() {
               </Card>
             </TabsContent>
 
-            
+            {/* Posts Tab */}
             <TabsContent value="posts" className="mt-0">
               <Card className="border-0 shadow-lg overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
@@ -659,7 +671,7 @@ export default function GroupDetailPage() {
             </TabsContent>
           </Tabs>
 
-          
+          {/* Bottom spacing */}
           <div className="h-12" />
         </div>
       </div>

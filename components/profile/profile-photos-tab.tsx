@@ -20,11 +20,11 @@ export default function ProfilePhotosTab({ userId }: ProfilePhotosTabProps) {
   const fetchPhotos = async (pageNum: number) => {
     try {
       setLoading(true);
-
+      // Fetch posts (we might need to fetch more to find photos if posts are text-only)
       const response = await getUserPosts(userId, pageNum, 20);
       
       if (response.success && response.data?.posts) {
-
+        // Extract posts with images
         const postsWithImages = response.data.posts.filter((post: any) => post.image);
         
         if (pageNum === 0) {
@@ -33,7 +33,7 @@ export default function ProfilePhotosTab({ userId }: ProfilePhotosTabProps) {
           setPhotos(prev => [...prev, ...postsWithImages]);
         }
         
-
+        // If response has fewer items than requested, we reached end
         if (response.data.posts.length < 20) {
           setHasMore(false);
         }

@@ -37,7 +37,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [createPostOpen, setCreatePostOpen] = useState(false);
   const currentUser = authService.getCurrentUser();
   
-
+  // Calculate if own profile
   const isOwnProfile = currentUser?.id?.toString() === resolvedParams.userId || currentUser?._id === resolvedParams.userId;
 
   useEffect(() => {
@@ -69,14 +69,14 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         const response = await friendRequestService.getUserFriends(resolvedParams.userId, 0, 9);
         if (response.success && response.data) {
            const friendsList = Array.isArray(response.data) ? response.data : [];
-
+           // Map to preview format
            const mappedFriends = friendsList.map((f: any) => ({
-             id: f.friendId || f.userId,
+             id: f.friendId || f.userId, // Depend on DTO
              name: f.friendName || f.userName || f.name,
              avatarUrl: f.friendAvatar || f.userAvatar || f.avatar || '',
            })).filter((f: any) => f.id !== null);
            
-
+           // Deduplicate friends by ID
            const uniqueFriends = Array.from(new Map(mappedFriends.map((f: any) => [f.id, f])).values());
            
            setFriendsPreview(uniqueFriends);
@@ -127,6 +127,8 @@ export default function ProfilePage({ params }: ProfilePageProps) {
       </div>
     );
   }
+
+  // Derive photos for sidebar preview
   const photosPreview = posts
     .filter((p: any) => p.image)
     .slice(0, 9)
@@ -156,7 +158,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
           <TabsContent value="posts" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-7 gap-4 px-2 md:px-0">
-              
+              {/* Left Column: Intro */}
               <div className="md:col-span-3 space-y-4 hidden md:block">
                 <ProfileIntro 
                   bio={profile.bio} 
@@ -174,9 +176,9 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                 />
               </div>
 
-              
+              {/* Right Column: Feed */}
               <div className="md:col-span-4 space-y-4">
-                
+                {/* Mobile Intro (Simplified) */}
                 <div className="md:hidden space-y-4">
                   <ProfileIntro bio={profile.bio} joinedDate={profile.createdAt} isOwnProfile={isOwnProfile} />
                 </div>

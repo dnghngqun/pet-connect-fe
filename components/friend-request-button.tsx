@@ -144,6 +144,8 @@ export default function FriendRequestButton({ userId, userName, onStatusChange }
   }
 
   if (!status) return null;
+
+  // Already friends
   if (status.status === 'FRIENDS') {
     return (
       <Button variant="outline" size="sm" disabled>
@@ -152,6 +154,8 @@ export default function FriendRequestButton({ userId, userName, onStatusChange }
       </Button>
     );
   }
+
+  // Pending sent - can cancel
   if (status.status === 'PENDING_SENT') {
     return (
       <Button 
@@ -166,6 +170,8 @@ export default function FriendRequestButton({ userId, userName, onStatusChange }
       </Button>
     );
   }
+
+  // Pending received - can accept/reject
   if (status.status === 'PENDING_RECEIVED') {
     return (
       <div className="flex gap-2">
@@ -189,6 +195,8 @@ export default function FriendRequestButton({ userId, userName, onStatusChange }
       </div>
     );
   }
+
+  // No relationship - can send request
   return (
     <Button 
       variant="default" 

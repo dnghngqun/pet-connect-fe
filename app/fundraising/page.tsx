@@ -44,7 +44,7 @@ export default function FundraisingPage() {
     SHELTER: '🏠 Nơi trú ẩn',
     FOOD: '🍖 Thức ăn',
     OTHER: '📌 Khác',
-
+    // Lowercase for compatibility
     medical: '🏥 Y tế',
     rescue: '🆘 Cứu hộ',
     shelter: '🏠 Nơi trú ẩn',
@@ -90,7 +90,7 @@ export default function FundraisingPage() {
 
   return (
     <div className="container px-4 py-8 md:py-12">
-      
+      {/* Header */}
       <div className="mb-12">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
@@ -99,7 +99,7 @@ export default function FundraisingPage() {
               Hãy cùng chúng tôi giúp đỡ các thú cưng cần sự giúp đỡ
             </p>
           </div>
-          
+          {/* Only ADMIN or RESCUE_GROUP can create campaigns */}
           {(currentUser?.roleCode === 'ADMIN' || currentUser?.roleCode === 'RESCUE_GROUP') && (
             <Button asChild size="lg" className="w-full md:w-auto">
               <Link href="/fundraising/create">Tạo chiến dịch</Link>
@@ -107,7 +107,7 @@ export default function FundraisingPage() {
           )}
         </div>
 
-        
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardContent className="pt-6">
@@ -144,7 +144,7 @@ export default function FundraisingPage() {
         </div>
       </div>
 
-      
+      {/* Active Campaigns */}
       <div className="mb-16">
         <div className="flex items-center gap-2 mb-6">
           <TrendingUp className="h-6 w-6 text-primary" />
@@ -166,7 +166,7 @@ export default function FundraisingPage() {
                   key={campaign.id}
                   className="overflow-hidden hover:shadow-lg transition-shadow"
                 >
-                  
+                  {/* Image */}
                   <div className="relative h-48 overflow-hidden bg-gray-200">
                     <Image
                       src={campaign.image || '/placeholder.jpg'}
@@ -181,7 +181,7 @@ export default function FundraisingPage() {
                     </div>
                   </div>
 
-                  
+                  {/* Content */}
                   <CardContent className="pt-4">
                     <h3 className="font-semibold text-lg line-clamp-2 mb-2">
                       {campaign.title}
@@ -196,7 +196,7 @@ export default function FundraisingPage() {
                       </div>
                     )}
 
-                    
+                    {/* Progress Bar */}
                     <div className="mb-3">
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
                         <div
@@ -214,7 +214,7 @@ export default function FundraisingPage() {
                       {progress.toFixed(0)}% đạt được
                     </div>
 
-                    
+                    {/* Button */}
                     <Button asChild className="w-full">
                       <Link href={`/fundraising/${campaign.slug}`}>Xem chi tiết & Góp</Link>
                     </Button>
@@ -226,7 +226,7 @@ export default function FundraisingPage() {
         )}
       </div>
 
-      
+      {/* Completed Campaigns */}
       {completedCampaigns.length > 0 && (
         <div>
           <h2 className="text-3xl font-bold mb-6">Chiến dịch hoàn thành</h2>

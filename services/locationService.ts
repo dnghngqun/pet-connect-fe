@@ -1,6 +1,10 @@
+// Location Service - Real API calls
+// Based on LocationController.java endpoints
 
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import apiClient from '@/common/apiClient';
+
+// API Response wrapper
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;

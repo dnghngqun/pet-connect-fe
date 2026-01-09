@@ -18,6 +18,8 @@ interface WishlistButtonProps {
 export default function WishlistButton({ productId, className, variant = 'ghost', size = 'icon' }: WishlistButtonProps) {
   const [isInWishlist, setIsInWishlist] = useState(false);
   const { toast } = useToast();
+
+  // Check if product is in wishlist on mount
   useEffect(() => {
     const savedWishlist = localStorage.getItem('wishlist');
     if (savedWishlist) {
@@ -46,14 +48,14 @@ export default function WishlistButton({ productId, className, variant = 'ghost'
     }
 
     if (isInWishlist) {
-
+      // Remove from wishlist
       wishlistIds = wishlistIds.filter((id) => id !== productId);
       toast({
         title: 'Removed from wishlist',
         description: 'The item has been removed from your wishlist',
       });
     } else {
-
+      // Add to wishlist
       wishlistIds.push(productId);
       toast({
         title: 'Added to wishlist',

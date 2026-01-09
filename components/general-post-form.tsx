@@ -54,14 +54,14 @@ export default function GeneralPostForm({ postType, onSuccess }: GeneralPostForm
   });
 
   const handleNext = () => {
-
+    // Validation for Step 1
     if (currentStep === 1) {
       if (!formData.title || !formData.petType) {
         toast({ title: 'Vui lòng nhập tiêu đề và chọn loại thú cưng', variant: 'destructive' });
         return;
       }
     }
-
+    // Validation for Step 2
     if (currentStep === 2) {
       if (!formData.description) {
         toast({ title: 'Vui lòng nhập mô tả chi tiết', variant: 'destructive' });
@@ -125,7 +125,7 @@ export default function GeneralPostForm({ postType, onSuccess }: GeneralPostForm
 
   return (
     <div className="flex flex-col h-full max-h-[600px]">
-      
+      {/* Progress Steps */}
       <div className="flex justify-between items-center mb-6 px-4">
         {STEPS.map((step, index) => (
           <div key={step.id} className="flex items-center">
@@ -145,7 +145,7 @@ export default function GeneralPostForm({ postType, onSuccess }: GeneralPostForm
         ))}
       </div>
 
-      
+      {/* Form Steps */}
       <div className="flex-1 overflow-y-auto px-1">
         <AnimatePresence mode="wait" initial={false}>
           {currentStep === 1 && (
@@ -309,14 +309,14 @@ export default function GeneralPostForm({ postType, onSuccess }: GeneralPostForm
         </AnimatePresence>
       </div>
 
-      
+      {/* Navigation Actions */}
       <div className="flex justify-between items-center mt-6 pt-4 border-t">
         {currentStep > 1 ? (
           <Button variant="outline" onClick={handleBack} className="gap-2">
             <ArrowLeft className="h-4 w-4" /> Quay lại
           </Button>
         ) : (
-          <div />
+          <div /> // Spacer
         )}
 
         {currentStep < 3 ? (

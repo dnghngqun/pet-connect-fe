@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Phone, MessageCircle, ArrowLeft, Share2, Flag, Heart } from 'lucide-react';
 import PetHealthProfileDialog from '@/components/pet-health-profile-dialog';
 import PetInfoCard from '@/components/pet-info-card';
-
+import PetQRCode from '@/components/pet-qr-code';
 import { PetPost } from '@/lib/types';
 import { toast } from '@/components/ui/use-toast';
 
@@ -24,7 +24,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
 
   return (
     <div className="container px-4 py-8">
-      
+      {/* Back Button */}
       <Button variant="ghost" asChild className="mb-6">
         <Link href="/shop">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -33,9 +33,9 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          
+          {/* Image */}
           <div className="relative rounded-lg overflow-hidden h-96">
             <Image
               src={post.image}
@@ -50,7 +50,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
             </div>
           </div>
 
-          
+          {/* Title and Basic Info */}
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">{post.title}</CardTitle>
@@ -63,7 +63,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
             </CardHeader>
           </Card>
 
-          
+          {/* Location */}
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
@@ -76,7 +76,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
             </CardContent>
           </Card>
 
-          
+          {/* Description */}
           <Card>
             <CardHeader>
               <CardTitle>Mô tả chi tiết</CardTitle>
@@ -86,13 +86,13 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
             </CardContent>
           </Card>
 
-          
+          {/* Pet Info Card */}
           {post.pet && <PetInfoCard pet={post.pet} />}
         </div>
 
-        
+        {/* Sidebar */}
         <div className="space-y-6">
-          
+          {/* Pet Info Card - New */}
           {post.pet && (
             <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
               <CardHeader>
@@ -102,7 +102,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                
+                {/* Pet Image */}
                 {post.pet.photos && post.pet.photos.length > 0 && (
                   <div className="relative rounded-lg overflow-hidden h-40 bg-muted">
                     <Image
@@ -114,7 +114,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
                   </div>
                 )}
 
-                
+                {/* Pet Basic Info */}
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground">Tên</p>
@@ -179,7 +179,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
                   )}
                 </div>
 
-                
+                {/* Health Status Quick View */}
                 <div className="border-t pt-3 space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">Trạng thái sức khỏe</p>
                   <div className="flex items-center gap-2 text-xs p-2 bg-green-100/50 rounded">
@@ -194,13 +194,22 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
                   </div>
                 </div>
 
-                
+                {/* View Health Profile Button */}
                 <PetHealthProfileDialog pet={post.pet} />
               </CardContent>
             </Card>
           )}
 
-          
+          {/* Pet QR Code */}
+          {post.pet && (
+            <PetQRCode
+              petId={post.pet.id}
+              petName={post.pet.name}
+              qrCodeUrl={post.pet.qrCodeUrl}
+            />
+          )}
+
+          {/* Poster Info */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Người đăng bài</CardTitle>
@@ -224,7 +233,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
                 </div>
               </div>
 
-              
+              {/* Contact Buttons */}
               <div className="space-y-2 pt-4 border-t">
                 <Button
                   className="w-full"
@@ -250,7 +259,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
             </CardContent>
           </Card>
 
-          
+          {/* Actions */}
           <div className="space-y-2">
             <Button variant="outline" className="w-full">
               <Share2 className="h-4 w-4 mr-2" />
@@ -262,7 +271,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
             </Button>
           </div>
 
-          
+          {/* Related Info */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Thông tin thêm</CardTitle>
@@ -283,3 +292,4 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
     </div>
   );
 }
+

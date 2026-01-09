@@ -52,6 +52,8 @@ export type CreateMessagePayload = {
   replyToId?: string;
   postId?: string | number;
 };
+
+// API Response Types
 export type ApiResponse<T> = {
   code: string;
   message: string;

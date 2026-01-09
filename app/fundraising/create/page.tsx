@@ -53,6 +53,8 @@ export default function CreateFundraisingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+
+    // Simulate submission
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
     toast({
@@ -74,7 +76,7 @@ export default function CreateFundraisingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-pink-50 to-white py-8">
       <div className="container px-4 max-w-2xl">
-      
+      {/* Back Button */}
       <Button variant="ghost" asChild className="mb-6">
         <Link href="/fundraising">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -92,7 +94,7 @@ export default function CreateFundraisingPage() {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-            
+            {/* Title */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Tiêu đề chiến dịch *
@@ -106,7 +108,7 @@ export default function CreateFundraisingPage() {
               />
             </div>
 
-            
+            {/* Category */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Danh mục *
@@ -125,7 +127,7 @@ export default function CreateFundraisingPage() {
               </select>
             </div>
 
-            
+            {/* Target Amount */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Mục tiêu quyên góp (VND) *
@@ -140,7 +142,7 @@ export default function CreateFundraisingPage() {
               />
             </div>
 
-            
+            {/* Description */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Mô tả chi tiết *
@@ -155,7 +157,7 @@ export default function CreateFundraisingPage() {
               />
             </div>
 
-            
+            {/* Pet Name (Optional) */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Tên thú cưng liên quan (tùy chọn)
@@ -168,7 +170,7 @@ export default function CreateFundraisingPage() {
               />
             </div>
 
-            
+            {/* Beneficiary */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Tổ chức hưởng lợi (tùy chọn)
@@ -181,7 +183,7 @@ export default function CreateFundraisingPage() {
               />
             </div>
 
-            
+            {/* Image URL */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 URL ảnh đại diện (tùy chọn)
@@ -190,7 +192,7 @@ export default function CreateFundraisingPage() {
                 name="image"
                 value={formData.image}
                 onChange={handleChange}
-                placeholder="https:
+                placeholder="https://..."
               />
               {formData.image && (
                 <div className="mt-2 relative w-full h-48 rounded-lg overflow-hidden">
@@ -203,7 +205,7 @@ export default function CreateFundraisingPage() {
               )}
             </div>
 
-            
+            {/* Submit */}
             <div className="border-t pt-6 flex gap-4">
               <Button
                 type="submit"
@@ -223,7 +225,7 @@ export default function CreateFundraisingPage() {
               </Button>
             </div>
 
-            
+            {/* Info */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
               <p className="font-semibold mb-2">💡 Mẹo:</p>
               <ul className="list-disc list-inside space-y-1">
@@ -240,3 +242,4 @@ export default function CreateFundraisingPage() {
     </div>
   )
 }
+

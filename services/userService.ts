@@ -2,7 +2,7 @@ import apiClient from '@/common/apiClient';
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import { AxiosRequestConfig } from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http:
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 export const getProfile = async () => {
   const resp = await apiClient.get(COMMON_API.profile);
@@ -33,7 +33,7 @@ export const getUserPosts = async (userId: string, page = 0, size = 10, status?:
       ...(status && { status }),
     };
     
-
+    // Note: This endpoint is public, so apiClient will add token if available, which is fine
     const response = await apiClient.get(`/api/v1/posts/user/${userId}`, { params });
     return response.data;
   } catch (error) {

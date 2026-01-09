@@ -24,7 +24,7 @@ export default function FriendRequestList() {
     try {
       setLoading(true);
       const data = await friendRequestService.getPendingRequests();
-
+      // Ensure data is array (handle API response wrapper if needed)
       const list = Array.isArray(data) ? data : (data as any).data || [];
       setRequests(list);
     } catch (error) {
@@ -42,7 +42,7 @@ export default function FriendRequestList() {
           title: 'Đã chấp nhận',
           description: `Đã trở thành bạn bè với ${userName}`,
         });
-
+        // Remove from list
         setRequests(prev => prev.filter(r => r.id !== requestId));
       }
     } catch (error) {

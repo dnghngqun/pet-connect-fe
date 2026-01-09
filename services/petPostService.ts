@@ -1,12 +1,20 @@
+// Pet Post Service - Real API calls
+// Based on PostController.java endpoints
 
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import apiClient from '@/common/apiClient';
+
+// ============ Types based on backend DTOs ============
+
+// PosterDTO
 export interface Poster {
   id: number;
   name: string;
   phone: string;
   avatar: string | null;
 }
+
+// PetInfoDTO
 export interface PetInfo {
   id: number;
   userId: number;
@@ -36,6 +44,8 @@ export interface PetInfo {
     medicalHistory: { id: number; visitDate: string; condition: string; treatment: string; notes?: string; weight?: number }[];
   } | null;
 }
+
+// PostListItemDTO
 export interface PostListItem {
   id: number;
   title: string;
@@ -64,6 +74,8 @@ export interface PostListItem {
   createdAt: string;
   updatedAt: string;
 }
+
+// PostDetailDTO
 export interface PostDetail {
   id: number;
   title: string;
@@ -106,6 +118,8 @@ export interface PostDetail {
   createdAt: string;
   updatedAt: string;
 }
+
+// API Response wrapper from ResponseHandler
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
@@ -121,6 +135,8 @@ export interface ApiResponse<T> {
     hasPrevPage?: boolean;
   };
 }
+
+// Paginated response
 export interface PaginatedResponse<T> {
   content: T[];
   totalPages: number;
@@ -130,6 +146,8 @@ export interface PaginatedResponse<T> {
   first?: boolean;
   last?: boolean;
 }
+
+// ============ Request Types ============
 
 export interface GetPostsParams {
   page?: number;
@@ -218,6 +236,8 @@ export interface UpdatePostRequest {
     medicalHistory?: any[];
   };
 }
+
+// ============ Service Functions ============
 
 const petPostService = {
   /**
@@ -495,7 +515,7 @@ const petPostService = {
    * POST /api/v1/pets/{petId}/health/vaccinations
    */
   async addVaccination(petId: number, data: { name: string; date: string; nextDueDate?: string }): Promise<ApiResponse<any>> {
-
+    // Backend expects LocalDateTime format: "2025-12-02T00:00:00"
     const formatToLocalDateTime = (dateStr: string) => dateStr ? `${dateStr}T00:00:00` : undefined;
     
     const response = await apiClient.post(`/api/v1/pets/${petId}/health/vaccinations`, {
@@ -520,7 +540,7 @@ const petPostService = {
    * POST /api/v1/pets/{petId}/health/medical-history
    */
   async addMedicalHistory(petId: number, data: { condition: string; treatment: string; date: string; notes?: string; weight?: number }): Promise<ApiResponse<any>> {
-
+    // Backend expects LocalDateTime format: "2025-12-02T00:00:00"
     const response = await apiClient.post(`/api/v1/pets/${petId}/health/medical-history`, {
       condition: data.condition,
       treatment: data.treatment,

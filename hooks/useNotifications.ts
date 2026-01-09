@@ -3,7 +3,6 @@ import { notificationService } from '@/services/notificationService'
 import { Notification } from '@/lib/types'
 import { useAuth } from '@/hooks/useAuth'
 import { chatAPI } from '@/services/chatService'
-import { useWebSocket } from '@/components/websocket-provider'
 
 export function useNotifications() {
   const { user, isLoading: isAuthLoading } = useAuth()
@@ -66,35 +65,35 @@ export function useNotifications() {
     setNotifications([])
     setUnreadCount(0)
   }, [user?._id])
-  const { subscribe, isConnected } = useWebSocket()
+
+  const handleSocketNotification = useCallback((payload: any) => {
+    const incoming = payload?.data ?? payload
+    if (!incoming?.id) return
+
+    setNotifications((prev) => [
+      incoming,
+      ...prev.filter((notif) => notif.id !== incoming.id),
+    ])
+    if (!incoming.isRead) {
+      setUnreadCount((prev) => prev + 1)
+    }
+  }, [])
+
   useEffect(() => {
-    if (!isConnected || !user?._id) return
+    if (isAuthLoading) return
+    refresh()
+  }, [isAuthLoading, refresh])
 
-    const sub = subscribe('/user/queue/notifications', (message) => {
-      try {
-        if (message.body) {
-          const incoming = JSON.parse(message.body)
-          if (!incoming?.id) return
+  useEffect(() => {
+    if (!user?.token) return
 
-          setNotifications((prev) => [
-            incoming,
-            ...prev.filter((notif) => notif.id !== incoming.id),
-          ])
-          
-
-          if (!incoming.isRead) {
-            setUnreadCount((prev) => prev + 1)
-          }
-        }
-      } catch (error) {
-        console.error('Error parsing notification message', error)
-      }
-    })
+    chatAPI.connectWebSocket(user.token, undefined, undefined)
+    const cleanup = chatAPI.addNotificationListener(handleSocketNotification)
 
     return () => {
-      sub?.unsubscribe()
+      if (cleanup) cleanup()
     }
-  }, [isConnected, subscribe, user?._id])
+  }, [user?.token, handleSocketNotification])
 
   return {
     notifications,

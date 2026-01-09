@@ -64,16 +64,20 @@ export default function OrganizationReportForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [reportedOrgIds, setReportedOrgIds] = useState<Set<number>>(new Set());
+
+  // Form data
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [reason, setReason] = useState('');
   const [content, setContent] = useState('');
   const [evidence, setEvidence] = useState<File[]>([]);
   const [evidencePreviews, setEvidencePreviews] = useState<string[]>([]);
+
+  // Load organizations on mount
   useEffect(() => {
     if (open) {
       loadOrganizations();
       if (editReport) {
-
+        // Convert OrganizationReport organization to service Organization
         const org: Organization = {
           id: Number(editReport.organization.id),
           name: editReport.organization.name,
@@ -102,17 +106,21 @@ export default function OrganizationReportForm({
   const loadOrganizations = async () => {
     setIsLoading(true);
     try {
-
+      // Load both organizations and user's existing reports
       const [orgsResult, myReports] = await Promise.all([
         organizationReportService.getOrganizations(),
         organizationReportService.getMyReports(),
       ]);
+
+      // Get IDs of organizations that user has already reported (not REFUSED - those can be edited)
       const alreadyReportedIds = new Set(
         myReports
           .filter(report => report.status !== 'REFUSED')
           .map(report => Number(report.organizationId))
       );
       setReportedOrgIds(alreadyReportedIds);
+
+      // Filter out already reported organizations (unless editing)
       const availableOrgs = orgsResult.content.filter(
         org => !alreadyReportedIds.has(org.id)
       );
@@ -204,6 +212,8 @@ export default function OrganizationReportForm({
       setIsSubmitting(false);
     }
   };
+
+  // Real evidence upload handler
   const handleAddEvidence = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -276,7 +286,7 @@ export default function OrganizationReportForm({
           </DialogDescription>
         </DialogHeader>
 
-        
+        {/* Step Indicator */}
         <div className="flex items-center justify-center gap-2 py-4">
           {STEPS.map((step, index) => {
             const StepIcon = step.icon;
@@ -324,7 +334,7 @@ export default function OrganizationReportForm({
         </div>
 
         <div className="flex-1 overflow-hidden">
-          
+          {/* Step 1: Select Organization */}
           {currentStep === 1 && (
             <div className="space-y-4">
               <Input
@@ -379,7 +389,7 @@ export default function OrganizationReportForm({
             </div>
           )}
 
-          
+          {/* Step 2: Report Details */}
           {currentStep === 2 && (
             <ScrollArea className="h-[350px] pr-4">
               <div className="space-y-6">
@@ -456,7 +466,7 @@ export default function OrganizationReportForm({
             </ScrollArea>
           )}
 
-          
+          {/* Step 3: Confirmation */}
           {currentStep === 3 && selectedOrg && (
             <ScrollArea className="h-[350px] pr-4">
               <div className="space-y-6">
@@ -533,7 +543,7 @@ export default function OrganizationReportForm({
           )}
         </div>
 
-        
+        {/* Footer Navigation */}
         <div className="flex items-center justify-between pt-4 border-t">
           <Button
             variant="outline"

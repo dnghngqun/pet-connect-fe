@@ -81,6 +81,8 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
       onFavoriteToggle(post.id || '', saved);
     }
   };
+
+  // Post type configuration with colors and icons
   const postTypeConfig: Record<string, { label: string; color: string; icon: string }> = {
     LOST_FOUND: { label: 'Lost/Found', color: 'bg-red-100 text-red-700 border-red-200', icon: '🔍' },
     ADOPTION: { label: 'Nhận nuôi', color: 'bg-green-100 text-green-700 border-green-200', icon: '🏠' },
@@ -105,7 +107,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
   return (
     <>
       <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl border-0 bg-white">
-        
+        {/* Author Header - Facebook style */}
         <div className="p-4 flex items-center justify-between">
           <div 
             onClick={(e) => {
@@ -184,7 +186,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
                     className="cursor-pointer"
                   >
                     <span className="flex items-center">
-                      <svg className="mr-2 h-4 w-4" xmlns="http:
+                      <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                       Sửa bài đăng
                     </span>
                   </DropdownMenuItem>
@@ -197,7 +199,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
                     className="text-red-600 cursor-pointer"
                   >
                     <span className="flex items-center">
-                      <svg className="mr-2 h-4 w-4" xmlns="http:
+                      <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                       Xóa bài đăng
                     </span>
                   </DropdownMenuItem>
@@ -218,10 +220,10 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
           </DropdownMenu>
         </div>
 
-        
+        {/* Post Content */}
         <div onClick={() => onPostClick?.(post)} className="block cursor-pointer">
           <div className="px-4 pb-3">
-            
+            {/* Phone Number if available */}
             {post.postedBy?.phone && (
               <p className="text-sm font-semibold text-blue-600 mb-2">
                 📞 Liên hệ: {post.postedBy.phone}
@@ -230,7 +232,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
 
             <h3 className="font-semibold text-base line-clamp-2 mb-1">{post.title}</h3>
             
-            
+            {/* Description with See More */}
             <div className="relative">
               <p className={cn("text-sm text-muted-foreground whitespace-pre-line", !isExpanded && "line-clamp-3")}>
                 {post.description}
@@ -249,7 +251,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
             </div>
           </div>
 
-          
+          {/* Images Grid - Facebook Style */}
           <div className="relative bg-muted">
             {(() => {
               const images = post.images && post.images.length > 0 ? post.images : (post.image ? [post.image] : []);
@@ -262,6 +264,8 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
                    </div>
                  );
               }
+
+              // 1 Image
               if (count === 1) {
                 return (
                   <Image
@@ -273,6 +277,8 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
                   />
                 );
               }
+
+              // 2 Images
               if (count === 2) {
                 return (
                   <div className="grid grid-cols-2 gap-1 aspect-[4/3]">
@@ -284,6 +290,8 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
                   </div>
                 );
               }
+
+              // 3 Images
               if (count === 3) {
                  return (
                    <div className="grid grid-cols-2 gap-1 aspect-[4/3]">
@@ -301,6 +309,8 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
                    </div>
                  );
               }
+
+              // 4 Images
               if (count === 4) {
                 return (
                   <div className="grid grid-cols-2 grid-rows-2 gap-1 aspect-[4/3]">
@@ -312,6 +322,8 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
                   </div>
                 );
               }
+
+              // 5+ Images
               return (
                 <div className="grid grid-cols-2 gap-1 aspect-[4/3]">
                   <div className="relative w-full h-full">
@@ -342,9 +354,9 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
             </Badge>
           </div>
 
-          
+          {/* Meta info */}
           <div className="px-4 py-3 space-y-2">
-            
+            {/* Location - only show if valid and not "null" */}
             {((post.location && !post.location.includes('null')) || (post.city && !post.city.includes('null') && post.city !== 'Online')) && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4 flex-shrink-0" />
@@ -371,7 +383,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
             </div>
           </div>
 
-          
+          {/* Post Type Specific Meta */}
           {post.postType && post.meta && (
             <div className="px-4 pb-3">
               <PostTypeMeta postType={post.postType} meta={post.meta} />
@@ -379,7 +391,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
           )}
         </div>
 
-        
+        {/* Stats bar */}
         {(reactionCount > 0 || favoriteCount > 0 || post.commentCount > 0) && (
           <div className="px-4 py-2 border-t border-b flex items-center justify-between text-sm text-muted-foreground">
             <div className="flex items-center gap-4">
@@ -397,7 +409,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
           </div>
         )}
 
-        
+        {/* Interaction Bar - Facebook style */}
         <div className="px-2 py-2 flex items-center gap-1">
           <PostReactions
             postId={post.id || ''}

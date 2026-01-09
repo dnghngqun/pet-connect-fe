@@ -32,11 +32,11 @@ export function PostModalProvider({ children }: { children: React.ReactNode }) {
   const openPostModal = async (idOrSlug: string) => {
     setIsLoading(true);
     try {
-
+      // Fetch post details first
       const response = await petPostService.getPostBySlug(idOrSlug);
       const postDetail: PostDetail = response.data || response;
       
-
+      // Convert PostDetail to PetPost
       const mappedPost: PetPost = {
         id: postDetail.id.toString(),
         title: postDetail.title,
@@ -117,7 +117,7 @@ export function PostModalProvider({ children }: { children: React.ReactNode }) {
 
   const closePostModal = () => {
     setIsOpen(false);
-
+    // Don't clear post immediately to avoid flash
     setTimeout(() => setPost(null), 300);
   };
 

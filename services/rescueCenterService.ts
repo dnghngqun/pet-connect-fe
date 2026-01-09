@@ -1,17 +1,27 @@
+// Rescue Center Service - Real API calls
+// Based on RescueCenterController.java endpoints
 
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import apiClient from '@/common/apiClient';
+
+// ============ Types based on backend DTOs ============
+
+// API Response wrapper
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
   message: string;
   data: T;
 }
+
+// Paginated response
 export interface PaginatedResponse<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
 }
+
+// LocationDTO
 export interface Location {
   address: string;
   district: string;
@@ -19,6 +29,8 @@ export interface Location {
   latitude: number;
   longitude: number;
 }
+
+// RescueCenterListItemDTO
 export interface RescueCenterListItem {
   id: number;
   name: string;
@@ -30,9 +42,11 @@ export interface RescueCenterListItem {
   specialties: string[];
   rating: number | null;
   reviewCount: number;
-  distance: number | null;
+  distance: number | null; // km (only if lat/lon provided)
   isVerified: boolean;
 }
+
+// RescueCenterDetailDTO
 export interface RescueCenterDetail extends RescueCenterListItem {
   description: string | null;
   services: string[];
@@ -46,6 +60,8 @@ export interface RescueCenterDetail extends RescueCenterListItem {
   createdAt: string;
   updatedAt: string;
 }
+
+// ReviewDTO
 export interface Review {
   id: number;
   rating: number;
@@ -57,6 +73,8 @@ export interface Review {
   };
   createdAt: string;
 }
+
+// ============ Request Types ============
 
 export interface GetRescueCentersParams {
   latitude?: number;
@@ -73,6 +91,8 @@ export interface AddReviewRequest {
   rating: number;
   comment: string;
 }
+
+// ============ Service Functions ============
 
 const rescueCenterService = {
   /**

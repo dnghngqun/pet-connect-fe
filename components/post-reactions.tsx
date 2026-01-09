@@ -78,6 +78,8 @@ export default function PostReactions({
       if (onReactionChange) {
         onReactionChange(newCount, newReaction as ReactionType);
       }
+
+      // Show toast only when adding a new reaction (not removing)
       if (newReaction) {
         const reactionLabel = REACTIONS.find(r => r.type === newReaction)?.label || 'Thích';
         toast({

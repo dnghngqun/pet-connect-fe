@@ -50,7 +50,7 @@ export default function MyGroupsPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      
+      {/* Header */}
       <div className="bg-gradient-to-r from-primary to-orange-500 text-white">
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto text-center">

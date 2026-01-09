@@ -5,11 +5,11 @@ import { PawPrint, Heart, ShieldCheck, Truck } from "lucide-react"
 export default function AboutPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      
+      {/* Hero Section */}
       <section className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/50 z-10" />
         <Image
-          src="https:
+          src="https://images.unsplash.com/photo-1450778869180-41d0601e046e?q=80&w=1600&auto=format&fit=crop"
           width={1600}
           height={500}
           alt="Happy pets with owners"
@@ -25,7 +25,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      
+      {/* Our Story Section */}
       <section className="py-16">
         <div className="container px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -55,7 +55,7 @@ export default function AboutPage() {
               <div className="absolute -top-4 -left-4 w-24 h-24 bg-primary/10 rounded-full z-0" />
               <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-primary/10 rounded-full z-0" />
               <Image
-                src="https:
+                src="https://images.unsplash.com/photo-1522276498395-f4f68f7f8454?q=80&w=500&auto=format&fit=crop"
                 width={500}
                 height={500}
                 alt="PetPals founders with their pets"
@@ -66,7 +66,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      
+      {/* Our Mission Section */}
       <section className="py-16 bg-muted">
         <div className="container px-4 text-center">
           <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
@@ -110,7 +110,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      
+      {/* Team Section */}
       <section className="py-16">
         <div className="container px-4">
           <h2 className="text-3xl font-bold mb-6 text-center">Meet Our Team</h2>
@@ -123,22 +123,22 @@ export default function AboutPage() {
               {
                 name: "Alex Johnson",
                 role: "Founder & CEO",
-                image: "https:
+                image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=300&auto=format&fit=crop",
               },
               {
                 name: "Sam Wilson",
                 role: "Head Veterinarian",
-                image: "https:
+                image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=300&auto=format&fit=crop",
               },
               {
                 name: "Jamie Smith",
                 role: "Product Specialist",
-                image: "https:
+                image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=300&auto=format&fit=crop",
               },
               {
                 name: "Taylor Brown",
                 role: "Customer Experience",
-                image: "https:
+                image: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=300&auto=format&fit=crop",
               },
             ].map((member, index) => (
               <div key={index} className="text-center">
@@ -160,7 +160,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      
+      {/* Testimonials Section */}
       <section className="py-16 bg-primary text-white">
         <div className="container px-4">
           <h2 className="text-3xl font-bold mb-12 text-center">What Our Customers Say</h2>
@@ -198,7 +198,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      
+      {/* CTA Section */}
       <section className="py-16">
         <div className="container px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Join Our Community</h2>

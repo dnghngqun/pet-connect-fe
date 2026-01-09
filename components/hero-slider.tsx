@@ -23,6 +23,8 @@ interface HeroSliderProps {
 export default function HeroSlider({ slides, autoPlayInterval = 5000 }: HeroSliderProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isLoading, setIsLoading] = useState<boolean[]>(slides.map(() => true));
+
+  // Auto-play functionality
   useEffect(() => {
     if (!autoPlayInterval) return;
 
@@ -86,7 +88,7 @@ export default function HeroSlider({ slides, autoPlayInterval = 5000 }: HeroSlid
         </div>
       ))}
 
-      
+      {/* Navigation Arrows */}
       <button onClick={prevSlide} className="absolute left-4 top-1/2 z-20 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full" aria-label="Previous slide">
         <ChevronLeft className="h-6 w-6" />
       </button>
@@ -94,7 +96,7 @@ export default function HeroSlider({ slides, autoPlayInterval = 5000 }: HeroSlid
         <ChevronRight className="h-6 w-6" />
       </button>
 
-      
+      {/* Dots Navigation */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
         {slides.map((_, index) => (
           <button

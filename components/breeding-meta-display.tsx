@@ -5,11 +5,11 @@ import { Card } from './ui/card';
 interface BreedingMetaDisplayProps {
   petBreed: string;
   petGender: 'male' | 'female';
-  age?: number;
+  age?: number; // months
   isNeutered?: boolean;
   isVaccinated?: boolean;
   healthCertified?: boolean;
-  lookingFor?: string;
+  lookingFor?: string; // breed to match with
   requirements?: string[];
   fee?: number;
 }
@@ -32,13 +32,13 @@ export default function BreedingMetaDisplay({
   return (
     <Card className="p-4 bg-gradient-to-br from-pink-50 to-rose-50 border-pink-200">
       <div className="space-y-3">
-        
+        {/* Header */}
         <div className="flex items-center gap-2 text-pink-700">
           <Heart className="h-5 w-5 fill-pink-400" />
           <span className="font-semibold">Thông tin phối giống</span>
         </div>
 
-        
+        {/* Pet Info */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <div className="text-xs text-gray-500 mb-1">Giống</div>
@@ -68,7 +68,7 @@ export default function BreedingMetaDisplay({
           )}
         </div>
 
-        
+        {/* Health Status */}
         <div className="flex flex-wrap gap-2 pt-2 border-t border-pink-200">
           {isVaccinated && (
             <div className="flex items-center gap-1 text-xs text-green-600">
@@ -90,7 +90,7 @@ export default function BreedingMetaDisplay({
           )}
         </div>
 
-        
+        {/* Looking For */}
         {lookingFor && (
           <div>
             <div className="text-xs text-gray-500 mb-1">Tìm kiếm</div>
@@ -100,7 +100,7 @@ export default function BreedingMetaDisplay({
           </div>
         )}
 
-        
+        {/* Requirements */}
         {requirements.length > 0 && (
           <div>
             <div className="text-xs text-gray-500 mb-2">Yêu cầu</div>

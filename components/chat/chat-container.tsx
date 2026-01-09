@@ -31,7 +31,7 @@ export function ChatContainer({ initialParticipantId }: { initialParticipantId?:
       try {
         const newChat = await createChat({ participantId: initialParticipantId });
         if (isMounted.current && newChat && newChat._id) {
-
+          // also select chat to load messages
           await selectChat(newChat._id);
         }
       } catch (err) {
@@ -43,17 +43,17 @@ export function ChatContainer({ initialParticipantId }: { initialParticipantId?:
   }, [initialParticipantId, createChat, selectChat]);
 
   useEffect(() => {
-
+    // eslint-disable-next-line no-console
     console.debug("ChatContainer mounted", { initialParticipantId });
     return () => {
-
+      // eslint-disable-next-line no-console
       console.debug("ChatContainer unmounted");
     };
   }, [initialParticipantId]);
 
   return (
     <div className="flex h-[calc(100vh-5.5rem)] max-w-[1600px] mx-auto rounded-xl overflow-hidden shadow-2xl border border-white/20 bg-white/40 backdrop-blur-xl">
-      
+      {/* Chat List Sidebar */}
       <div className="hidden md:flex w-80 border-r border-white/20 bg-white/60 flex-col backdrop-blur-md">
         <div className="p-4 border-b border-white/20 flex items-center justify-between">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">Tin nhắn</h1>
@@ -64,7 +64,7 @@ export function ChatContainer({ initialParticipantId }: { initialParticipantId?:
         </div>
       </div>
 
-      
+      {/* Chat Main Area */}
       <div className="flex-1 flex flex-col relative">
         <ChatHeader />
         <ChatBody onReply={setReplyTo} />

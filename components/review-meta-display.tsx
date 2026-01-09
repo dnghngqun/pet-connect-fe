@@ -23,7 +23,7 @@ export default function ReviewMetaDisplay({
   return (
     <Card className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
       <div className="space-y-3">
-        
+        {/* Rating */}
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs text-gray-500 mb-1">Đánh giá dịch vụ</div>
@@ -46,7 +46,7 @@ export default function ReviewMetaDisplay({
           )}
         </div>
 
-        
+        {/* Service Info */}
         {(serviceName || visitDate) && (
           <div className="flex flex-wrap gap-2 text-sm">
             {serviceName && (
@@ -62,7 +62,7 @@ export default function ReviewMetaDisplay({
           </div>
         )}
 
-        
+        {/* Pros & Cons */}
         {(pros.length > 0 || cons.length > 0) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-purple-200">
             {pros.length > 0 && (

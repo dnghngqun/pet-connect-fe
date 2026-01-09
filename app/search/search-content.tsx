@@ -10,6 +10,8 @@ import PostDetailModal from '@/components/post-detail-modal';
 import type { PetPost } from '@/lib/types';
 import PostCardSkeleton from '@/components/post-card-skeleton';
 import petPostService from '@/services/petPostService';
+
+// Define User type to match API response
 interface UserResult {
   id: number;
   fullName: string;
@@ -28,6 +30,8 @@ export default function SearchPageContent() {
     users: [],
     totalItems: 0,
   });
+
+  // Modal state
   const [selectedPost, setSelectedPost] = useState<PetPost | null>(null);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
 
@@ -140,7 +144,7 @@ export default function SearchPageContent() {
 
   return (
     <div className="min-h-screen py-6 relative">
-      
+      {/* Decorative stickers */}
       <div className="absolute top-20 left-8 text-orange-200/40 animate-bounce">
         <PawPrint size={32} />
       </div>
@@ -152,7 +156,7 @@ export default function SearchPageContent() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4">
-        
+        {/* Header with search - Glassmorphism style */}
         <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl shadow-md">
@@ -174,7 +178,7 @@ export default function SearchPageContent() {
 
         {query && (
           <>
-            
+            {/* Results header */}
             <div className="mb-4 flex items-center gap-2">
               <PawPrint className="h-5 w-5 text-orange-400" />
               <p className="text-muted-foreground">
@@ -192,7 +196,7 @@ export default function SearchPageContent() {
               </p>
             </div>
 
-            
+            {/* Filter tabs - Styled */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="bg-white/70 backdrop-blur-sm mb-6 p-1.5 h-auto flex-wrap rounded-xl border border-white/50 shadow-sm">
                 <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
@@ -221,7 +225,7 @@ export default function SearchPageContent() {
                 </TabsTrigger>
               </TabsList>
 
-              
+              {/* Users Tab Content */}
               <TabsContent value="users">
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
@@ -236,7 +240,7 @@ export default function SearchPageContent() {
                         className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-sm border border-white/50 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-4"
                       >
                          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden flex-shrink-0 ring-2 ring-orange-200/50">
-                           <img src={user.avatarUrl || `https:
+                           <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.fullName}`} alt={user.fullName} className="h-full w-full object-cover" />
                          </div>
                          <div className="min-w-0">
                            <h3 className="font-semibold text-gray-900 truncate">{user.fullName}</h3>
@@ -258,7 +262,7 @@ export default function SearchPageContent() {
                 )}
               </TabsContent>
 
-              
+              {/* Post List Content for all other tabs */}
               {['all', 'lost_found', 'adoption', 'review', 'qna', 'tip', 'marketplace'].map((tabValue) => (
                 <TabsContent key={tabValue} value={tabValue}>
                   {loading ? (
@@ -323,7 +327,7 @@ export default function SearchPageContent() {
         )}
       </div>
 
-      
+      {/* Post Detail Modal */}
       {selectedPost && (
         <PostDetailModal
           post={selectedPost}
@@ -334,3 +338,4 @@ export default function SearchPageContent() {
     </div>
   );
 }
+

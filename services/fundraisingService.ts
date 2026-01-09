@@ -1,12 +1,20 @@
+// Fundraising Service - Real API calls
+// Based on FundraisingController.java endpoints
 
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import apiClient from '@/common/apiClient';
+
+// ============ Types based on backend DTOs ============
+
+// API Response wrapper
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
   message: string;
   data: T;
 }
+
+// Paginated response
 export interface PaginatedResponse<T> {
   content: T[];
   totalPages: number;
@@ -14,6 +22,8 @@ export interface PaginatedResponse<T> {
   size: number;
   number: number;
 }
+
+// CampaignListItemDTO
 export interface CampaignListItem {
   id: number;
   title: string;
@@ -39,8 +49,10 @@ export interface CampaignListItem {
     image: string | null;
   } | null;
   donorCount: number;
-  progress: number;
+  progress: number; // Percentage 0-100
 }
+
+// CampaignDetailDTO
 export interface CampaignDetail {
   id: number;
   title: string;
@@ -74,6 +86,8 @@ export interface CampaignDetail {
   donorCount: number;
   progress: number;
 }
+
+// CampaignUpdateDTO
 export interface CampaignUpdate {
   id: number;
   title: string;
@@ -81,6 +95,8 @@ export interface CampaignUpdate {
   images: string[] | null;
   createdAt: string;
 }
+
+// DonationItem from getCampaignDonations
 export interface DonationItem {
   id: number;
   amount: number;
@@ -93,6 +109,8 @@ export interface DonationItem {
   } | null;
   createdAt: string;
 }
+
+// ============ Request Types ============
 
 export interface GetCampaignsParams {
   status?: string;
@@ -127,6 +145,8 @@ export interface AddCampaignUpdateRequest {
   title: string;
   content: string;
 }
+
+// ============ Service Functions ============
 
 const fundraisingService = {
   /**

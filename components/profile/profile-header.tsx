@@ -29,12 +29,12 @@ interface ProfileHeaderProps {
 }
 
 export default function ProfileHeader({ profile }: ProfileHeaderProps) {
-  const [coverUrl, setCoverUrl] = useState(profile.coverUrl || 'https:
+  const [coverUrl, setCoverUrl] = useState(profile.coverUrl || 'https://images.unsplash.com/photo-1623387641168-d9803ddd3f35?q=80&w=2000&auto=format&fit=crop');
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const { openMiniChat } = useMiniChat();
   
-
+  // Handle opening mini-chat for messaging
   const handleSendMessage = () => {
     openMiniChat(String(profile.id), {
       id: String(profile.id),
@@ -42,6 +42,8 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
       avatar: profile.avatarUrl,
     });
   };
+
+  // Handle cover photo upload
   const handleCoverPhotoClick = () => {
     coverInputRef.current?.click();
   };
@@ -49,10 +51,14 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
   const handleCoverPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({ title: 'Chỉ chấp nhận file ảnh', variant: 'destructive' });
       return;
     }
+
+    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast({ title: 'File quá lớn (tối đa 10MB)', variant: 'destructive' });
       return;
@@ -72,7 +78,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
       toast({ title: 'Có lỗi xảy ra khi tải ảnh bìa', variant: 'destructive' });
     } finally {
       setIsUploadingCover(false);
-
+      // Reset input
       if (coverInputRef.current) {
         coverInputRef.current.value = '';
       }
@@ -82,7 +88,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
   return (
     <div className="bg-white shadow-sm pb-4">
       <div className="relative max-w-5xl mx-auto">
-        
+        {/* Cover Photo */}
         <div className="h-[200px] md:h-[350px] w-full rounded-b-xl overflow-hidden relative group">
           <img 
             src={coverUrl} 
@@ -117,11 +123,11 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
           )}
         </div>
 
-        
+        {/* Profile Info Section */}
         <div className="px-4 pb-4">
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end -mt-[30px] md:-mt-[40px] relative z-10">
             
-            
+            {/* Avatar */}
             <div className="relative">
               <div className="p-1 bg-white rounded-full">
                 <Avatar className="w-[120px] h-[120px] md:w-[168px] md:h-[168px] border-4 border-white">
@@ -137,7 +143,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
               )}
             </div>
 
-            
+            {/* Name & Bio */}
             <div className="flex-1 mt-2 md:mt-0 md:mb-4 text-center md:text-left">
               <h1 className="text-2xl md:text-3xl font-bold">{profile.fullName}</h1>
               {profile.stats?.friendsCount !== undefined && (
@@ -150,7 +156,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
               )}
             </div>
 
-            
+            {/* Actions */}
             <div className="flex flex-row gap-2 mt-4 md:mt-0 md:mb-4 w-full md:w-auto justify-center">
               {profile.isOwnProfile ? (
                 <>
@@ -184,7 +190,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
           </div>
 
           <div className="mt-6 md:mt-8 border-t pt-1">
-            
+            {/* Tabs can go here if we want them inside header container */}
           </div>
         </div>
       </div>

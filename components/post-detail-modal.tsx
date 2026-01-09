@@ -43,20 +43,22 @@ export default function PostDetailModal({
   const [isFavorited, setIsFavorited] = useState(post.isFavorited || false);
   const [comments, setComments] = useState<any[]>([]);
   const [fullPost, setFullPost] = useState<any>(null);
-  const getImages = (): string[] => {
 
+  // Get images from post.images, fallback to post.image, then to fullPost.media
+  const getImages = (): string[] => {
+    // Priority 1: fullPost with media array
     if (fullPost?.media && Array.isArray(fullPost.media) && fullPost.media.length > 0) {
       return fullPost.media.map((m: any) => m.imageUrl || m);
     }
-
+    // Priority 2: fullPost with images array
     if (fullPost?.images && Array.isArray(fullPost.images) && fullPost.images.length > 0) {
       return fullPost.images;
     }
-
+    // Priority 3: post.images array
     if (post.images && Array.isArray(post.images) && post.images.length > 0) {
       return post.images;
     }
-
+    // Priority 4: single post.image
     if (post.image) {
       return [post.image];
     }
@@ -64,6 +66,8 @@ export default function PostDetailModal({
   };
   
   const images = getImages();
+
+  // Load full post data when modal opens
   useEffect(() => {
     if (open && post.slug) {
       loadFullPost();
@@ -84,11 +88,15 @@ export default function PostDetailModal({
       console.error('Failed to load full post:', error);
     }
   };
+
+  // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       setCurrentImageIndex(0);
     }
   }, [open]);
+
+  // Handle ESC key
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
@@ -115,8 +123,10 @@ export default function PostDetailModal({
 
   const handleCommentSubmit = async (content: string) => {
     await petPostService.addComment(Number(post.id), { content });
-    await loadFullPost();
+    await loadFullPost(); // Reload to get updated comments
   };
+
+  // Post type configuration
   const postTypeConfig: Record<string, { label: string; color: string; icon: string }> = {
     LOST_FOUND: { label: 'Lost/Found', color: 'bg-red-100 text-red-700 border-red-200', icon: '🔍' },
     ADOPTION: { label: 'Nhận nuôi', color: 'bg-green-100 text-green-700 border-green-200', icon: '🏠' },
@@ -145,7 +155,7 @@ export default function PostDetailModal({
           <DialogTitle>{post.title}</DialogTitle>
         </VisuallyHidden>
         <div className="grid lg:grid-cols-[1fr,400px] h-full">
-          
+          {/* Left Column - Image Gallery */}
           <div className="relative bg-black flex items-center justify-center">
             {images.length > 0 && (
               <>
@@ -159,14 +169,14 @@ export default function PostDetailModal({
                   />
                 </div>
 
-                
+                {/* Status Badge */}
                 <div className="absolute top-4 left-4">
                   <Badge className={`${statusConf.color} text-white text-sm px-4 py-1.5 font-semibold shadow-lg`}>
                     {statusConf.label}
                   </Badge>
                 </div>
 
-                
+                {/* Navigation Arrows */}
                 {images.length > 1 && (
                   <>
                     <button
@@ -182,7 +192,7 @@ export default function PostDetailModal({
                       <ChevronRight className="h-5 w-5" />
                     </button>
 
-                    
+                    {/* Dots */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                       {images.map((_, i) => (
                         <button
@@ -199,7 +209,7 @@ export default function PostDetailModal({
               </>
             )}
 
-            
+            {/* Close Button */}
             <button
               onClick={() => onOpenChange(false)}
               className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition z-10"
@@ -208,9 +218,9 @@ export default function PostDetailModal({
             </button>
           </div>
 
-          
+          {/* Right Column - Post Info & Comments */}
           <div className="flex flex-col bg-white overflow-hidden">
-            
+            {/* Author Header */}
             <div className="p-4 border-b">
               <div 
                 className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 rounded-lg p-2 -m-2 transition"
@@ -254,10 +264,10 @@ export default function PostDetailModal({
               </div>
             </div>
 
-            
+            {/* Post Content - Scrollable */}
             <div className="flex-1 overflow-y-auto">
               <div className="p-4 space-y-4">
-                
+                {/* Title & Description */}
                 <div>
                   <h2 className="font-semibold text-lg mb-2">{post.title}</h2>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
@@ -265,7 +275,7 @@ export default function PostDetailModal({
                   </p>
                 </div>
 
-                
+                {/* Meta Info */}
                 <div className="space-y-2">
                   {post.location && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -274,7 +284,7 @@ export default function PostDetailModal({
                     </div>
                   )}
 
-                  
+                  {/* Tags */}
                   {post.tags && post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {post.tags.map((tag) => (
@@ -287,7 +297,7 @@ export default function PostDetailModal({
                   )}
                 </div>
 
-                
+                {/* Stats Bar */}
                 {(reactionCount > 0 || (post.favoriteCount || 0) > 0 || post.commentCount || 0 > 0) && (
                   <div className="py-2 border-t border-b flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-4">
@@ -305,7 +315,7 @@ export default function PostDetailModal({
                   </div>
                 )}
 
-                
+                {/* Interaction Buttons */}
                 <div className="flex items-center gap-1 pb-4 border-b">
                   <PostReactions
                     postId={post.id || ''}
@@ -326,7 +336,7 @@ export default function PostDetailModal({
                   />
                 </div>
 
-                
+                {/* Comments Section */}
                 <CommentSection
                   postId={post.id || ''}
                   comments={comments}

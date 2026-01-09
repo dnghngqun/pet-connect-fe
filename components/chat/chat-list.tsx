@@ -14,7 +14,7 @@ function getChatId(chat: ChatType): string {
 
 function getOtherParticipant(chat: ChatType, currentUserId: string | undefined) {
   if (chat.isGroup) return null;
-
+  // Compare as strings to handle number/string mismatch
   return chat.participants.find((p) => String(p._id) !== String(currentUserId));
 }
 
@@ -96,7 +96,7 @@ export function ChatList() {
               selectedChatId === getChatId(chat) && "bg-white/50 border-white/30 shadow-sm"
             )}
           >
-            
+            {/* Avatar */}
             <div className="flex-shrink-0">
               {otherUser?.avatar ? (
                 <Image
@@ -113,7 +113,7 @@ export function ChatList() {
               )}
             </div>
 
-            
+            {/* Chat info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-gray-900 truncate">

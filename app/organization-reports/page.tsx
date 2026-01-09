@@ -52,6 +52,8 @@ export default function OrganizationReportsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Dialog states
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<OrganizationReport | null>(null);
@@ -158,7 +160,7 @@ export default function OrganizationReportsPage() {
   return (
     <div className="container py-8">
       <div className="max-w-6xl mx-auto">
-        
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -175,7 +177,7 @@ export default function OrganizationReportsPage() {
           </Button>
         </div>
 
-        
+        {/* Main Content Card */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Lịch sử báo cáo</CardTitle>
@@ -184,7 +186,7 @@ export default function OrganizationReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            
+            {/* Filter Tabs */}
             <Tabs value={activeFilter} onValueChange={handleFilterChange} className="mb-4">
               <TabsList className="flex flex-wrap h-auto gap-1">
                 {FILTER_TABS.map((tab) => {
@@ -203,7 +205,7 @@ export default function OrganizationReportsPage() {
               </TabsList>
             </Tabs>
 
-            
+            {/* Reports Table */}
             {isLoading ? (
               <div className="py-12 text-center">
                 <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
@@ -309,7 +311,7 @@ export default function OrganizationReportsPage() {
           </CardContent>
         </Card>
 
-        
+        {/* Status Legend */}
         <Card className="mt-6">
           <CardHeader className="py-4">
             <CardTitle className="text-sm font-medium">Chú thích trạng thái</CardTitle>
@@ -334,7 +336,7 @@ export default function OrganizationReportsPage() {
         </Card>
       </div>
 
-      
+      {/* Dialogs */}
       <OrganizationReportForm
         open={isFormOpen}
         onOpenChange={setIsFormOpen}

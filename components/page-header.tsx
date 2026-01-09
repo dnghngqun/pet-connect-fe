@@ -32,7 +32,7 @@ export default function PageHeader({ title, description, icon, action }: PageHea
           )}
         </div>
       </div>
-      
+      {/* Decorative paw prints */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
         <span className="absolute top-4 right-[10%] text-3xl">🐾</span>
         <span className="absolute top-16 left-[15%] text-2xl">🐾</span>

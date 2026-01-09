@@ -14,11 +14,15 @@ import { Bell, Trash2, CheckCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Notification } from '@/lib/types'
 import { usePostModal } from '@/components/post-modal-provider'
+
+// Generate link based on notification type
 const getNotificationLink = (notif: Notification): string | null => {
   if (notif.link) return notif.link;
   
-
-
+  // Post notifications now handled by modal, so we don't return link for them here
+  // unless we want a fallback. But for logic separation, let's keep it null if we want modal.
+  // actually, let's return null for posts so we know to use modal?
+  // No, let's keep logic simple: check postId first.
   
   switch (notif.type) {
     case 'FRIEND_REQUEST':

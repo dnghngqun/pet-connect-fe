@@ -13,14 +13,16 @@ interface MiniChatBubbleProps {
 
 export function MiniChatBubble({ chat, index }: MiniChatBubbleProps) {
   const { closeMiniChat, toggleMinimize } = useMiniChat();
-  const rightPosition = 20 + index * 60;
+
+  // Position bubbles from right to left
+  const rightPosition = 20 + index * 60; // 60px per bubble (48px width + 12px gap)
 
   return (
     <div
       className="fixed bottom-5 z-50 group"
       style={{ right: rightPosition }}
     >
-      
+      {/* Close button on hover */}
       <Button
         variant="destructive"
         size="icon"
@@ -33,7 +35,7 @@ export function MiniChatBubble({ chat, index }: MiniChatBubbleProps) {
         <X className="h-3 w-3" />
       </Button>
 
-      
+      {/* Bubble */}
       <button
         onClick={() => toggleMinimize(chat.participantId)}
         className="relative w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ring-2 ring-white overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600"
@@ -51,7 +53,7 @@ export function MiniChatBubble({ chat, index }: MiniChatBubbleProps) {
           </span>
         )}
 
-        
+        {/* Unread badge */}
         {chat.unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-5 px-1 flex items-center justify-center">
             {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
@@ -59,7 +61,7 @@ export function MiniChatBubble({ chat, index }: MiniChatBubbleProps) {
         )}
       </button>
 
-      
+      {/* Name tooltip */}
       <div className="absolute left-1/2 -translate-x-1/2 -top-8 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
         {chat.participant.name}
       </div>

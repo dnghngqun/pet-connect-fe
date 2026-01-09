@@ -1,9 +1,13 @@
+// Mock data for Organization Reports
+
 import { Organization, OrganizationReport, ReportStatus } from './organization-report.types';
+
+// Mock Organizations
 export const mockOrganizations: Organization[] = [
   {
     id: 'org-001',
     name: 'Trung tâm cứu hộ động vật Sài Gòn',
-    logo: 'https:
+    logo: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=100',
     email: 'cuuho.saigon@example.com',
     phone: '0901234567',
     address: '123 Đường Nguyễn Văn Linh',
@@ -16,7 +20,7 @@ export const mockOrganizations: Organization[] = [
   {
     id: 'org-002',
     name: 'Hội bảo vệ động vật Việt Nam',
-    logo: 'https:
+    logo: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=100',
     email: 'hoidongvat@example.com',
     phone: '0912345678',
     address: '456 Đường Lê Lợi',
@@ -29,7 +33,7 @@ export const mockOrganizations: Organization[] = [
   {
     id: 'org-003',
     name: 'Nhà Yêu Chó Mèo',
-    logo: 'https:
+    logo: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=100',
     email: 'nhayeuchomeo@example.com',
     phone: '0923456789',
     address: '789 Đường Cách Mạng Tháng 8',
@@ -42,7 +46,7 @@ export const mockOrganizations: Organization[] = [
   {
     id: 'org-004',
     name: 'Trạm cứu hộ thú cưng Hà Nội',
-    logo: 'https:
+    logo: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=100',
     email: 'cuuho.hanoi@example.com',
     phone: '0934567890',
     address: '321 Đường Hoàng Hoa Thám',
@@ -55,7 +59,7 @@ export const mockOrganizations: Organization[] = [
   {
     id: 'org-005',
     name: 'Pet Care Vietnam',
-    logo: 'https:
+    logo: 'https://images.unsplash.com/photo-1560807707-8cc77767d783?w=100',
     email: 'petcare.vn@example.com',
     phone: '0945678901',
     address: '567 Đường Nguyễn Huệ',
@@ -68,7 +72,7 @@ export const mockOrganizations: Organization[] = [
   {
     id: 'org-006',
     name: 'Thiên đường thú cưng',
-    logo: 'https:
+    logo: 'https://images.unsplash.com/photo-1586671267731-da2cf3ceeb80?w=100',
     email: 'thiendang@example.com',
     phone: '0956789012',
     address: '890 Đường Võ Văn Tần',
@@ -79,6 +83,8 @@ export const mockOrganizations: Organization[] = [
     description: 'Trung tâm nhận nuôi và chăm sóc thú cưng cao cấp.',
   },
 ];
+
+// Mock Reports with different statuses
 export const mockReports: OrganizationReport[] = [
   {
     id: 'rpt-001',
@@ -89,7 +95,7 @@ export const mockReports: OrganizationReport[] = [
     reasonLabel: 'Lừa đảo, gian dối',
     content: 'Tổ chức này yêu cầu đóng phí nhận nuôi rất cao (5 triệu đồng) nhưng không cung cấp giấy tờ tiêm phòng và sổ sức khỏe cho thú cưng. Khi hỏi thì trả lời mập mờ.',
     evidence: [
-      'https:
+      'https://images.unsplash.com/photo-1560807707-8cc77767d783?w=400',
     ],
     status: 'PENDING',
     createdAt: '2024-12-15T08:30:00Z',
@@ -104,8 +110,8 @@ export const mockReports: OrganizationReport[] = [
     reasonLabel: 'Nghi ngờ ngược đãi động vật',
     content: 'Tôi đã đến thăm trung tâm và thấy nhiều thú cưng bị nhốt trong lồng chật hẹp, không có nước uống. Một số con có dấu hiệu bị thương nhưng không được chăm sóc y tế.',
     evidence: [
-      'https:
-      'https:
+      'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400',
+      'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400',
     ],
     status: 'RESOLVED',
     adminResponse: {
@@ -137,7 +143,7 @@ export const mockReports: OrganizationReport[] = [
     reasonLabel: 'Dịch vụ kém chất lượng',
     content: 'Tôi đã nhận nuôi một chú mèo từ tổ chức này. Họ cam kết mèo đã tiêm phòng đầy đủ và khỏe mạnh. Tuy nhiên sau 2 ngày, mèo bị ốm nặng và bác sĩ thú y xác nhận mèo chưa được tiêm phòng và có dấu hiệu suy dinh dưỡng.',
     evidence: [
-      'https:
+      'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=400',
     ],
     status: 'REFUSED',
     adminResponse: {
@@ -161,13 +167,19 @@ export const mockReports: OrganizationReport[] = [
     updatedAt: '2024-12-21T13:20:00Z',
   },
 ];
+
+// Helper function to get reports by status
 export function getReportsByStatus(status?: ReportStatus): OrganizationReport[] {
   if (!status) return mockReports;
   return mockReports.filter(r => r.status === status);
 }
+
+// Helper function to get report by id
 export function getReportById(id: string): OrganizationReport | undefined {
   return mockReports.find(r => r.id === id);
 }
+
+// Simulated local storage for state management
 let localReports = [...mockReports];
 let nextReportId = 6;
 
