@@ -31,8 +31,8 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
         setIsLoading(true);
         try {
           const response = await getFriends(0, 50); // Fetch first 50 friends
-          if (response.code === "0000" && response.data) {
-            setFriends(response.data.content || []);
+          if (response.success && response.data) {
+            setFriends(Array.isArray(response.data) ? response.data : []);
           }
         } catch (error) {
           console.error("Failed to fetch friends:", error);
