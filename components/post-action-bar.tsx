@@ -51,8 +51,8 @@ export default function PostActionBar({
       const response = await petPostService.reactToPost(postId, 'LIKE');
       
       // Update with server response
-      setLiked(response.reaction !== null);
-      setReactionCount(response.reactionCount || 0);
+      setLiked(response.data?.reaction !== null);
+      setReactionCount(response.data?.reactionCount || 0);
       
       toast({
         title: optimisticLiked ? '❤️ Đã thích!' : 'Đã bỏ thích',
@@ -86,7 +86,7 @@ export default function PostActionBar({
       const response = await petPostService.toggleFavorite(postId);
       
       // Update with server response
-      setSaved(response.isFavorited);
+      setSaved(response.data?.isFavorited ?? optimisticSaved);
       
       toast({
         title: optimisticSaved ? '🔖 Đã lưu!' : 'Đã bỏ lưu',

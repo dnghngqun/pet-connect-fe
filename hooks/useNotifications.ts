@@ -3,6 +3,7 @@ import { notificationService } from '@/services/notificationService'
 import { Notification } from '@/lib/types'
 import { useAuth } from '@/hooks/useAuth'
 import { chatAPI } from '@/services/chatService'
+import { useWebSocket } from '@/components/websocket-provider'
 
 export function useNotifications() {
   const { user, isLoading: isAuthLoading } = useAuth()
@@ -66,34 +67,36 @@ export function useNotifications() {
     setUnreadCount(0)
   }, [user?._id])
 
-  const handleSocketNotification = useCallback((payload: any) => {
-    const incoming = payload?.data ?? payload
-    if (!incoming?.id) return
-
-    setNotifications((prev) => [
-      incoming,
-      ...prev.filter((notif) => notif.id !== incoming.id),
-    ])
-    if (!incoming.isRead) {
-      setUnreadCount((prev) => prev + 1)
-    }
-  }, [])
-
+  // WebSocket Subscription
+  const { subscribe, isConnected } = useWebSocket()
   useEffect(() => {
-    if (isAuthLoading) return
-    refresh()
-  }, [isAuthLoading, refresh])
+    if (!isConnected || !user?._id) return
 
-  useEffect(() => {
-    if (!user?.token) return
+    const sub = subscribe('/user/queue/notifications', (message) => {
+      try {
+        if (message.body) {
+          const incoming = JSON.parse(message.body)
+          if (!incoming?.id) return
 
-    chatAPI.connectWebSocket(user.token, undefined, undefined)
-    const cleanup = chatAPI.addNotificationListener(handleSocketNotification)
+          setNotifications((prev) => [
+            incoming,
+            ...prev.filter((notif) => notif.id !== incoming.id),
+          ])
+          
+          // Increment unread if new
+          if (!incoming.isRead) {
+            setUnreadCount((prev) => prev + 1)
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing notification message', error)
+      }
+    })
 
     return () => {
-      if (cleanup) cleanup()
+      sub?.unsubscribe()
     }
-  }, [user?.token, handleSocketNotification])
+  }, [isConnected, subscribe, user?._id])
 
   return {
     notifications,

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Phone, MessageCircle, ArrowLeft, Share2, Flag, Heart } from 'lucide-react';
 import PetHealthProfileDialog from '@/components/pet-health-profile-dialog';
 import PetInfoCard from '@/components/pet-info-card';
-import PetQRCode from '@/components/pet-qr-code';
+
 import { PetPost } from '@/lib/types';
 import { toast } from '@/components/ui/use-toast';
 
@@ -200,14 +200,7 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
             </Card>
           )}
 
-          {/* Pet QR Code */}
-          {post.pet && (
-            <PetQRCode
-              petId={post.pet.id}
-              petName={post.pet.name}
-              qrCodeUrl={post.pet.qrCodeUrl}
-            />
-          )}
+
 
           {/* Poster Info */}
           <Card>

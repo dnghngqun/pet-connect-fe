@@ -44,9 +44,10 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
     }
   }, [open]);
 
-  const filteredUsers = friends.filter((friend) =>
-    friend.userName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = friends.filter((friend) => {
+     const name = friend.friendName || friend.userName || "";
+     return name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const handleCreateChat = async () => {
     if (!selectedUserId) return;
@@ -109,34 +110,41 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
                   {searchTerm ? "Không tìm thấy bạn bè" : "Bạn chưa kết bạn với ai"}
                 </div>
               ) : (
-                filteredUsers.map((friend) => (
+                filteredUsers.map((friend) => {
+                  // Handle DTO variations
+                  const friendId = friend.friendId || friend.userId;
+                  const friendName = friend.friendName || friend.userName;
+                  const friendAvatar = friend.friendAvatar || friend.userAvatar;
+                  
+                  return (
                   <button
-                    key={friend.userId}
-                    onClick={() => setSelectedUserId(String(friend.userId))}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${selectedUserId === String(friend.userId)
+                    key={friend.id || friendId}
+                    onClick={() => setSelectedUserId(String(friendId))}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${selectedUserId === String(friendId)
                         ? "bg-blue-100 border border-blue-500"
                         : "hover:bg-gray-100 border border-transparent"
                       }`}
                   >
-                    {friend.userAvatar ? (
+                    {friendAvatar ? (
                       <Image
-                        src={friend.userAvatar}
-                        alt={friend.userName}
+                        src={friendAvatar}
+                        alt={friendName}
                         width={40}
                         height={40}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white font-semibold">
-                        {friend.userName.charAt(0).toUpperCase()}
+                        {friendName?.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1 text-left">
-                      <p className="font-semibold text-gray-900">{friend.userName}</p>
+                      <p className="font-semibold text-gray-900">{friendName}</p>
                       <p className="text-xs text-gray-500">{friend.userCity || "Bạn bè"}</p>
                     </div>
                   </button>
-                ))
+                  );
+                })
               )}
             </div>
 

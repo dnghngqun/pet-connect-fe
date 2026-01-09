@@ -17,6 +17,7 @@ import type {
 } from "@/lib/chat.types";
 import { chatAPI, normalizeMessageResponse } from "@/services/chatService";
 import { useAuth } from "./useAuth";
+import { useWebSocket } from "@/components/websocket-provider";
 
 const SEND_TIMEOUT_MS = 30000;
 
@@ -279,37 +280,34 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
   }, []);
 
 
-  // Connect WebSocket
+  // WebSocket Subscription
+  const { subscribe, isConnected } = useWebSocket();
+  
   useEffect(() => {
-    if (!currentUser || demo) return;
+    if (!isConnected || !currentUser?._id || demo) return;
 
-    const userStr = localStorage.getItem('pet-connect-user');
-    const token = userStr ? JSON.parse(userStr).token : null;
-
-    let cleanupMessage: (() => void) | undefined;
-    let cleanupNotification: (() => void) | undefined;
-
-    if (token) {
-      // Ensure connection is active
-      chatAPI.connectWebSocket(
-        token,
-        undefined, // Don't pass listeners here to avoid duplication logic inside connect
-        undefined, 
-        handleError
-      );
-
-      // Add listeners separately with cleanup
-      cleanupMessage = chatAPI.addMessageListener(handleWebSocketMessage);
-      cleanupNotification = chatAPI.addNotificationListener(handleNotification);
-    }
+    const sub = subscribe('/user/queue/messages', (message) => {
+        if (message.body) {
+             try {
+                 const data = JSON.parse(message.body);
+                 // handleWebSocketMessage expects "response" object possibly wrapped.
+                 // Backend sends the message object directly? Or wrapped?
+                 // handleWebSocketMessage handles "response.data || response".
+                 handleWebSocketMessage(data);
+             } catch (e) {
+                 console.error("Error parsing chat message", e);
+             }
+        }
+    });
+    
+    // Also subscribe to notifications here? useNotifications handles it globally but 
+    // ChatProvider had a listener. Let's keep it minimal for now.
+    // Ideally ChatProvider only cares about messages.
 
     return () => {
-      // Do NOT disconnect WebSocket here as it might be used by MiniChat (Global)
-      // Just remove listeners
-      if (cleanupMessage) cleanupMessage();
-      if (cleanupNotification) cleanupNotification();
+        sub?.unsubscribe();
     };
-  }, [currentUser, demo, handleWebSocketMessage, handleNotification, handleError]);
+  }, [isConnected, currentUser, demo, handleWebSocketMessage, subscribe]);
 
 
   // Fetch all chats
@@ -690,14 +688,33 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     [sendMessageInternal]
   );
 
-  // Fetch chats on mount (Polling for chats list retained as per typical requirements for "Other chats updated")
+  // Fetch chats on mount and when tab becomes active
   useEffect(() => {
     if (!currentUser?._id) return;
 
+    // Initial fetch
     fetchAllChats();
+
     if (!demo) {
-      const interval = setInterval(fetchAllChats, 10000); // Poll every 10 seconds for chat list
-      return () => clearInterval(interval);
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible") {
+          console.log("Tab active, fetching latest chats...");
+          fetchAllChats();
+        }
+      };
+
+      const handleWindowFocus = () => {
+        // console.log("Window focused, fetching chats...");
+        fetchAllChats();
+      };
+
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      window.addEventListener("focus", handleWindowFocus);
+
+      return () => {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        window.removeEventListener("focus", handleWindowFocus);
+      };
     }
   }, [currentUser?._id, fetchAllChats, demo]);
 
