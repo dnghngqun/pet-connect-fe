@@ -66,8 +66,6 @@ export function useNotifications() {
     setNotifications([])
     setUnreadCount(0)
   }, [user?._id])
-
-  // WebSocket Subscription
   const { subscribe, isConnected } = useWebSocket()
   useEffect(() => {
     if (!isConnected || !user?._id) return
@@ -83,7 +81,7 @@ export function useNotifications() {
             ...prev.filter((notif) => notif.id !== incoming.id),
           ])
           
-          // Increment unread if new
+
           if (!incoming.isRead) {
             setUnreadCount((prev) => prev + 1)
           }

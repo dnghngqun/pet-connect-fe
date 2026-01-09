@@ -1,20 +1,12 @@
-// Pet Health Service - Real API calls
-// Based on PetHealthController.java endpoints
 
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import apiClient from '@/common/apiClient';
-
-// ============ Types based on backend DTOs ============
-
-// API Response wrapper
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
   message: string;
   data: T;
 }
-
-// VaccinationDTO
 export interface Vaccination {
   id: number;
   name: string;
@@ -23,8 +15,6 @@ export interface Vaccination {
   veterinarian: string | null;
   notes: string | null;
 }
-
-// MedicalHistoryDTO
 export interface MedicalHistory {
   id: number;
   date: string;
@@ -33,16 +23,12 @@ export interface MedicalHistory {
   veterinarian: string | null;
   notes: string | null;
 }
-
-// WeightTrackingDTO
 export interface WeightTracking {
   id: number;
   date: string;
   weight: number;
   notes: string | null;
 }
-
-// VaccinationReminderDTO
 export interface VaccinationReminder {
   id: number;
   vaccinationName: string;
@@ -51,8 +37,6 @@ export interface VaccinationReminder {
   petId: number;
   daysUntilDue: number;
 }
-
-// HealthRecordSummaryDTO
 export interface HealthRecordSummary {
   id: number;
   lastCheckup: string | null;
@@ -63,8 +47,6 @@ export interface HealthRecordSummary {
   medicalHistory: MedicalHistory[];
   weightTracking: WeightTracking[];
 }
-
-// PetHealthProfileDTO
 export interface PetHealthProfile {
   pet: {
     id: number;
@@ -78,8 +60,6 @@ export interface PetHealthProfile {
   };
   healthRecord: HealthRecordSummary;
 }
-
-// ============ Request Types ============
 
 export interface UpdateHealthRecordRequest {
   allergies?: string[];
@@ -108,8 +88,6 @@ export interface AddWeightTrackingRequest {
   weight: number;
   notes?: string;
 }
-
-// ============ Service Functions ============
 
 const petHealthService = {
   /**

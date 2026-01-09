@@ -26,11 +26,11 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
   const { currentUser, retryMessage } = useChat();
   const [isRecalling, setIsRecalling] = useState(false);
   
-  // Compare as strings to handle number/string ID mismatch
+
   const isCurrentUser = String(currentUser?._id) === String(message.sender._id);
   const isTempMessage = message._id?.startsWith("temp_");
   
-  // Check if message is within 5 minutes (can recall)
+
   const messageTime = new Date(message.createdAt).getTime();
   const now = Date.now();
   const fiveMinutesMs = 5 * 60 * 1000;
@@ -45,8 +45,6 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
     isWithin5Minutes;
   const canReply = onReply && !message.isRecalled && message.status !== "sending";
   const canRetry = isCurrentUser && message.status === "failed";
-
-  // Show dropdown only if there are options
   const hasDropdownOptions = canRecall || canReply;
 
   const imageSrc = message.image || message.localImagePreview;
@@ -78,8 +76,6 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
       retryMessage(message);
     }
   };
-
-  // Display recalled message differently
   if (message.isRecalled) {
     return (
       <div className={`flex gap-3 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
@@ -124,7 +120,7 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
               <RefreshCcw className="h-4 w-4" />
             </Button>
           )}
-          {/* Actions menu - shown on hover */}
+          
           {hasDropdownOptions && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

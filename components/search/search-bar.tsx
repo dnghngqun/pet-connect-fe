@@ -12,8 +12,6 @@ export default function SearchBar() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Debounced search
   useEffect(() => {
     if (query.length < 2) {
       setResults([]);
@@ -24,7 +22,7 @@ export default function SearchBar() {
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
-        // Search users
+
         const response = await userService.searchUsers(query);
         if (response.success && response.data) {
           const userResults = response.data.map((user: any) => ({
@@ -48,8 +46,6 @@ export default function SearchBar() {
 
     return () => clearTimeout(timer);
   }, [query]);
-
-  // Close on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
@@ -78,7 +74,7 @@ export default function SearchBar() {
         )}
       </div>
 
-      {/* Search Results Modal */}
+      
       {isOpen && query.length >= 2 && (
         <SearchResultsModal
           query={query}

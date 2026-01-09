@@ -33,7 +33,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     <div className="container px-4 py-8 md:py-12">
       <div className="flex flex-col md:flex-row gap-8 lg:gap-16">
-        {/* Product Images */}
+        
         <div className="md:w-1/2">
           <div className="sticky top-20">
             <div className="aspect-square overflow-hidden rounded-lg bg-muted">
@@ -49,7 +49,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
 
-        {/* Product Details */}
+        
         <div className="md:w-1/2">
           <div className="mb-6">
             <Link href="/shop" className="text-sm text-primary hover:underline">
@@ -134,7 +134,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
       </div>
 
-      {/* Product Tabs */}
+      
       <div className="mt-16">
         <Tabs defaultValue="description">
           <TabsList className="w-full justify-start border-b rounded-none h-auto p-0">
@@ -208,7 +208,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
 
               <div className="space-y-6">
-                {/* Sample reviews */}
+                
                 {[
                   {
                     name: 'Alex Johnson',
@@ -252,7 +252,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </Tabs>
       </div>
 
-      {/* Related Products */}
+      
       <div className="mt-16">
         <h2 className="text-2xl font-bold mb-6">Related Products</h2>
         <RelatedProducts products={relatedProducts} />

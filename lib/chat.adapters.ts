@@ -1,7 +1,5 @@
 import type { ConversationRow, ChatType } from "./chat.types";
 
-// Helpers to normalize DB conversation rows and convert between numeric/string ids.
-
 export const normalizeConversationRow = (
   row: ConversationRow
 ): {
@@ -23,8 +21,6 @@ export const normalizeConversationRow = (
   };
 };
 
-// If you need to persist a ChatType -> ConversationRow, implement a best-effort mapper here.
-// Note: ChatType has rich participant objects; the DB row stores only two user IDs.
 export const conversationRowFromChat = (chat: ChatType): ConversationRow => {
   const participants = chat.participants || [];
   const userOne = participants[0]?._id ?? "";
@@ -38,8 +34,6 @@ export const conversationRowFromChat = (chat: ChatType): ConversationRow => {
     updated_at: chat.updatedAt,
   };
 };
-
-// Small utility: detect if an id string is numeric-only (so it could map to BIGINT)
 export const isNumericId = (id?: string | number | null) => {
   if (id === null || id === undefined) return false;
   return /^\d+$/.test(String(id));

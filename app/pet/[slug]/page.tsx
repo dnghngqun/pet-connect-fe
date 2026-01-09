@@ -167,7 +167,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
       const data = response.data?.data || response.data;
 
       if (data) {
-        // Check if current user is the owner
+
         const currentUser = authService.getCurrentUser();
         if (currentUser && data.postedBy?.id) {
           setIsOwner(String(currentUser.id) === String(data.postedBy.id));
@@ -178,7 +178,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
           images.unshift(data.image);
         }
         if (images.length === 0) {
-          images.push('https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800');
+          images.push('https:
         }
 
         const transformedPost: PostData = {
@@ -271,7 +271,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
         await navigator.clipboard.writeText(window.location.href);
       }
     } catch (error) {
-      // User cancelled share dialog - ignore
+
       console.log('Share cancelled or failed:', error);
     }
   };
@@ -303,7 +303,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
       const reactionType = userReaction ? null : 'LIKE';
       await petPostService.toggleReaction(Number(post.id), reactionType);
       
-      // Update UI optimistically
+
       if (userReaction) {
         setUserReaction(null);
         setReactionCount(prev => Math.max(0, prev - 1));
@@ -355,7 +355,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
-      {/* Top Navigation */}
+      
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
         <div className="container px-4 py-3 flex items-center justify-between">
           <Button variant="ghost" size="sm" asChild>
@@ -376,10 +376,10 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-5 gap-6 lg:gap-8">
 
-            {/* Left Column - Images & Info */}
+            
             <div className="lg:col-span-3 space-y-6">
 
-              {/* Image Gallery */}
+              
               <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3]">
                 <Image
                   src={post.images[currentImageIndex]}
@@ -389,14 +389,14 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                   priority
                 />
 
-                {/* Status Badge */}
+                
                 <div className="absolute top-4 left-4">
                   <Badge className={`${config.bgColor} ${config.color} text-sm px-4 py-1.5 font-semibold shadow-lg`}>
                     {config.label}
                   </Badge>
                 </div>
 
-                {/* Navigation Arrows */}
+                
                 {post.images.length > 1 && (
                   <>
                     <button
@@ -412,7 +412,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       <ChevronRight className="h-5 w-5" />
                     </button>
 
-                    {/* Dots */}
+                    
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                       {post.images.map((_, i) => (
                         <button
@@ -428,7 +428,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                 )}
               </div>
 
-              {/* Thumbnail Strip */}
+              
               {post.images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {post.images.map((img, i) => (
@@ -445,7 +445,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                 </div>
               )}
 
-              {/* Title & Quick Info */}
+              
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold mb-3">{post.title}</h1>
                 <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
@@ -466,7 +466,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                 </div>
               </div>
 
-              {/* Tabs for Description & Details */}
+              
               <Tabs defaultValue="description" className="w-full">
                 <TabsList className="w-full grid grid-cols-3">
                   <TabsTrigger value="description">Mô tả</TabsTrigger>
@@ -558,10 +558,10 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
               </Tabs>
             </div>
 
-            {/* Right Column - Pet Info & Contact */}
+            
             <div className="lg:col-span-2 space-y-6">
 
-              {/* Pet Info Card */}
+              
               {post.pet && (
                 <Card className="overflow-hidden border-2 border-primary/10 bg-gradient-to-br from-primary/5 to-transparent">
                   <CardHeader className="pb-4">
@@ -571,7 +571,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Pet Avatar & Name */}
+                    
                     <div className="flex items-center gap-4">
                       <Avatar className="h-16 w-16 border-2 border-primary/20">
                         <AvatarImage src={post.images[0]} />
@@ -587,7 +587,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       </div>
                     </div>
 
-                    {/* Quick Stats */}
+                    
                     <div className="grid grid-cols-3 gap-2">
                       {post.pet.age !== undefined && (
                         <div className="bg-muted/50 rounded-lg p-3 text-center">
@@ -611,7 +611,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       )}
                     </div>
 
-                    {/* Health Badges */}
+                    
                     <div className="flex flex-wrap gap-2">
                       {post.pet.healthRecord?.vaccinations && post.pet.healthRecord.vaccinations.length > 0 && (
                         <Badge variant="outline" className="text-green-600 border-green-300 bg-green-50">
@@ -627,7 +627,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       )}
                     </div>
 
-                    {/* Personality */}
+                    
                     {post.pet.personality && post.pet.personality.length > 0 && (
                       <div>
                         <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Tính cách</p>
@@ -641,7 +641,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       </div>
                     )}
 
-                    {/* Bio */}
+                    
                     {post.pet.bio && (
                       <div className="bg-white/50 rounded-lg p-3">
                         <p className="text-sm italic text-muted-foreground">
@@ -650,7 +650,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       </div>
                     )}
 
-                    {/* Health Profile Button */}
+                    
                     {post.pet.healthRecord ? (
                       <PetHealthProfileDialog pet={{
                         ...post.pet,
@@ -670,7 +670,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       </div>
                     )}
 
-                    {/* Pet QR Code */}
+                    
                     {post.pet.qrCodeUrl && (
                       <div className="bg-muted/50 rounded-lg p-4 text-center">
                         <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Mã QR thú cưng</p>
@@ -685,7 +685,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                 </Card>
               )}
 
-              {/* Contact Card */}
+              
               <Card>
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg">Người đăng bài</CardTitle>
@@ -704,7 +704,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                     </div>
                   </div>
 
-              {/* Contact Buttons - Only show if not owner */}
+              
               {!isOwner && (
                 <div className="space-y-2 pt-4 border-t">
                   <Button
@@ -717,24 +717,24 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                   <ChatButton postedBy={post.postedBy} />
                 </div>
               )}
-                    {/*<div className="grid gap-2">*/}
-                    {/*    {post.postedBy.phone && (*/}
-                    {/*        <Button className="w-full" asChild>*/}
-                    {/*            <a href={`tel:${post.postedBy.phone}`}>*/}
-                    {/*                <Phone className="h-4 w-4 mr-2" />*/}
-                    {/*                Gọi điện: {post.postedBy.phone}*/}
-                    {/*            </a>*/}
-                    {/*        </Button>*/}
-                    {/*    )}*/}
-                    {/*    <Button variant="outline" className="w-full">*/}
-                    {/*        <MessageCircle className="h-4 w-4 mr-2" />*/}
-                    {/*        Nhắn tin*/}
-                    {/*    </Button>*/}
-                    {/*</div>*/}
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
             </CardContent>
           </Card>
 
-              {/* Owner Actions */}
+              
               {isOwner && (
                 <Card className="border-2 border-orange-200 bg-orange-50/50">
                   <CardHeader className="pb-3">
@@ -766,7 +766,7 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                 </Card>
               )}
 
-              {/* Quick Actions */}
+              
               <div className="grid grid-cols-3 gap-2">
                 <Button variant="outline" className="w-full" onClick={handleReaction}>
                   <Heart className={`h-4 w-4 mr-2 ${userReaction ? "fill-red-500 text-red-500" : ""}`} />

@@ -28,7 +28,7 @@ export default function QnaMetaDisplay({
   return (
     <Card className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
       <div className="space-y-3">
-        {/* Status & Stats */}
+        
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             {isAnswered ? (
@@ -56,7 +56,7 @@ export default function QnaMetaDisplay({
           </div>
         </div>
 
-        {/* Topic & Difficulty */}
+        
         <div className="flex flex-wrap gap-2">
           {topic && (
             <Badge variant="secondary" className="bg-blue-100 text-blue-700">
@@ -70,7 +70,7 @@ export default function QnaMetaDisplay({
           )}
         </div>
 
-        {/* Best Answer Indicator */}
+        
         {bestAnswerId && (
           <div className="pt-2 border-t border-blue-200">
             <div className="flex items-center gap-2 text-sm text-amber-700">

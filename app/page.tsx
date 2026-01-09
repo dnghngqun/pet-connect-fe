@@ -40,7 +40,7 @@ export default function FeedPage() {
   const [processingIds, setProcessingIds] = useState<Set<number>>(new Set());
   const [trendingTags, setTrendingTags] = useState<import('@/services/trendingService').TrendingStats[]>([]);
   const [loadingTrending, setLoadingTrending] = useState(false);
-  const [editingPost, setEditingPost] = useState<any>(null); // For edit mode
+  const [editingPost, setEditingPost] = useState<any>(null);
 
   const handlePostCreated = (newPostData: any) => {
     const imageUrl =
@@ -85,7 +85,7 @@ export default function FeedPage() {
   const handlePostClick = (clickedPost: PetPost) => {
     setSelectedPost(clickedPost);
     setIsPostModalOpen(true);
-    // Track view for trending
+
     if (clickedPost.id && /^\d+$/.test(clickedPost.id.toString())) {
        import('@/services/trendingService').then(mod => {
           mod.default.trackView(clickedPost.id.toString());
@@ -94,7 +94,7 @@ export default function FeedPage() {
   };
 
   const handleTrendingClick = async (tag: string) => {
-      // Track search
+
       const trendingService = (await import('@/services/trendingService')).default;
       await trendingService.trackSearch(tag);
       router.push(`/search?q=${encodeURIComponent(tag)}`);
@@ -102,7 +102,7 @@ export default function FeedPage() {
 
   const handleEditPost = async (post: PetPost) => {
     try {
-      // Fetch full post detail for editing
+
       const response = await petPostService.getPostBySlug(post.id?.toString() || post.slug);
       if (response.success && response.data) {
         setEditingPost(response.data);
@@ -122,7 +122,7 @@ export default function FeedPage() {
     try {
       const response = await petPostService.deletePost(Number(post.id));
       if (response.success) {
-        // Remove the post from the list
+
         setPosts(prev => prev.filter(p => p.id?.toString() !== post.id?.toString()));
         toast.success('🗑️ Đã xóa bài đăng thành công!');
       } else {
@@ -153,8 +153,6 @@ export default function FeedPage() {
     setPage(0);
     setHasMore(true);
   }, [postTypeFilter]);
-
-  // Load suggestions and trending on mount
   useEffect(() => {
     loadSuggestions();
     loadTrending();
@@ -195,7 +193,7 @@ export default function FeedPage() {
       return;
     }
     
-    // Prevent double-click
+
     if (processingIds.has(item.id)) {
       return;
     }
@@ -267,7 +265,7 @@ export default function FeedPage() {
         slug: post.slug,
         description: post.description,
         image: post.images?.[0] || post.image || '',
-        images: post.images || (post.image ? [post.image] : []), // Add images array for grid display
+        images: post.images || (post.image ? [post.image] : []),
         petType: post.petType,
         status: post.status,
         postType: post.postType,
@@ -279,7 +277,7 @@ export default function FeedPage() {
           name: post.postedBy?.name || 'Unknown',
           phone: post.postedBy?.phone || '',
           avatar: post.postedBy?.avatar,
-          isVerified: false, // postedBy doesn't have isVerified field
+          isVerified: false,
         },
         createdAt: post.createdAt,
         tags: post.tags || [],
@@ -302,14 +300,12 @@ export default function FeedPage() {
     }
   };
 
-
-
   return (
     <div className="min-h-screen">
-      {/* Main Layout - 3 Columns */}
+      
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-12 gap-4 px-4 py-4">
-          {/* Left Sidebar - Hidden on mobile */}
+          
           <aside className="hidden lg:block col-span-3 space-y-2 sticky top-20 h-fit">
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <h3 className="font-semibold mb-3">Menu</h3>
@@ -340,9 +336,9 @@ export default function FeedPage() {
             </div>
           </aside>
 
-          {/* Center Feed */}
+          
           <main className="col-span-12 lg:col-span-6 space-y-4">
-            {/* Create Post Box */}
+            
             <div className="bg-white rounded-lg shadow-sm p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
@@ -361,7 +357,7 @@ export default function FeedPage() {
               </div>
             </div>
 
-            {/* Post Type Filters */}
+            
             <div className="bg-white rounded-lg shadow-sm p-3">
               <div className="flex items-center gap-2 overflow-x-auto">
                 <button
@@ -398,7 +394,7 @@ export default function FeedPage() {
               </div>
             </div>
 
-            {/* Posts Feed */}
+            
             {loading && posts.length === 0 ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
@@ -437,7 +433,7 @@ export default function FeedPage() {
             )}
           </main>
 
-          {/* Right Sidebar - Hidden on mobile/tablet */}
+          
           <aside className="hidden xl:block col-span-3 space-y-4 sticky top-20 h-fit">
             <div className="bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-semibold mb-3">📢 Gợi ý cho bạn</h3>
@@ -536,16 +532,16 @@ export default function FeedPage() {
         </div>
       </div>
 
-      {/* Create/Edit Post Modal */}
+      
       <CreatePostModal
         open={openCreateModal}
         onOpenChange={(open) => {
           setOpenCreateModal(open);
-          if (!open) setEditingPost(null); // Reset editing state when modal closes
+          if (!open) setEditingPost(null);
         }}
         onPostCreated={(post) => {
           if (editingPost) {
-            // Reload posts to get fresh data after update
+
             setPosts([]);
             setPage(0);
             setHasMore(true);
@@ -558,7 +554,7 @@ export default function FeedPage() {
         initialPost={editingPost}
       />
 
-      {/* Post Detail Modal */}
+      
       {selectedPost && (
         <PostDetailModal
           post={selectedPost}

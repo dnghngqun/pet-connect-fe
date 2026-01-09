@@ -64,14 +64,12 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Dialog states
   const [vaccinationDialogOpen, setVaccinationDialogOpen] = useState(false);
   const [medicalDialogOpen, setMedicalDialogOpen] = useState(false);
   const [weightDialogOpen, setWeightDialogOpen] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form states
   const [vaccinationForm, setVaccinationForm] = useState<AddVaccinationRequest>({
     name: '',
     date: new Date().toISOString().split('T')[0],
@@ -124,7 +122,6 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
         setReminders(response.data);
       }
     } catch {
-      // Ignore error
     }
   };
 
@@ -241,7 +238,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
 
   return (
     <div className="container py-8 max-w-5xl">
-      {/* Header */}
+      
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
@@ -256,7 +253,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
         </Button>
       </div>
 
-      {/* Pet Info Card */}
+      
       <Card className="mb-6">
         <CardContent className="p-6">
           <div className="flex items-center gap-6">
@@ -283,7 +280,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
             )}
           </div>
 
-          {/* Allergies */}
+          
           {healthRecord.allergies && healthRecord.allergies.length > 0 && (
             <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <div className="flex items-center gap-2 text-amber-700">
@@ -296,7 +293,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
         </CardContent>
       </Card>
 
-      {/* Upcoming Vaccinations Alert */}
+      
       {reminders.length > 0 && (
         <Card className="mb-6 border-orange-200 bg-orange-50">
           <CardHeader className="pb-2">
@@ -320,7 +317,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
         </Card>
       )}
 
-      {/* Tabs */}
+      
       <Tabs defaultValue="vaccinations" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="vaccinations" className="flex items-center gap-2">
@@ -337,7 +334,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
           </TabsTrigger>
         </TabsList>
 
-        {/* Vaccinations Tab */}
+        
         <TabsContent value="vaccinations">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -380,7 +377,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
           </Card>
         </TabsContent>
 
-        {/* Medical History Tab */}
+        
         <TabsContent value="medical">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -425,7 +422,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
           </Card>
         </TabsContent>
 
-        {/* Weight Tracking Tab */}
+        
         <TabsContent value="weight">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -473,7 +470,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
         </TabsContent>
       </Tabs>
 
-      {/* Add Vaccination Dialog */}
+      
       <Dialog open={vaccinationDialogOpen} onOpenChange={setVaccinationDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -532,7 +529,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
         </DialogContent>
       </Dialog>
 
-      {/* Add Medical History Dialog */}
+      
       <Dialog open={medicalDialogOpen} onOpenChange={setMedicalDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -591,7 +588,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
         </DialogContent>
       </Dialog>
 
-      {/* Add Weight Dialog */}
+      
       <Dialog open={weightDialogOpen} onOpenChange={setWeightDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -636,7 +633,7 @@ export default function PetHealthPage({ params }: { params: Promise<PageParams> 
         </DialogContent>
       </Dialog>
 
-      {/* QR Code Dialog */}
+      
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

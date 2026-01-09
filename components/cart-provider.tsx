@@ -24,8 +24,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const { toast } = useToast()
-
-  // Load cart from localStorage on mount
   useEffect(() => {
     const savedCart = localStorage.getItem("cart")
     if (savedCart) {
@@ -36,8 +34,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     }
   }, [])
-
-  // Save cart to localStorage when it changes
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cartItems))
   }, [cartItems])
@@ -58,8 +54,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prevItems, { ...item, quantity: 1 }]
     }
   })
-
-  // Fire toast after state update initiation (not inside updater)
   toast({
     title: "Item added to cart",
     description: message,

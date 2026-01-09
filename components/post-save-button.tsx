@@ -26,8 +26,6 @@ export default function PostSaveButton({
     if (isLoading) return;
 
     setIsLoading(true);
-
-    // Optimistic update
     const previousState = isSaved;
     setIsSaved(!isSaved);
 
@@ -46,7 +44,7 @@ export default function PostSaveButton({
         duration: 2000,
       });
     } catch (error) {
-      // Revert on error
+
       setIsSaved(previousState);
       console.error('Failed to toggle save:', error);
       toast({

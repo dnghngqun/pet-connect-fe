@@ -37,21 +37,17 @@ function withTimeout<T>(
 }
 
 interface ChatContextType {
-  // State
+
   chats: ChatType[];
   users: UserType[];
   currentUser: UserType | null;
   currentChat: ChatType | null;
   messages: MessageType[];
   selectedChatId: string | null;
-
-  // Loading states
   isChatsLoading: boolean;
   isMessagesLoading: boolean;
   isUsersLoading: boolean;
   isSendingMessage: boolean;
-
-  // Actions
   fetchAllChats: () => Promise<void>;
   fetchAllUsers: () => Promise<void>;
   selectChat: (chatId: string) => Promise<void>;
@@ -67,8 +63,6 @@ export const ChatContext = createContext<ChatContextType | undefined>(
 
 export function ChatProvider({ children, demo }: { children: ReactNode; demo?: boolean }) {
   const { user } = useAuth();
-  // Demo mode: when `demo` is true, use local mock data and skip API calls.
-  // This lets frontend run without backend responses during testing.
   const DEMO_USER: UserType = {
     _id: "demo_user_1",
     name: "Demo User",
@@ -80,27 +74,23 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     _id: "user_2",
     name: "Nguyễn Văn B",
     email: "b@example.com",
-    avatar: "https://i.pravatar.cc/150?img=32",
+    avatar: "https:
     isOnline: true,
   };
   const DEMO_USER_3: UserType = {
     _id: "user_3",
     name: "Trần Thị C",
     email: "c@example.com",
-    avatar: "https://i.pravatar.cc/150?img=12",
+    avatar: "https:
     isOnline: false,
   };
   const DEMO_USERS: UserType[] = [DEMO_USER, DEMO_USER_2, DEMO_USER_3];
   const currentUser = demo ? DEMO_USER : user;
-
-  // State
   const [chats, setChats] = useState<ChatType[]>(() => (demo ? [] : []));
   const [users, setUsers] = useState<UserType[]>(() => (demo ? [] : []));
   const [currentChat, setCurrentChat] = useState<ChatType | null>(null);
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-
-  // Loading states
   const [isChatsLoading, setIsChatsLoading] = useState(false);
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
@@ -110,8 +100,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
-
-  // Refs for callbacks
   const selectedChatIdRef = useRef(selectedChatId);
   useEffect(() => {
     selectedChatIdRef.current = selectedChatId;
@@ -170,21 +158,15 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       pendingTimeoutsRef.current.clear();
     };
   }, []);
-
-  // WebSocket Handlers
   const handleWebSocketMessage = useCallback((response: any) => {
     console.log("useChat handleWebSocketMessage:", response);
     const rawData = response.data || response;
-
-    // Check if it's a message
     if (response.type === 'MESSAGE' || (rawData.content && rawData.conversationId)) {
       const msgData = rawData;
       try {
         const normalized = normalizeMessageResponse(msgData);
         console.log("Normalized message:", normalized);
 
-        // 1. Update Messages if belongs to current chat
-        // Use ref to get current selectedChatId
         if (normalized.chatId === selectedChatIdRef.current) {
           let matchedTempId: string | null = null;
 
@@ -207,8 +189,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
               newMessages[index] = { ...normalized, status: "sent" };
               return newMessages;
             }
-
-            // Avoid duplicates if already exists (via ID)
             if (prev.some((m) => m._id === normalized._id)) return prev;
 
             return [...prev, normalized];
@@ -216,8 +196,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
 
           if (matchedTempId) clearSendTimeout(matchedTempId);
         }
-
-        // 2. Update Chat List (Last Message)
         setChats((prevChats) => {
           const chatIndex = prevChats.findIndex(c => c._id === normalized.chatId);
           if (chatIndex !== -1) {
@@ -227,19 +205,13 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
               lastMessage: normalized,
               updatedAt: normalized.createdAt,
             };
-            // Move updated chat to top
+
             newChats.splice(chatIndex, 1);
             newChats.unshift(updatedChat);
             return newChats;
           } else {
-            // Chat not in list? Fetch it and add to top!
-            // We can't use await here inside setState, so we trigger a side effect or separate action.
-            // But we need to update state. 
-            // Better approach: Call a function to fetch single Chat and add it.
-            // Since we are in a callback, let's call fetchAndAddChat(normalized.chatId)
+
             
-            // NOTE: We cannot easily async/await here.
-            // Let's trigger it outside.
             if(normalized.chatId) fetchSingleChatAndAdd(normalized.chatId);
             return prevChats;  
           }
@@ -250,8 +222,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       }
     }
   }, []);
-
-  // Helper to fetch single chat and add to list if not exists
   const fetchSingleChatAndAdd = useCallback(async (chatId: string) => {
     try {
         const { chat } = await chatAPI.getSingleChat(chatId);
@@ -262,7 +232,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
         }
 
         setChats(prev => {
-            if (prev.some(c => c._id === chat._id)) return prev; // already added by race condition
+            if (prev.some(c => c._id === chat._id)) return prev;
             return [chat, ...prev];
         });
     } catch (err) {
@@ -271,16 +241,12 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
   }, []);
 
   const handleNotification = useCallback((response: any) => {
-    // console.log("Notification received", response); 
-    // Could Trigger fetchAllChats if notification implies new chat?
   }, []);
 
   const handleError = useCallback((error: any) => {
     console.error("WebSocket error", error);
   }, []);
 
-
-  // WebSocket Subscription
   const { subscribe, isConnected } = useWebSocket();
   
   useEffect(() => {
@@ -290,9 +256,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
         if (message.body) {
              try {
                  const data = JSON.parse(message.body);
-                 // handleWebSocketMessage expects "response" object possibly wrapped.
-                 // Backend sends the message object directly? Or wrapped?
-                 // handleWebSocketMessage handles "response.data || response".
+
                  handleWebSocketMessage(data);
              } catch (e) {
                  console.error("Error parsing chat message", e);
@@ -300,24 +264,20 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
         }
     });
     
-    // Also subscribe to notifications here? useNotifications handles it globally but 
-    // ChatProvider had a listener. Let's keep it minimal for now.
-    // Ideally ChatProvider only cares about messages.
+
 
     return () => {
         sub?.unsubscribe();
     };
   }, [isConnected, currentUser, demo, handleWebSocketMessage, subscribe]);
 
-
-  // Fetch all chats
   const fetchAllChats = useCallback(async () => {
     if (!currentUser?._id) return;
 
     setIsChatsLoading(true);
     try {
       if (demo) {
-        // Provide demo chats (two conversations)
+
         const demoChats: ChatType[] = [
           {
             _id: "chat_demo_1",
@@ -349,13 +309,11 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       setIsChatsLoading(false);
     }
   }, [currentUser?._id, demo]);
-
-  // Fetch all users
   const fetchAllUsers = useCallback(async () => {
     setIsUsersLoading(true);
     try {
       if (demo) {
-        // Provide three demo users
+
         setUsers(DEMO_USERS);
       } else {
         const data = await chatAPI.getAllUsers();
@@ -367,8 +325,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       setIsUsersLoading(false);
     }
   }, [demo, currentUser]);
-
-  // Select chat and fetch messages
   const selectChat = useCallback(
     async (chatId: string) => {
       if (!currentUser?._id) return;
@@ -377,12 +333,10 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       setIsMessagesLoading(true);
       try {
         if (demo) {
-          // Create a few demo messages depending on chatId
+
           const userA = DEMO_USER;
           const userB = DEMO_USER_2;
           const userC = DEMO_USER_3;
-
-          // Message examples: text from userB, image from userC, reply from demo user
           const msg1: MessageType = {
             _id: "msg_demo_1",
             content: "Xin chào, bạn còn bé husky không?",
@@ -398,7 +352,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
           const msg2: MessageType = {
             _id: "msg_demo_2",
             content: undefined,
-            image: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=800&q=80",
+            image: "https:
             sender: userC,
             replyTo: undefined,
             chatId,
@@ -420,8 +374,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
           };
 
           const messagesDemo: MessageType[] = [msg1, msg2, msg3];
-
-          // Choose participants based on chatId
           const participants = chatId === "chat_demo_2" ? [userA, userC] : [userA, userB];
 
           const demoChat: ChatType = {
@@ -449,8 +401,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     },
     [currentUser?._id, demo, users]
   );
-
-  // Refresh messages (polling) - kept for manual refresh if needed
   const refreshMessages = useCallback(async () => {
     if (!selectedChatId || !currentUser?._id) return;
 
@@ -462,8 +412,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       console.error("Failed to refresh messages:", error);
     }
   }, [selectedChatId, currentUser?._id, demo]);
-
-  // Create chat
   const createChat = useCallback(
     async (payload: CreateChatPayload): Promise<ChatType | null> => {
       if (!currentUser?._id) return null;
@@ -487,12 +435,12 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
         const newChat = await chatAPI.createChat(payload);
         
         setChats((prev) => {
-          // Normalize IDs to string for comparison
+
           const newId = String(newChat._id || newChat.id);
           const existsIndex = prev.findIndex(c => String(c._id || c.id) === newId);
           
           if (existsIndex !== -1) {
-             // Move to top if exists
+
              const newChats = [...prev];
              const existing = newChats[existsIndex];
              newChats.splice(existsIndex, 1);
@@ -505,7 +453,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Failed to create chat";
         console.error("Failed to create chat:", errorMsg);
-        // alert(`Lỗi: ${errorMsg}`); // Suppress alert for better UX
+
         return null;
       }
     },
@@ -611,8 +559,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
           "Hết thời gian gửi tin nhắn. Vui lòng thử lại."
         );
 
-        // If handled via WS (returnValue is null), we keep the optimistic message.
-        // It will be replaced when the broadcast is received.
         if (sentMessage === null) {
           return optimisticMessage;
         }
@@ -623,8 +569,6 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
             msg._id === optimisticId ? { ...sentMessage, status: "sent" } : msg
           )
         );
-
-        // Update Chat List (Last Message) manually for REST
         setChats((prevChats) => {
           const chatIndex = prevChats.findIndex((c) => c._id === chatId);
           if (chatIndex !== -1) {
@@ -687,12 +631,8 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     },
     [sendMessageInternal]
   );
-
-  // Fetch chats on mount and when tab becomes active
   useEffect(() => {
     if (!currentUser?._id) return;
-
-    // Initial fetch
     fetchAllChats();
 
     if (!demo) {
@@ -704,7 +644,7 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
       };
 
       const handleWindowFocus = () => {
-        // console.log("Window focused, fetching chats...");
+
         fetchAllChats();
       };
 

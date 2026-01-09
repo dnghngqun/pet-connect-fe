@@ -13,8 +13,6 @@ import type { Product } from "@/lib/types"
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState<Product[]>([])
   const { addToCart } = useCart()
-
-  // Load wishlist from localStorage on mount
   useEffect(() => {
     const savedWishlist = localStorage.getItem("wishlist")
     if (savedWishlist) {
@@ -27,8 +25,6 @@ export default function WishlistPage() {
       }
     }
   }, [])
-
-  // Save wishlist to localStorage when it changes
   useEffect(() => {
     const wishlistIds = wishlistItems.map((item) => item.id)
     localStorage.setItem("wishlist", JSON.stringify(wishlistIds))
@@ -46,11 +42,9 @@ export default function WishlistPage() {
       image: product.image,
     })
   }
-
-  // For demo purposes, if wishlist is empty, add some sample products
   useEffect(() => {
     if (wishlistItems.length === 0) {
-      // Add some sample products to the wishlist for demonstration
+
       const sampleWishlist = products.slice(0, 4)
       setWishlistItems(sampleWishlist)
     }

@@ -21,20 +21,14 @@ const MapComponent = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<any>(null)
   const [isClient, setIsClient] = useState(false)
-
-  // Only run on client
   useEffect(() => {
     setIsClient(true)
   }, [])
 
   useEffect(() => {
     if (!isClient || !containerRef.current) return
-
-    // Dynamic import leaflet only on client
     const initMap = async () => {
       const L = (await import('leaflet')).default
-
-      // Khởi tạo bản đồ
       if (!mapRef.current) {
         mapRef.current = L.map(containerRef.current!).setView(
           [
@@ -44,14 +38,12 @@ const MapComponent = ({
           13
         )
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        L.tileLayer('https:
           attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            '&copy; <a href="https:
           maxZoom: 19,
         }).addTo(mapRef.current)
       }
-
-      // Thêm marker cho vị trí người dùng
       if (userLocation && mapRef.current) {
         L.circleMarker(
           [userLocation.latitude, userLocation.longitude],
@@ -67,8 +59,6 @@ const MapComponent = ({
           .addTo(mapRef.current)
           .bindPopup('Vị trí hiện tại của bạn')
       }
-
-      // Thêm markers cho rescue centers
       rescueCenters.forEach((center) => {
         if (!mapRef.current) return
 
@@ -87,8 +77,6 @@ const MapComponent = ({
             </div>
           `
           )
-
-        // Thay đổi icon cho rescue centers
         marker.setIcon(
           L.icon({
             iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTIgMkM2LjQ4IDIgMiA2LjQ4IDIgMTJzNC40OCAxMCAxMCAxMCAxMC00LjQ4IDEwLTEwUzE3LjUyIDIgMTIgMnptLTIgMTVsLTUtNSAxLjQxLTEuNDFMMTAgMTQuMTdsNi41OS02LjU5TDE4IDE5eiIgZmlsbD0iIzRmNDZlNSIvPjwvc3ZnPg==',
@@ -98,8 +86,6 @@ const MapComponent = ({
           })
         )
       })
-
-      // Thêm markers cho pets
       pets.forEach((pet) => {
         if (!mapRef.current || !pet.locationCoords) return
 

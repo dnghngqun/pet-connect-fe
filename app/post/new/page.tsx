@@ -87,7 +87,6 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   
-  // Form data
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -98,19 +97,18 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
     city: '',
     district: '',
     location: '',
-    // Pet details (matches DB: pets table)
-    petName: '',       // name
-    petBreed: '',      // breed
-    petAge: '',        // age (months)
-    petGender: '',     // gender: MALE | FEMALE
-    petColor: '',      // color
-    petSize: '',       // size: SMALL | MEDIUM | LARGE
-    petWeight: '',     // weight
-    isNeutered: false, // is_neutered
-    isVaccinated: false, // is_vaccinated
-    petPersonality: '', // personality traits (comma separated)
-    specialNeeds: '',  // special needs
-    bio: '',           // bio
+    petName: '',
+    petBreed: '',
+    petAge: '',
+    petGender: '',
+    petColor: '',
+    petSize: '',
+    petWeight: '',
+    isNeutered: false,
+    isVaccinated: false,
+    petPersonality: '',
+    specialNeeds: '',
+    bio: '',
   });
 
   const [structuredMeta, setStructuredMeta] = useState({
@@ -144,7 +142,6 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
   const requiresPetInfo = ['LOST_FOUND', 'ADOPTION', 'BREEDING'].includes(formData.postType);
   const shouldShowPetSteps = requiresPetInfo;
   
-  // Health record state (optional)
   const [healthRecord, setHealthRecord] = useState({
     notes: '',
     allergies: [] as string[],
@@ -156,7 +153,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
   const [newVaccine, setNewVaccine] = useState({ name: '', date: '' });
   const [newMedical, setNewMedical] = useState({ condition: '', treatment: '', date: '', notes: '' });
   
-  // Image cropper state
+
   const [cropperOpen, setCropperOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string>('');
   
@@ -217,7 +214,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
-  // Validation for each step
+
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
@@ -311,7 +308,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
     }
   };
   
-  // Real image upload handler - opens cropper for each image
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -327,7 +324,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
     
     const file = files[0];
     
-    // Validate file type
+
     if (!file.type.startsWith('image/')) {
       toast({
         title: 'Lỗi',
@@ -337,7 +334,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
       return;
     }
     
-    // Validate file size (max 5MB)
+
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: 'Lỗi', 
@@ -347,16 +344,16 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
       return;
     }
     
-    // Open cropper
+
     const imageUrl = URL.createObjectURL(file);
     setImageToCrop(imageUrl);
     setCropperOpen(true);
     
-    // Reset input
+
     e.target.value = '';
   };
   
-  // Handle cropped image
+
   const handleCropComplete = (croppedBlob: Blob) => {
     const croppedFile = new File([croppedBlob], `cropped_${Date.now()}.jpg`, {
       type: 'image/jpeg',
@@ -367,7 +364,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
     setImageFiles(prev => [...prev, croppedFile]);
     setImagePreviews(prev => [...prev, previewUrl]);
     
-    // Clean up original image URL
+
     if (imageToCrop) {
       URL.revokeObjectURL(imageToCrop);
       setImageToCrop('');
@@ -377,7 +374,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
   };
   
   const handleRemoveImage = (index: number) => {
-    // Revoke object URL to prevent memory leaks
+
     URL.revokeObjectURL(imagePreviews[index]);
     setImageFiles(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
@@ -388,7 +385,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
     if (formData.postType === 'LOST_FOUND') return 'LOST';
     if (formData.postType === 'ADOPTION') return 'FOR_ADOPTION';
     if (formData.postType === 'RESCUE') return 'RESCUE';
-    // Neutral status for social-style posts
+
     return 'GENERAL';
   };
 
@@ -462,7 +459,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
     
     setIsSubmitting(true);
     try {
-      // Build health record data if any field is filled
+
       
       const personality = formData.petPersonality
         .split(',')
@@ -485,8 +482,6 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
         ...(formData.bio.trim() ? { bio: formData.bio.trim() } : {}),
       };
       const petInfoData = Object.keys(petInfo).length ? petInfo : undefined;
-
-      // Construct Health Record object if any data exists
       const hasHealthData = 
         healthRecord.allergies.length > 0 ||
         healthRecord.vaccinations.length > 0 ||
@@ -605,7 +600,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
       )}
 
       <Card className="border-0 shadow-xl bg-gradient-to-br from-white via-orange-50/30 to-pink-50/30 overflow-hidden relative">
-        {/* Decorative Background Elements */}
+        
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-orange-200/20 to-pink-200/20 rounded-full blur-2xl" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-gradient-to-br from-blue-200/20 to-purple-200/20 rounded-full blur-2xl" />
@@ -627,7 +622,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
           </CardDescription>
         </CardHeader>
         <CardContent className="relative z-10">
-          {/* Enhanced Step Indicator */}
+          
           <div className="flex items-center justify-center gap-0 mb-10 px-2">
             {steps.map((stepKey, index) => {
               const step = STEP_CONFIG[stepKey];
@@ -676,7 +671,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
             })}
           </div>
 
-          {/* Step 1: Post Type */}
+          
         {currentStepKey === 'type' && (
           <div className="space-y-6">
             <div className="text-center mb-8">
@@ -722,7 +717,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                     </p>
                     <p className="text-xs text-gray-500 leading-relaxed">{type.desc}</p>
                     
-                    {/* Selection indicator */}
+                    
                     {formData.postType === type.value && (
                       <div className={cn(
                         'absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br shadow-md',
@@ -737,7 +732,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
             </div>
           )}
 
-          {/* Step 2: Post Details */}
+          
           {currentStepKey === 'details' && (
           <div className="space-y-6">
             <div className="text-center mb-8">
@@ -751,7 +746,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
               </p>
             </div>
 
-            {/* Status (only for LOST_FOUND / ADOPTION) */}
+            
             {STATUS_BY_TYPE[formData.postType] && (
               <div className="space-y-2">
                 <Label>Trạng thái</Label>
@@ -772,7 +767,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
               </div>
             )}
 
-            {/* Title */}
+            
             <div className="space-y-2">
               <Label htmlFor="title">Tiêu đề *</Label>
               <Input
@@ -784,7 +779,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 />
               </div>
 
-            {/* Tags */}
+            
             <div className="space-y-2">
               <Label>Hashtag/Tag</Label>
               <div className="flex gap-2">
@@ -802,7 +797,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
               <p className="text-xs text-muted-foreground">Dùng tag để lọc và gợi ý nội dung</p>
             </div>
 
-            {/* Dynamic meta fields */}
+            
             {formData.postType === 'LOST_FOUND' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -1047,7 +1042,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
               </div>
             )}
 
-              {/* Pet Type */}
+              
               {requiresPetInfo && (
                 <div className="space-y-2">
                   <Label>Loại thú cưng *</Label>
@@ -1067,7 +1062,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 </div>
               )}
 
-              {/* Location */}
+              
               <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
                 {!requiresPetInfo && (
                   <div className="flex items-center justify-between">
@@ -1108,7 +1103,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                       </div>
                     </div>
 
-                    {/* Detailed Location */}
+                    
                     <div className="space-y-2">
                       <Label htmlFor="location">
                         <MapPin className="h-4 w-4 inline mr-1" />
@@ -1126,7 +1121,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 )}
               </div>
 
-              {/* Description */}
+              
               <div className="space-y-2">
                 <Label htmlFor="description">Mô tả chi tiết * (tối thiểu 20 ký tự)</Label>
                 <Textarea
@@ -1155,7 +1150,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
             </div>
           )}
 
-          {/* Step 3: Pet Details (Optional) */}
+          
           {currentStepKey === 'pet' && shouldShowPetSteps && (
             <div className="space-y-6">
               <div className="text-center mb-8">
@@ -1281,7 +1276,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 />
               </div>
 
-              {/* Special Needs */}
+              
               <div className="space-y-2">
                 <Label htmlFor="specialNeeds">Nhu cầu đặc biệt</Label>
                 <Input
@@ -1293,7 +1288,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 />
               </div>
 
-              {/* Bio */}
+              
               <div className="space-y-2">
                 <Label htmlFor="bio">Mô tả thêm</Label>
                 <Textarea
@@ -1329,7 +1324,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
             </div>
           )}
 
-          {/* Step 4: Health Record (Optional) */}
+          
           {currentStepKey === 'health' && shouldShowPetSteps && (
             <div className="space-y-6">
               <div className="text-center mb-8">
@@ -1348,7 +1343,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 </p>
               </div>
 
-              {/* Weight */}
+              
               <div className="space-y-2">
                 <Label htmlFor="healthWeight">Cân nặng (kg)</Label>
                 <Input
@@ -1362,7 +1357,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 />
               </div>
 
-              {/* Allergies */}
+              
               <div className="space-y-2">
                 <Label>Dị ứng</Label>
                 <div className="flex gap-2">
@@ -1420,9 +1415,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                   </div>
                 )}
               </div>
-
-
-              {/* Vaccinations */}
+              
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Syringe className="h-4 w-4" />
@@ -1489,7 +1482,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 )}
               </div>
 
-              {/* Medical History */}
+              
               <div className="space-y-2">
                 <Label>Lịch sử khám bệnh</Label>
                 <div className="grid grid-cols-2 gap-2">
@@ -1571,7 +1564,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 )}
               </div>
 
-              {/* Notes */}
+              
               <div className="space-y-2">
                 <Label htmlFor="healthNotes">Ghi chú sức khỏe</Label>
                 <Textarea
@@ -1585,7 +1578,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
             </div>
           )}
 
-          {/* Step 5: Images */}
+          
           {currentStepKey === 'images' && (
             <div className="space-y-6">
               <div className="text-center mb-8">
@@ -1651,7 +1644,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
                 * Ảnh đầu tiên sẽ được dùng làm ảnh đại diện cho bài đăng
               </p>
 
-              {/* Summary */}
+              
               {imageFiles.length > 0 && (
                 <div className="mt-8 p-4 bg-muted/50 rounded-xl border">
                   <h4 className="font-semibold mb-3">Tóm tắt bài đăng</h4>
@@ -1673,7 +1666,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
             </div>
           )}
 
-          {/* Navigation Buttons */}
+          
           <div className="flex items-center justify-between mt-10 pt-6 border-t border-gray-100">
             <Button
               type="button"
@@ -1720,7 +1713,7 @@ export default function NewPostPage({ presetType, onPostCreated, onCancel }: New
         </CardContent>
       </Card>
 
-      {/* Image Cropper Modal */}
+      
       <ImageCropper
         open={cropperOpen}
         onOpenChange={setCropperOpen}

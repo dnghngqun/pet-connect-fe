@@ -33,7 +33,7 @@ export default function ProfileFriendsTab({ userId }: ProfileFriendsTabProps) {
           setFriends(prev => [...prev, ...data.data]);
         }
         
-        // Check if more pages
+
         if (data.data.length < 12) {
           setHasMore(false);
         }
@@ -79,25 +79,17 @@ export default function ProfileFriendsTab({ userId }: ProfileFriendsTabProps) {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {friends.map((friend) => {
-          // Identify the actual friend user object (could be 'friend' or 'user' property depending on friendship direction)
-          // But DTO from backend usually flattens this. Let's check DTO structure.
-          // FriendshipDTO has: userId, userName, userAvatar... AND friendId, friendName... 
-          // Actually FriendshipDTO represents the relation. 
-          // FriendshipController.getFriends returns mapped DTO relative to the requested user.
-          // Let's check FriendshipMapper.
           
-          // Assuming FriendshipMapper returns a simplified obj relative to the userId passed.
-          // If not, we handle it on frontend.
+
+
           
-          // Based on FriendshipServiceImpl.getFriends -> friendshipMapper.toDTO(f, userId)
-          // It creates DTO where "friend" info is put into generic fields or separate?
-          // Let's check FriendshipMapper to be safe.
+
           
-          const friendId = friend.friendId || friend.userId; // Fallback
+          const friendId = friend.friendId || friend.userId;
           const friendName = friend.friendName || friend.userName;
           const friendAvatar = friend.friendAvatar || friend.userAvatar;
           
-          // If current user is same as friend item, skip (shouldn't happen with correct backend)
+
           if (currentUser && (friendId === currentUser.id)) return null;
 
           return (
@@ -114,7 +106,7 @@ export default function ProfileFriendsTab({ userId }: ProfileFriendsTabProps) {
               </Link>
               
               <div className="flex flex-col gap-2">
-                 {/* Only show friend request button if it's NOT ME */}
+                 
                  {currentUser && currentUser.id !== friendId && (
                     <FriendRequestButton userId={friendId} userName={friendName} />
                  )}

@@ -8,7 +8,7 @@ import { vi } from 'date-fns/locale';
 
 interface ProfileIntroProps {
   bio?: string;
-  address?: string; // We might need to map this
+  address?: string;
   joinedDate?: string;
   isOwnProfile?: boolean;
 }
@@ -45,8 +45,8 @@ export default function ProfileIntro({ bio, address, joinedDate, isOwnProfile }:
         )}
       </div>
 
-      {/* TODO: Mutual Groups - will be implemented when groups feature is available */}
-      {/* Currently hidden since there's no real data */}
+      
+      
 
       {isOwnProfile && (
         <Button variant="secondary" className="w-full bg-gray-200 hover:bg-gray-300 text-black mt-4">

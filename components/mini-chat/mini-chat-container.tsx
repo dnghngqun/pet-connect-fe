@@ -13,14 +13,12 @@ export function MiniChatContainer() {
   const { openChats, openMiniChat } = useMiniChat();
   const { user } = useAuth();
   const pathname = usePathname();
-
-  // Separate expanded and minimized chats
   const expandedChats = openChats.filter((c) => !c.isMinimized);
   const minimizedChats = openChats.filter((c) => c.isMinimized);
 
   return (
     <>
-      {/* Expanded chat windows */}
+      
       {expandedChats.map((chat, index) => (
         <MiniChatWindow
           key={chat.participantId}
@@ -29,7 +27,7 @@ export function MiniChatContainer() {
         />
       ))}
 
-      {/* Minimized chat bubbles */}
+      
       {minimizedChats.map((chat, index) => (
         <MiniChatBubble
           key={chat.participantId}
@@ -38,7 +36,7 @@ export function MiniChatContainer() {
         />
       ))}
 
-      {/* Floating New Chat Button (visible on all pages except auth) */}
+      
       {user && !pathname.startsWith("/login") && !pathname.startsWith("/register") && (
         <div className="fixed bottom-5 right-5 z-50">
         <NewChatDialog 
@@ -53,7 +51,7 @@ export function MiniChatContainer() {
           onChatCreated={(chat) => {
             if (!chat.participants || !user?._id) return;
             
-            // Find the other participant
+
             const partner = chat.participants.find(p => String(p._id) !== String(user._id));
             
             if (partner && partner._id) {

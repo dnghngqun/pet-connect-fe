@@ -21,7 +21,7 @@ export default function TrendingPage() {
   const fetchTrendingPosts = async () => {
     setLoading(true);
     try {
-      // Fetch posts sorted by views and reactions (trending algorithm)
+
       const params = new URLSearchParams({
         page: '0',
         size: '20',
@@ -58,7 +58,7 @@ export default function TrendingPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-6">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Hero Header */}
+        
         <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg shadow-lg p-8 mb-6 text-white">
           <div className="flex items-center gap-3 mb-4">
             <Flame className="h-10 w-10" />
@@ -69,7 +69,7 @@ export default function TrendingPage() {
           </p>
         </div>
 
-        {/* Time Range Selector */}
+        
         <Tabs value={timeRange} onValueChange={setTimeRange} className="mb-6">
           <TabsList className="bg-white">
             <TabsTrigger value="24h">
@@ -87,7 +87,7 @@ export default function TrendingPage() {
           </TabsList>
         </Tabs>
 
-        {/* Categories Grid */}
+        
         <div className="mb-8">
           <h2 className="text-xl font-bold mb-4">📁 Danh mục phổ biến</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -106,7 +106,7 @@ export default function TrendingPage() {
           </div>
         </div>
 
-        {/* Trending Posts */}
+        
         <div>
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Flame className="h-6 w-6 text-orange-500" />
@@ -131,7 +131,7 @@ export default function TrendingPage() {
                   className="cursor-pointer hover:shadow-xl transition-all overflow-hidden group"
                   onClick={() => handlePostClick(post.slug)}
                 >
-                  {/* Trending Badge */}
+                  
                   {index < 3 && (
                     <div className="absolute top-2 left-2 z-10">
                       <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
@@ -141,7 +141,7 @@ export default function TrendingPage() {
                     </div>
                   )}
 
-                  {/* Image */}
+                  
                   {post.image && (
                     <div className="relative h-48 overflow-hidden">
                       <img
@@ -152,7 +152,7 @@ export default function TrendingPage() {
                     </div>
                   )}
 
-                  {/* Content */}
+                  
                   <div className="p-4">
                     <div className="flex items-center gap-2 mb-2">
                       {post.postType && (

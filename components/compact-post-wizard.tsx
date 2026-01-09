@@ -14,8 +14,6 @@ import { X, Upload, ChevronLeft, ChevronRight, Plus, Loader2 } from 'lucide-reac
 import petPostService from '@/services/petPostService';
 import authService from '@/services/authService';
 import Image from 'next/image';
-
-// Complete wizard matching FE Mobile - supports all 7 post types with dynamic steps
 type StepKind = 'type' | 'details' | 'pet' | 'health' | 'images';
 
 const POST_TYPES = [
@@ -44,7 +42,7 @@ interface CompactPostWizardProps {
   presetType?: string;
   onPostCreated?: (post: any) => void;
   onCancel?: () => void;
-  initialPost?: any; // For edit mode
+  initialPost?: any;
   isEditing?: boolean;
 }
 
@@ -63,11 +61,11 @@ export default function CompactPostWizard({
     title: '',
     description: '',
     petType: 'Chó',
-    status: 'LOST', // for LOST_FOUND, ADOPTION status
+    status: 'LOST',
     city: '',
     district: '',
     location: '',
-    // Pet fields
+
     petName: '',
     petBreed: '',
     petAge: '',
@@ -76,24 +74,18 @@ export default function CompactPostWizard({
     petWeight: '',
     isNeutered: false,
     isVaccinated: false,
-    // Additional fields matching Mobile FE
+
     petSize: '', 
     petPersonality: '',
     petSpecialNeeds: '',
     petBio: '',
-    // Health fields
+
     healthWeight: '',
     healthNotes: '',
   });
-
-  // Tags
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-
-  // Location toggle (for non-pet posts)
   const [enableLocation, setEnableLocation] = useState(false);
-
-  // Health record arrays (like FE Mobile)
   const [allergies, setAllergies] = useState<string[]>([]);
   const [allergyInput, setAllergyInput] = useState('');
   
@@ -104,16 +96,16 @@ export default function CompactPostWizard({
   const [medicalInput, setMedicalInput] = useState({condition: '', treatment: '', date: '', notes: ''});
 
   const [structuredMeta, setStructuredMeta] = useState({
-    // LOST_FOUND
+
     lastSeenLocation: '',
     reward: '',
     distinguishingMarks: '',
     lostFoundContact: '',
-    // ADOPTION
+
     adoptionRequirements: '',
     vaccinationStatus: '',
     adoptionContact: '',
-    // REVIEW
+
     placeName: '',
     serviceType: '',
     rating: '',
@@ -121,16 +113,16 @@ export default function CompactPostWizard({
     address: '',
     pros: '',
     cons: '',
-    // QNA
+
     questionTopic: '',
     qnaContext: '',
-    // TIP
+
     tipTopic: '',
     tipContext: '',
-    // BREEDING
+
     breedingRequirements: '',
     breedingContact: '',
-    // MARKETPLACE
+
     marketplaceItemName: '',
     marketplaceCondition: '',
     marketplacePrice: '',
@@ -140,12 +132,8 @@ export default function CompactPostWizard({
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-
-  // Derived state - needed outside useMemo (like FE Mobile)
   const requiresPetInfo = ['LOST_FOUND', 'ADOPTION', 'BREEDING'].includes(formData.postType);
 
-  // Dynamic steps based on post type (like FE Mobile)
-  // Skip type step when editing
   const steps = useMemo<StepKind[]>(() => {
     const base: StepKind[] = isEditing ? ['details'] : ['type', 'details'];
     if (requiresPetInfo) {
@@ -154,8 +142,6 @@ export default function CompactPostWizard({
     base.push('images');
     return base;
   }, [formData.postType, requiresPetInfo, isEditing]);
-
-  // Progress calculation (exclude type selection step)
   const progressAfterTypeSelection = currentStep > 0 
     ? ((currentStep) / (steps.length - 1)) * 100 
     : 0;
@@ -164,8 +150,6 @@ export default function CompactPostWizard({
     const user = authService.getCurrentUser();
     if (!user && onCancel) onCancel();
   }, [onCancel]);
-
-  // Pre-fill form data when editing
   useEffect(() => {
     if (isEditing && initialPost) {
       setFormData(prev => ({
@@ -178,7 +162,7 @@ export default function CompactPostWizard({
         city: initialPost.city || '',
         district: initialPost.district || '',
         location: initialPost.location || '',
-        // Pet fields from initialPost.pet
+
         petName: initialPost.pet?.name || '',
         petBreed: initialPost.pet?.breed || '',
         petAge: initialPost.pet?.age?.toString() || '',
@@ -192,26 +176,26 @@ export default function CompactPostWizard({
         isNeutered: initialPost.pet?.isNeutered || false,
         isVaccinated: initialPost.pet?.isVaccinated || false,
       }));
-      // Pre-fill tags
+
       if (initialPost.tags && Array.isArray(initialPost.tags)) {
         setTags(initialPost.tags);
       }
-      // Pre-fill meta fields
+
       if (initialPost.meta) {
         setStructuredMeta(prev => ({ ...prev, ...initialPost.meta }));
       }
-      // Pre-fill existing images as previews (URLs)
+
       if (initialPost.media && Array.isArray(initialPost.media)) {
         const urls = initialPost.media.map((m: any) => m.imageUrl || m);
         setImagePreviews(urls);
-        // Note: We don't set imageFiles since these are existing URLs, not new uploads
+
       } else if (initialPost.images && Array.isArray(initialPost.images)) {
         setImagePreviews(initialPost.images);
       } else if (initialPost.image) {
         setImagePreviews([initialPost.image]);
       }
       
-      // Enable location toggle if post has location data
+
       if (initialPost.city || initialPost.district || initialPost.location) {
         setEnableLocation(true);
       }
@@ -380,7 +364,7 @@ export default function CompactPostWizard({
   };
 
   const handleSubmit = async () => {
-    // Relax image validation when editing (existing images are already there)
+
     if (!isEditing && !validateStep()) return;
     if (isEditing && steps[currentStep] === 'images' && imagePreviews.length === 0 && imageFiles.length === 0) {
       toast({ title: 'Lỗi', description: 'Thêm ít nhất 1 ảnh', variant: 'destructive' });
@@ -416,15 +400,15 @@ export default function CompactPostWizard({
 
       let response;
       if (isEditing && initialPost?.id) {
-        // Update existing post
+
         response = await petPostService.updatePost(Number(initialPost.id), payload);
-        // Upload new images if any
+
         if (imageFiles.length > 0) {
           await petPostService.uploadImages(Number(initialPost.id), imageFiles);
         }
         toast({ title: 'Thành công!', description: 'Bài đăng đã được cập nhật.' });
       } else {
-        // Create new post
+
         response = await petPostService.createPost(payload, imageFiles);
         toast({ title: 'Thành công!', description: 'Bài đăng đã được tạo.' });
       }
@@ -441,7 +425,7 @@ export default function CompactPostWizard({
 
   return (
     <div className="relative p-2">
-      {/* Progress Bar - Only show AFTER type selection */}
+      
       {currentStep > 0 && (
         <div className="mb-6">
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -456,7 +440,7 @@ export default function CompactPostWizard({
         </div>
       )}
 
-      {/* TYPE STEP */}
+      
       {currentStepKey === 'type' && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-center">Chọn loại bài đăng 🤔</h3>
@@ -480,12 +464,12 @@ export default function CompactPostWizard({
         </div>
       )}
 
-      {/* DETAILS STEP */}
+      
       {currentStepKey === 'details' && (
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <h3 className="text-lg font-bold text-center mb-4">Nội dung bài đăng ✍️</h3>
           
-          {/* Status Selection (for LOST_FOUND, ADOPTION) */}
+          
           {(['LOST_FOUND', 'ADOPTION'].includes(formData.postType)) && (
             <div className="space-y-2">
               <Label>Trạng thái</Label>
@@ -561,7 +545,7 @@ export default function CompactPostWizard({
             />
           </div>
 
-          {/* Tags Input */}
+          
           <div className="space-y-2">
             <Label>Hashtag/Tag</Label>
             <Input
@@ -594,9 +578,9 @@ export default function CompactPostWizard({
             <div className="text-xs text-muted-foreground text-right">{formData.description.trim().length}/2000</div>
           </div>
 
-          {/* Meta Fields by Type */}
+          
 
-          {/* Meta Fields by Type */}
+          
           {formData.postType === 'LOST_FOUND' && (
             <div className="space-y-3 pt-3 border-t">
               <h4 className="font-semibold text-sm">Thông tin thất lạc</h4>
@@ -688,7 +672,7 @@ export default function CompactPostWizard({
           )}
 
           {formData.postType === 'QNA' && (
-             // Simplified: No extra meta fields needed for QNA
+
              <></>
           )}
 
@@ -734,7 +718,7 @@ export default function CompactPostWizard({
             </div>
           )}
 
-          {/* Location Toggle (for non-pet posts) */}
+          
           {!requiresPetInfo && (
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div>
@@ -745,7 +729,7 @@ export default function CompactPostWizard({
             </div>
           )}
 
-          {/* Location Fields (when needed) */}
+          
           {(requiresPetInfo || enableLocation) && (
             <>
               <div className="space-y-2">
@@ -777,7 +761,7 @@ export default function CompactPostWizard({
         </div>
       )}
 
-      {/* PET STEP */}
+      
       {currentStepKey === 'pet' && (
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <h3 className="text-lg font-bold text-center">Thông tin thú cưng 🐾</h3>
@@ -866,13 +850,13 @@ export default function CompactPostWizard({
         </div>
       )}
 
-      {/* HEALTH STEP */}
+      
       {currentStepKey === 'health' && (
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <h3 className="text-lg font-bold text-center">Hồ sơ y tế 🩺</h3>
           <p className="text-sm text-center text-muted-foreground mb-4">Không bắt buộc</p>
           
-          {/* Weight */}
+          
           <div className="space-y-2">
             <Label>Cân nặng (kg)</Label>
             <Input
@@ -884,7 +868,7 @@ export default function CompactPostWizard({
             />
           </div>
 
-          {/* Allergies */}
+          
           <div className="space-y-2">
             <Label>Dị ứng</Label>
             <div className="flex gap-2">
@@ -931,7 +915,7 @@ export default function CompactPostWizard({
             )}
           </div>
 
-          {/* Vaccinations */}
+          
           <div className="space-y-2 pt-3 border-t">
             <Label className="font-semibold">Tiêm phòng</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -982,7 +966,7 @@ export default function CompactPostWizard({
             )}
           </div>
 
-          {/* Medical History */}
+          
           <div className="space-y-2 pt-3 border-t">
             <Label className="font-semibold">Lịch sử khám bệnh</Label>
             <div className="grid grid-cols-2 gap-2">
@@ -1049,7 +1033,7 @@ export default function CompactPostWizard({
             )}
           </div>
 
-          {/* General Health Notes */}
+          
           <div className="space-y-2 pt-3 border-t">
             <Label>Ghi chú y tế khác</Label>
             <Textarea
@@ -1062,7 +1046,7 @@ export default function CompactPostWizard({
         </div>
       )}
 
-      {/* IMAGES STEP */}
+      
       {currentStepKey === 'images' && (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-center">Thêm hình ảnh 📷</h3>
@@ -1091,7 +1075,7 @@ export default function CompactPostWizard({
         </div>
       )}
 
-      {/* Navigation */}
+      
       <div className="flex justify-between items-center mt-8 pt-4 border-t">
         <Button type="button" variant="ghost" onClick={currentStep === 0 ? onCancel : goPrev} disabled={isSubmitting}>
           {currentStep === 0 ? 'Hủy' : <><ChevronLeft className="h-4 w-4 mr-1" /> Quay lại</>}

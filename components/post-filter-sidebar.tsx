@@ -63,7 +63,7 @@ export default function PostFilterSidebar({
 
   return (
     <>
-      {/* Mobile Toggle Button */}
+      
       <Button
         variant="outline"
         size="sm"
@@ -74,7 +74,7 @@ export default function PostFilterSidebar({
         Lọc {activeFilterCount > 0 && `(${activeFilterCount})`}
       </Button>
 
-      {/* Sidebar */}
+      
       <div
         className={`
           fixed md:sticky top-0 left-0 h-screen md:h-auto w-80 bg-white border-r
@@ -113,7 +113,7 @@ export default function PostFilterSidebar({
 
         <ScrollArea className="h-[calc(100vh-80px)]">
           <div className="p-4 space-y-6">
-            {/* Post Types Filter */}
+            
             <div>
               <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
                 LOẠI BÀI VIẾT
@@ -140,7 +140,7 @@ export default function PostFilterSidebar({
               </div>
             </div>
 
-            {/* Tags Filter */}
+            
             <div>
               <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
                 TAGS PHỔ BIẾN
@@ -159,7 +159,7 @@ export default function PostFilterSidebar({
               </div>
             </div>
 
-            {/* Selected Filters Summary */}
+            
             {activeFilterCount > 0 && (
               <div className="pt-4 border-t">
                 <h3 className="font-semibold mb-2 text-sm text-muted-foreground">
@@ -211,7 +211,7 @@ export default function PostFilterSidebar({
         </ScrollArea>
       </div>
 
-      {/* Mobile Backdrop */}
+      
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"

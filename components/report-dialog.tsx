@@ -89,7 +89,7 @@ export default function ReportDialog({
 
     setIsSubmitting(true);
     try {
-      // Backend requires min 20 chars, so we make the prefix descriptive
+
       const content = `Báo cáo vi phạm [Bài viết ${postId}]. Lý do: ${postReason}${postReason === 'other' && postOtherReason ? ' - ' + postOtherReason : ''}`;
       if (onSubmit) {
         await onSubmit(content);
@@ -146,7 +146,7 @@ export default function ReportDialog({
 
     setIsSubmitting(true);
     try {
-      // Backend requires min 20 chars
+
       const content = `Báo cáo vi phạm [Người dùng ${userId}]. Lý do: ${userReason}${userReason === 'other' && userOtherReason ? ' - ' + userOtherReason : ''}`;
       if (onSubmit) {
         await onSubmit(content);
@@ -199,7 +199,7 @@ export default function ReportDialog({
             <TabsTrigger value="user">Báo cáo người dùng</TabsTrigger>
           </TabsList>
 
-          {/* Post Report Tab */}
+          
           <TabsContent value="post" className="space-y-4">
             {postTitle && (
               <div className="p-3 bg-muted rounded-md">
@@ -249,7 +249,7 @@ export default function ReportDialog({
             </Button>
           </TabsContent>
 
-          {/* User Report Tab */}
+          
           <TabsContent value="user" className="space-y-4">
             {userName && (
               <div className="p-3 bg-muted rounded-md">

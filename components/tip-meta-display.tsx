@@ -4,7 +4,7 @@ import { Card } from './ui/card';
 
 interface TipMetaDisplayProps {
   category?: string;
-  readTime?: number; // minutes
+  readTime?: number;
   difficulty?: 'easy' | 'medium' | 'hard';
   tags?: string[];
 }
@@ -24,13 +24,13 @@ export default function TipMetaDisplay({
   return (
     <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
       <div className="space-y-3">
-        {/* Header */}
+        
         <div className="flex items-center gap-2 text-amber-700">
           <Lightbulb className="h-5 w-5 fill-amber-400" />
           <span className="font-semibold">Mẹo hữu ích</span>
         </div>
 
-        {/* Meta Info */}
+        
         <div className="flex flex-wrap gap-2">
           {category && (
             <Badge className="bg-amber-100 text-amber-700 border-amber-200 flex items-center gap-1">
@@ -51,7 +51,7 @@ export default function TipMetaDisplay({
           )}
         </div>
 
-        {/* Tags */}
+        
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-2 border-t border-amber-200">
             {tags.map((tag, index) => (

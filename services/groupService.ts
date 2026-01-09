@@ -1,8 +1,6 @@
 import apiClient from '@/common/apiClient';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-
-// Helper to get token from user storage (fixes auth issue)
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http:
 const getToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   const userStr = localStorage.getItem('pet-connect-user');
@@ -460,4 +458,3 @@ export default {
   approveMember,
   rejectMember,
 };
-

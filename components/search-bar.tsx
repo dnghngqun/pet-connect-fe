@@ -29,8 +29,6 @@ export default function SearchBar({
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<any[]>([]);
-
-  // Manual debounce implementation
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (!query || query.length < 2) {
@@ -111,7 +109,7 @@ export default function SearchBar({
         )}
       </form>
 
-      {/* Search results dropdown */}
+      
       {showResults && isOpen && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
           <Command>

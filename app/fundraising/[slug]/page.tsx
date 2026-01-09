@@ -40,7 +40,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
       const response = await fundraisingService.getCampaignDetail(resolvedParams.slug)
       setCampaign(response.data)
       
-      // Load donations
+
       if (response.data?.id) {
         const donationsResponse = await fundraisingService.getCampaignDonations(response.data.id)
         setDonations(donationsResponse.data?.content || [])
@@ -75,7 +75,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
       })
       setDonationAmount('')
       setDonationMessage('')
-      loadCampaign() // Reload to update amounts
+      loadCampaign()
     } catch (error) {
       console.error('Donation failed:', error)
       toast({
@@ -137,7 +137,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
 
   return (
     <div className="container px-4 py-8">
-      {/* Back Button */}
+      
       <Button variant="ghost" asChild className="mb-6">
         <Link href="/fundraising">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -146,9 +146,9 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
+        
         <div className="lg:col-span-2 space-y-6">
-          {/* Image & Header */}
+          
           <div className="space-y-4">
             <div className="relative h-96 rounded-lg overflow-hidden">
               <Image
@@ -176,7 +176,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
             </div>
           </div>
 
-          {/* Creator Info */}
+          
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
@@ -204,7 +204,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
             </CardContent>
           </Card>
 
-          {/* Description */}
+          
           <Card>
             <CardHeader>
               <CardTitle>Chi tiết</CardTitle>
@@ -224,7 +224,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
             </CardContent>
           </Card>
 
-          {/* Updates */}
+          
           {campaign.updates && campaign.updates.length > 0 && (
             <Card>
               <CardHeader>
@@ -258,7 +258,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
             </Card>
           )}
 
-          {/* Donation Wall */}
+          
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -294,15 +294,15 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
           </Card>
         </div>
 
-        {/* Sidebar */}
+        
         <div className="space-y-6">
-          {/* Donation Card */}
+          
           <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent sticky top-4">
             <CardHeader>
               <CardTitle className="text-xl">Quyên góp ngay</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Progress */}
+              
               <div>
                 <div className="h-3 bg-gray-200 rounded-full overflow-hidden mb-2">
                   <div
@@ -410,7 +410,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
             </CardContent>
           </Card>
 
-          {/* Campaign Info */}
+          
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Thông tin chiến dịch</CardTitle>
@@ -439,7 +439,7 @@ export default function FundraisingDetailPage({ params }: FundraisingDetailPageP
             </CardContent>
           </Card>
 
-          {/* Related Pet */}
+          
           {campaign.relatedPet && (
             <Card>
               <CardHeader>

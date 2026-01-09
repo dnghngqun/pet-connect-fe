@@ -1,20 +1,12 @@
-// Organization Report Service - Real API calls
-// Based on ReportController.java endpoints
 
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import apiClient from '@/common/apiClient';
-
-// ============ Types based on backend DTOs ============
-
-// API Response wrapper
 export interface ApiResponse<T> {
   success: boolean;
   statusCode: number;
   message: string;
   data: T;
 }
-
-// Paginated response
 export interface PaginatedResponse<T> {
   content: T[];
   totalPages: number;
@@ -24,8 +16,6 @@ export interface PaginatedResponse<T> {
   first: boolean;
   last: boolean;
 }
-
-// OrganizationListItemDTO
 export interface Organization {
   id: number;
   name: string;
@@ -35,34 +25,28 @@ export interface Organization {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  // UI fields (may be populated from other sources)
+
   logo?: string;
   city?: string;
   district?: string;
   address?: string;
   followerCount?: number;
 }
-
-// AdminResponseDTO
 export interface AdminResponse {
   content: string;
   respondedAt: string;
   respondedBy: string;
 }
-
-// ReportListItemDTO
 export interface ReportListItem {
   id: number;
   content: string;
-  status: string; // 'CREATED' | 'RECEIVED' | 'RESOLVED' | 'REFUSED'
+  status: string;
   targetType: string;
   createdAt: string;
   updatedAt: string;
   organization: Organization;
   adminResponse: AdminResponse | null;
 }
-
-// ReportDetailDTO
 export interface ReportDetail {
   id: number;
   content: string;
@@ -76,8 +60,6 @@ export interface ReportDetail {
   adminResponse: AdminResponse | null;
 }
 
-// ============ Request Types ============
-
 export interface CreateReportRequest {
   content: string;
   targetId: number;
@@ -87,16 +69,10 @@ export interface CreateReportRequest {
 export interface UpdateReportRequest {
   content: string;
 }
-
-// ============ For Frontend Compatibility ============
-
-// Frontend types (from lib/organization-report.types.ts)
 import {
   OrganizationReport,
   ReportStatus,
 } from '@/lib/organization-report.types';
-
-// Transform backend response to frontend format
 function transformToFrontendReport(item: ReportListItem | ReportDetail): OrganizationReport {
   return {
     id: String(item.id),
@@ -127,8 +103,6 @@ function transformToFrontendReport(item: ReportListItem | ReportDetail): Organiz
     } : undefined,
   };
 }
-
-// ============ Service Functions ============
 
 const organizationReportService = {
   /**
@@ -167,7 +141,7 @@ const organizationReportService = {
     const reportData = response.data?.data;
     if (!reportData) {
       console.log('Create report response:', response.data);
-      return null; // Return null on success without data transform
+      return null;
     }
     return transformToFrontendReport(reportData);
   },
@@ -196,7 +170,7 @@ const organizationReportService = {
     const response = await apiClient.get(COMMON_API.organizations, {
       params: { search, page, size },
     });
-    // Response format: { success, statusCode, message, data: { rescueGroups: { items, total }, pagination } }
+
     const data = response.data.data;
     return {
       content: data.rescueGroups?.items || [],

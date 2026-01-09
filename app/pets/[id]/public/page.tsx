@@ -79,8 +79,6 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
   const loadPetData = async () => {
     try {
       setIsLoading(true);
-      // TODO: Call public API endpoint when backend is ready
-      // For now, simulate with mock data based on ID
       const mockData: PetPublicData = {
         pet: {
           id: petId,
@@ -92,7 +90,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
           color: 'Trắng xám',
           size: 'LARGE',
           weight: 28.5,
-          profilePhoto: 'https://images.unsplash.com/photo-1605568427561-40dd23c2acea?w=500',
+          profilePhoto: 'https:
           personality: ['Hiếu kỳ', 'Năng động', 'Thân thiện'],
           bio: 'Max là một chú Husky 3 tuổi rất thân thiện và năng động.',
           isNeutered: true,
@@ -115,7 +113,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
         },
       };
       
-      // Simulate API delay
+
       await new Promise(resolve => setTimeout(resolve, 500));
       setPetData(mockData);
     } catch (err) {
@@ -163,7 +161,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-      {/* Header with Logo */}
+      
       <div className="bg-primary/10 py-4 px-4 text-center border-b">
         <div className="flex items-center justify-center gap-2">
           <PawPrint className="h-6 w-6 text-primary" />
@@ -173,9 +171,9 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
       </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
-        {/* Pet Profile Card */}
+        
         <Card className="overflow-hidden">
-          {/* Pet Image */}
+          
           <div className="relative h-48 sm:h-64 bg-gradient-to-br from-primary/20 to-secondary/20">
             {pet.profilePhoto ? (
               <Image
@@ -189,7 +187,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
                 <PawPrint className="h-20 w-20 text-primary/30" />
               </div>
             )}
-            {/* Status badges */}
+            
             <div className="absolute top-3 right-3 flex flex-col gap-1">
               {pet.isVaccinated && (
                 <Badge className="bg-green-500 text-white text-xs">
@@ -206,7 +204,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
           </div>
 
           <CardContent className="p-4 sm:p-6">
-            {/* Pet Name & Basic Info */}
+            
             <div className="text-center mb-4">
               <h1 className="text-2xl sm:text-3xl font-bold">{pet.name}</h1>
               <p className="text-muted-foreground">
@@ -214,7 +212,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
               </p>
             </div>
 
-            {/* Quick Stats */}
+            
             <div className="grid grid-cols-3 gap-2 mb-4">
               {pet.age && (
                 <div className="bg-muted/50 rounded-lg p-2 sm:p-3 text-center">
@@ -240,7 +238,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
               )}
             </div>
 
-            {/* Personality */}
+            
             {pet.personality && pet.personality.length > 0 && (
               <div className="mb-4">
                 <p className="text-xs font-semibold text-muted-foreground mb-2">TÍNH CÁCH</p>
@@ -254,14 +252,14 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
               </div>
             )}
 
-            {/* Bio */}
+            
             {pet.bio && (
               <div className="bg-primary/5 rounded-lg p-3 mb-4">
                 <p className="text-sm italic text-muted-foreground">"{pet.bio}"</p>
               </div>
             )}
 
-            {/* Color & Size */}
+            
             <div className="grid grid-cols-2 gap-2 text-sm">
               {pet.color && (
                 <div>
@@ -281,7 +279,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
           </CardContent>
         </Card>
 
-        {/* Health Record Card */}
+        
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -292,7 +290,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
           <CardContent>
             {healthRecord ? (
               <div className="space-y-3">
-                {/* Last Checkup */}
+                
                 {healthRecord.lastCheckup && (
                   <div className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
                     <Stethoscope className="h-4 w-4 text-blue-600" />
@@ -303,7 +301,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
                   </div>
                 )}
 
-                {/* Allergies */}
+                
                 {healthRecord.allergies && healthRecord.allergies.length > 0 && (
                   <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg">
                     <div className="flex items-center gap-2 text-amber-700 text-sm">
@@ -316,7 +314,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
                   </div>
                 )}
 
-                {/* Vaccinations */}
+                
                 {healthRecord.vaccinations && healthRecord.vaccinations.length > 0 && (
                   <div>
                     <button
@@ -352,7 +350,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
                   </div>
                 )}
 
-                {/* Notes */}
+                
                 {healthRecord.notes && (
                   <p className="text-sm text-muted-foreground">
                     <span className="font-medium">Ghi chú: </span>
@@ -369,7 +367,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
           </CardContent>
         </Card>
 
-        {/* Owner Contact Card */}
+        
         {owner && (
           <Card>
             <CardHeader className="pb-2">
@@ -398,7 +396,7 @@ export default function PetPublicPage({ params }: { params: Promise<PageParams> 
           </Card>
         )}
 
-        {/* Footer */}
+        
         <div className="text-center py-4 text-xs text-muted-foreground">
           <p>Hồ sơ được tạo bởi Pets Connect</p>
           <p className="mt-1">

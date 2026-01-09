@@ -25,7 +25,7 @@ export default function NearbyPage() {
       const location = await getUserLocation()
       setUserLocation(location)
       setError(null)
-      // Load data after getting location
+
       await loadNearbyData(location.latitude, location.longitude)
     } catch (err: any) {
       setError(err.message || 'Không thể lấy vị trí của bạn')
@@ -57,14 +57,12 @@ export default function NearbyPage() {
       console.error('Failed to load nearby data:', err)
     }
   }
-
-  // Transform API data to match component expected format
   const transformedPosts = nearbyPosts.map((post: any) => ({
     id: String(post.id),
     title: post.title,
     slug: post.slug,
     description: post.description,
-    image: post.image || 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800',
+    image: post.image || 'https:
     petType: post.petType,
     status: post.status?.toLowerCase().replace('_', '-') || 'lost',
     location: post.location || `${post.district || ''}, ${post.city || ''}`,
@@ -106,7 +104,7 @@ export default function NearbyPage() {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container px-4 py-8 md:py-12">
-        {/* Header */}
+        
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Khám phá gần bạn</h1>
           <p className="text-muted-foreground text-lg">
@@ -114,7 +112,7 @@ export default function NearbyPage() {
           </p>
         </div>
 
-        {/* Enable Location Button */}
+        
         {!userLocation && (
           <Card className="mb-8 border-blue-200 bg-blue-50">
             <CardContent className="pt-6">
@@ -160,7 +158,7 @@ export default function NearbyPage() {
           </Card>
         )}
 
-        {/* Tabs */}
+        
         <Tabs defaultValue="nearby-pets" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="nearby-pets">Thú cưng gần bạn</TabsTrigger>
@@ -168,7 +166,7 @@ export default function NearbyPage() {
             <TabsTrigger value="map">Bản đồ</TabsTrigger>
           </TabsList>
 
-          {/* Nearby Pets Tab */}
+          
           <TabsContent value="nearby-pets">
             <NearbyPets
               pets={transformedPosts}
@@ -178,7 +176,7 @@ export default function NearbyPage() {
             />
           </TabsContent>
 
-          {/* Rescue Centers Tab */}
+          
           <TabsContent value="rescue-centers">
             <NearbyRescueCenters
               userLocation={userLocation}
@@ -188,7 +186,7 @@ export default function NearbyPage() {
             />
           </TabsContent>
 
-          {/* Map Tab */}
+          
           <TabsContent value="map">
             <Card>
               <CardHeader>
@@ -206,7 +204,7 @@ export default function NearbyPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Info Section */}
+        
         <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>

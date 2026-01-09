@@ -214,7 +214,7 @@ function ResultsList({ results, onSelect, showAddFriend }: ResultsListProps) {
               className="flex-shrink-0"
               onClick={(e) => {
                 e.stopPropagation();
-                // TODO: Implement friend request
+
                 console.log('Add friend:', result.id);
               }}
             >

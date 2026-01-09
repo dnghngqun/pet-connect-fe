@@ -89,7 +89,7 @@ export default function OrganizationReportDetail({
 
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6">
-            {/* Organization Info */}
+            
             <div className="p-4 bg-muted rounded-lg">
               <h4 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">
                 Tổ chức bị báo cáo
@@ -128,7 +128,7 @@ export default function OrganizationReportDetail({
 
             <Separator />
 
-            {/* Report Details */}
+            
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold mb-2 text-sm text-muted-foreground uppercase tracking-wide">
@@ -187,7 +187,7 @@ export default function OrganizationReportDetail({
               </div>
             </div>
 
-            {/* Admin Response */}
+            
             {report.adminResponse && (
               <>
                 <Separator />
@@ -229,7 +229,7 @@ export default function OrganizationReportDetail({
               </>
             )}
 
-            {/* Refused Status - Call to Action */}
+            
             {report.status === 'REFUSED' && (
               <div className="p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                 <div className="flex items-start gap-3">
@@ -248,7 +248,7 @@ export default function OrganizationReportDetail({
           </div>
         </ScrollArea>
 
-        {/* Footer */}
+        
         <div className="flex items-center justify-end gap-2 pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Đóng

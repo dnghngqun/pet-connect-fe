@@ -23,14 +23,12 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
   const [friends, setFriends] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
-  // Fetch friends when dialog opens
   useEffect(() => {
     if (open) {
       const fetchFriends = async () => {
         setIsLoading(true);
         try {
-          const response = await getFriends(0, 50); // Fetch first 50 friends
+          const response = await getFriends(0, 50);
           if (response.success && response.data) {
             setFriends(Array.isArray(response.data) ? response.data : []);
           }
@@ -92,14 +90,14 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Search */}
+            
             <Input
               placeholder="Tìm kiếm bạn bè..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-            {/* User List */}
+            
             <div className="max-h-64 overflow-y-auto space-y-2">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -111,7 +109,7 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
                 </div>
               ) : (
                 filteredUsers.map((friend) => {
-                  // Handle DTO variations
+
                   const friendId = friend.friendId || friend.userId;
                   const friendName = friend.friendName || friend.userName;
                   const friendAvatar = friend.friendAvatar || friend.userAvatar;
@@ -148,7 +146,7 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
               )}
             </div>
 
-            {/* Action Buttons */}
+            
             <div className="flex gap-2 pt-4">
               <Button
                 variant="outline"

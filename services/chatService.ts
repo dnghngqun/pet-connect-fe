@@ -15,18 +15,18 @@ let stompClient: Client | null = null;
 let isConnected = false;
 
 export const chatAPI = {
-  // Chats
+
   getAllChats: async () => {
-    // Updated endpoint to match backend 'conversation' resource
+
     const response = await apiClient.get("/api/conversation/all");
     const apiResponse = response.data as ApiResponse<any[]>;
     
     if (!apiResponse.data) return [];
     
-    // Normalize each chat response
+
     const normalizedChats = apiResponse.data.map((chat: any) => normalizeChatResponse(chat));
     
-    // Deduplicate by _id
+
     const uniqueChats = normalizedChats.filter((chat, index, self) => 
       index === self.findIndex(c => c._id === chat._id)
     );
@@ -35,10 +35,10 @@ export const chatAPI = {
   },
 
   getSingleChat: async (chatId: string) => {
-    // Updated endpoint to match socket file: /api/conversation/{id}
+
     const response = await apiClient.get(`/api/conversation/${chatId}`);
 
-    const data = response.data.data || response.data; // Try to unwrap if wrapped
+    const data = response.data.data || response.data;
     const rawMessages = data.messages;
 
     let messages: MessageType[] = [];
@@ -46,13 +46,11 @@ export const chatAPI = {
       data.pagination ?? rawMessages?.pagination ?? null;
 
     if (Array.isArray(rawMessages)) {
-      // Normalize each message to ensure consistent format
+
       messages = rawMessages.map((msg: any) => normalizeMessageResponse(msg));
     } else if (rawMessages && rawMessages.items) {
       messages = rawMessages.items.map((msg: any) => normalizeMessageResponse(msg));
     }
-
-    // Sort messages by createdAt ascending (oldest first at top, newest at bottom)
     messages.sort((a, b) => {
       const dateA = new Date(a.createdAt || 0).getTime();
       const dateB = new Date(b.createdAt || 0).getTime();
@@ -67,15 +65,13 @@ export const chatAPI = {
   },
 
   createChat: async (payload: CreateChatPayload): Promise<ChatType> => {
-    // Transform frontend payload to backend format
+
     const backendPayload = {
       targetUserId: payload.participantId ? Number(payload.participantId) : undefined,
     };
     
     const response = await apiClient.post("/api/conversation/create", backendPayload);
     const apiResponse = response.data as ApiResponse<ChatType>;
-
-    // Handle backend error response
     if (apiResponse.code !== "0000") {
       throw new Error(apiResponse.message || "Failed to create conversation");
     }
@@ -83,14 +79,10 @@ export const chatAPI = {
     if (!apiResponse.data) {
       throw new Error("No conversation data returned");
     }
-
-    // Normalize the response to our ChatType format
     return normalizeChatResponse(apiResponse.data);
   },
-
-  // Messages
   sendMessage: async (payload: CreateMessagePayload): Promise<MessageType | null> => {
-    // Transform frontend payload to backend format
+
     const backendPayload = {
       conversationId: payload.chatId ? Number(payload.chatId) : undefined,
       content: payload.content,
@@ -98,8 +90,6 @@ export const chatAPI = {
       replyToId: payload.replyToId ? Number(payload.replyToId) : undefined,
       postId: payload.postId ? Number(payload.postId) : undefined,
     };
-
-    // If WebSocket is connected, use it
     if (stompClient && isConnected) {
       const message = {
         conversationId: backendPayload.conversationId,
@@ -115,20 +105,14 @@ export const chatAPI = {
         destination: "/app/chat.send",
         body: JSON.stringify(message),
       });
-
-      // Return null to indicate handled via WS
       return null;
     }
-
-    // Fallback to REST API
     if (!backendPayload.conversationId || isNaN(backendPayload.conversationId)) {
         throw new Error("Invalid Conversation ID: " + payload.chatId);
     }
 
     const response = await apiClient.post("/api/conversation/message/send", backendPayload);
     const apiResponse = response.data as ApiResponse<MessageType>;
-
-    // Handle backend error response
     if (apiResponse.code !== "0000") {
       throw new Error(apiResponse.message || "Failed to send message");
     }
@@ -136,19 +120,15 @@ export const chatAPI = {
     if (!apiResponse.data) {
       throw new Error("No message data returned");
     }
-
-    // Normalize the response to our MessageType format
     return normalizeMessageResponse(apiResponse.data);
   },
-
-  // WebSocket
   connectWebSocket: (
     token: string,
     onMessage?: (message: any) => void,
     onNotification?: (notification: any) => void,
     onError?: (error: any) => void
   ) => {
-    // Add initial listeners if provided
+
     if (onMessage) chatAPI.addMessageListener(onMessage);
     if (onNotification) chatAPI.addNotificationListener(onNotification);
 
@@ -163,16 +143,12 @@ export const chatAPI = {
       onConnect: (frame) => {
         console.log("Connected to WebSocket:", frame);
         isConnected = true;
-
-        // Subscribe to messages
         stompClient?.subscribe("/user/queue/messages", (message: IMessage) => {
           const response = JSON.parse(message.body);
           console.log("WebSocket message received:", response);
-          // Broadcast to all listeners
+
           messageListeners.forEach(listener => listener(response));
         });
-
-        // Subscribe to notifications
         stompClient?.subscribe(
           "/user/queue/notifications",
           (notification: IMessage) => {
@@ -180,8 +156,6 @@ export const chatAPI = {
             notificationListeners.forEach(listener => listener(response));
           }
         );
-
-        // Subscribe to errors
         stompClient?.subscribe("/user/queue/errors", (error: IMessage) => {
           const response = JSON.parse(error.body);
           if (onError) onError(response);
@@ -213,8 +187,6 @@ export const chatAPI = {
       notificationListeners = [];
     }
   },
-
-  // Listener management
   addMessageListener: (listener: (message: any) => void) => {
     messageListeners.push(listener);
     return () => {
@@ -228,8 +200,6 @@ export const chatAPI = {
       notificationListeners = notificationListeners.filter(l => l !== listener);
     };
   },
-
-  // Users
   getAllUsers: async () => {
     const response = await apiClient.get("/api/mobile/users", {
       params: { limit: 200 },
@@ -245,8 +215,6 @@ export const chatAPI = {
       avatar: u.avatarUrl || u.avatar || null,
     })) as UserType[];
   },
-
-  // Recall Message
   recallMessage: async (messageId: string): Promise<MessageType> => {
     const response = await apiClient.put(`/api/conversation/message/${messageId}/recall`);
     const apiResponse = response.data as ApiResponse<MessageType>;
@@ -261,8 +229,6 @@ export const chatAPI = {
 
     return normalizeMessageResponse(apiResponse.data);
   },
-
-  // Delete Conversation
   deleteConversation: async (conversationId: string): Promise<void> => {
     const response = await apiClient.delete(`/api/conversation/${conversationId}`);
     const apiResponse = response.data as ApiResponse<void>;
@@ -271,8 +237,6 @@ export const chatAPI = {
       throw new Error(apiResponse.message || "Failed to delete conversation");
     }
   },
-
-  // Upload Chat Image
   uploadChatImage: async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
@@ -291,8 +255,6 @@ export const chatAPI = {
     return apiResponse.data || "";
   },
 };
-
-// Internal listener arrays
 let messageListeners: ((message: any) => void)[] = [];
 let notificationListeners: ((notification: any) => void)[] = [];
 
@@ -323,10 +285,10 @@ function normalizeChatResponse(data: any): ChatType {
  * Backend WebSocket uses 'conversationId', REST API uses 'chatId'
  */
 export function normalizeMessageResponse(data: any): MessageType {
-  // Handle both chatId (REST) and conversationId (WebSocket)
+
   const chatId = data.chatId || (data.conversationId ? String(data.conversationId) : "");
   
-  // Map replyTo from ReplyInfoDTO (simplified format: id, content, sender)
+
   let replyTo: MessageType | undefined = undefined;
   if (data.replyTo) {
     replyTo = {
@@ -357,7 +319,7 @@ export function normalizeMessageResponse(data: any): MessageType {
  * Normalize user response from backend to UserType format
  */
 function normalizeUserResponse(data: any): UserType {
-  // Defensive check for undefined/null data
+
   if (!data) {
     return {
       id: undefined,

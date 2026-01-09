@@ -63,9 +63,9 @@ export default function FacebookNavbar() {
     <nav className="sticky top-0 z-50 bg-white border-b shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          {/* Left: Logo + Search */}
+          
           <div className="flex items-center gap-2 flex-1">
-            {/* Logo */}
+            
             <Link href="/" className="flex items-center gap-2 mr-4">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center">
                 <PawPrint className="h-6 w-6 text-white" />
@@ -75,13 +75,13 @@ export default function FacebookNavbar() {
               </span>
             </Link>
 
-            {/* Search Bar - Desktop */}
+            
             <div className="hidden md:block flex-1 max-w-xl">
               <SearchBar />
             </div>
           </div>
 
-          {/* Center: Nav Icons - Desktop */}
+          
           <div className="hidden md:flex items-center gap-1 mx-4">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
@@ -107,9 +107,9 @@ export default function FacebookNavbar() {
             })}
           </div>
 
-          {/* Right: Notifications + Profile */}
+          
           <div className="flex items-center gap-2">
-            {/* Mobile Menu Button */}
+            
             <Button
               variant="ghost"
               size="icon"
@@ -125,10 +125,10 @@ export default function FacebookNavbar() {
 
             {isLoggedIn ? (
               <>
-                {/* Notifications */}
+                
                 <NotificationCenter />
 
-                {/* Profile Dropdown */}
+                
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -183,15 +183,15 @@ export default function FacebookNavbar() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t">
-            {/* Mobile Search */}
+            
             <div className="mb-4">
               <SearchBar />
             </div>
 
-            {/* Mobile Nav Links */}
+            
             <div className="space-y-1">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;

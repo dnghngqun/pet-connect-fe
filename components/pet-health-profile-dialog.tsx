@@ -7,8 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import PetHealthProfile from './pet-health-profile';
 import type { PetProfile } from '@/lib/types';
 import { Heart, BookOpen } from 'lucide-react';
-
-// Flexible pet type to accept various pet data structures
 interface PetWithHealthRecord {
   id: string;
   name: string;
@@ -36,8 +34,6 @@ interface PetHealthProfileDialogProps {
 
 export default function PetHealthProfileDialog({ pet }: PetHealthProfileDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-
-  // Transform to PetProfile format for inner component
   const petProfile: PetProfile = {
     id: pet.id,
     name: pet.name,
@@ -83,4 +79,3 @@ export default function PetHealthProfileDialog({ pet }: PetHealthProfileDialogPr
     </Dialog>
   );
 }
-

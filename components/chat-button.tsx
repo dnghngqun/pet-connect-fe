@@ -32,8 +32,6 @@ export default function ChatButton({ postedBy }: ChatButtonProps) {
       console.error('No participant ID found');
       return;
     }
-
-    // Open mini-chat instead of redirecting
     openMiniChat(participantId, {
       id: participantId,
       name: postedBy.name || 'Unknown User',

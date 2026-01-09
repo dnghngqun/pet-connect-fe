@@ -93,8 +93,6 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
-
-  // Debounced search
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 2) {
       setSearchResults([])
@@ -106,7 +104,7 @@ export default function Header() {
       try {
         const allResults: any[] = []
         
-        // Search users
+
         try {
           const userResponse = await userService.searchUsers(searchQuery)
           if (userResponse.success && userResponse.data) {
@@ -122,10 +120,8 @@ export default function Header() {
         } catch (err) {
           console.error('User search error:', err)
         }
-
-        // Search posts
         try {
-          const postResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/v1/posts?q=${encodeURIComponent(searchQuery)}`)
+          const postResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http:
           if (postResponse.ok) {
             const postData = await postResponse.json()
             if (postData.success && postData.data) {
@@ -209,7 +205,7 @@ export default function Header() {
         : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     )}>
       <div className="container flex h-16 items-center gap-4">
-        {/* Mobile menu button */}
+        
         <div className="lg:hidden">
           <Button 
             variant="ghost" 
@@ -235,7 +231,7 @@ export default function Header() {
           </Button>
         </div>
 
-        {/* Logo */}
+        
         <Link href="/" className="flex items-center gap-2 group">
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-orange-500/30 rounded-full blur-lg group-hover:blur-xl transition-all duration-300 opacity-0 group-hover:opacity-100" />
@@ -248,7 +244,7 @@ export default function Header() {
           </span>
         </Link>
 
-        {/* Desktop Navigation - Hidden when search is open */}
+        
         <nav className={cn(
           "hidden lg:flex items-center gap-1 mx-4 transition-all duration-300",
           isSearchOpen && "opacity-0 pointer-events-none w-0 overflow-hidden"
@@ -270,10 +266,10 @@ export default function Header() {
               isActive={pathname === "/organization-reports"}
             />
           )}
-          {/* More dropdown could be added here for About/Contact */}
+          
         </nav>
 
-        {/* Search - Expands to cover nav when open */}
+        
         <div className={cn(
           "transition-all duration-300 ease-out",
           isSearchOpen ? "flex-1" : "w-0 overflow-hidden"
@@ -305,7 +301,7 @@ export default function Header() {
                 </Button>
               </div>
               
-              {/* Search Results */}
+              
               {searchQuery.length >= 2 && (
                 <SearchDropdown
                   results={searchResults}
@@ -322,7 +318,7 @@ export default function Header() {
           )}
         </div>
 
-        {/* Right Actions */}
+        
         <div className="flex flex-1 items-center justify-end gap-2">
           {!isSearchOpen && (
             <Button 
@@ -367,9 +363,7 @@ export default function Header() {
           )}
         </div>
       </div>
-
-
-      {/* Mobile menu */}
+      
       <div className={cn(
         "fixed inset-x-0 top-16 z-50 bg-background/95 backdrop-blur-xl lg:hidden transition-all duration-300 ease-out border-b shadow-xl",
         isMenuOpen 
@@ -451,14 +445,14 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* Backdrop for mobile menu */}
+      
       {isMenuOpen && (
         <div 
           className="fixed inset-0 top-16 bg-black/20 backdrop-blur-sm lg:hidden z-40"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
-      {/* Modal for Post Details */}
+      
       {selectedPost && (
         <PostDetailModal
           post={selectedPost}

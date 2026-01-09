@@ -19,7 +19,7 @@ interface ImageCropperProps {
   onOpenChange: (open: boolean) => void;
   imageSrc: string;
   onCropComplete: (croppedBlob: Blob) => void;
-  aspectRatio?: number; // Default 10:16 = 0.625
+  aspectRatio?: number;
   title?: string;
 }
 
@@ -48,7 +48,7 @@ export default function ImageCropper({
   onOpenChange,
   imageSrc,
   onCropComplete,
-  aspectRatio = 16 / 10, // Default 16:10 landscape
+  aspectRatio = 16 / 10,
   title = 'Cắt ảnh',
 }: ImageCropperProps) {
   const [crop, setCrop] = useState<Crop>();
@@ -78,16 +78,10 @@ export default function ImageCropper({
       if (!ctx) {
         throw new Error('No 2D context');
       }
-
-      // Calculate scale factor
       const scaleX = image.naturalWidth / image.width;
       const scaleY = image.naturalHeight / image.height;
-
-      // Set canvas dimensions to cropped area
       canvas.width = completedCrop.width * scaleX;
       canvas.height = completedCrop.height * scaleY;
-
-      // Draw cropped image
       ctx.drawImage(
         image,
         completedCrop.x * scaleX,
@@ -99,8 +93,6 @@ export default function ImageCropper({
         canvas.width,
         canvas.height,
       );
-
-      // Convert to blob
       canvas.toBlob(
         (blob) => {
           if (blob) {

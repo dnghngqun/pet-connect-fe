@@ -36,7 +36,7 @@ export default function LikedPage() {
 
   return (
     <div className="min-h-screen py-6 relative">
-      {/* Decorative stickers */}
+      
       <div className="absolute top-24 left-10 text-red-200/30 animate-pulse">
         <Heart size={40} fill="currentColor" />
       </div>
@@ -113,4 +113,3 @@ export default function LikedPage() {
     </div>
   );
 }
-

@@ -43,14 +43,14 @@ export default function PostActionBar({
     const optimisticLiked = !liked;
     const optimisticCount = reactionCount + (optimisticLiked ? 1 : -1);
     
-    // Optimistic update
+
     setLiked(optimisticLiked);
     setReactionCount(optimisticCount);
 
     try {
       const response = await petPostService.reactToPost(postId, 'LIKE');
       
-      // Update with server response
+
       setLiked(response.data?.reaction !== null);
       setReactionCount(response.data?.reactionCount || 0);
       
@@ -59,7 +59,7 @@ export default function PostActionBar({
         duration: 1500,
       });
     } catch (error) {
-      // Revert on error
+
       setLiked(initialLiked);
       setReactionCount(initialReactionCount);
       
@@ -79,13 +79,13 @@ export default function PostActionBar({
     setIsProcessing(true);
     const optimisticSaved = !saved;
     
-    // Optimistic update
+
     setSaved(optimisticSaved);
 
     try {
       const response = await petPostService.toggleFavorite(postId);
       
-      // Update with server response
+
       setSaved(response.data?.isFavorited ?? optimisticSaved);
       
       toast({
@@ -93,7 +93,7 @@ export default function PostActionBar({
         duration: 1500,
       });
     } catch (error) {
-      // Revert on error
+
       setSaved(initialSaved);
       
       toast({
@@ -138,9 +138,9 @@ export default function PostActionBar({
 
   return (
     <div className="flex items-center justify-between px-4 py-2 border-t">
-      {/* Left side - Main actions */}
+      
       <div className="flex items-center gap-1">
-        {/* Like button */}
+        
         <Button
           variant="ghost"
           size="sm"
@@ -156,7 +156,7 @@ export default function PostActionBar({
           )}
         </Button>
 
-        {/* Comment button */}
+        
         <Button
           variant="ghost"
           size="sm"
@@ -169,7 +169,7 @@ export default function PostActionBar({
           )}
         </Button>
 
-        {/* Share button */}
+        
         <Button
           variant="ghost"
           size="sm"
@@ -180,9 +180,9 @@ export default function PostActionBar({
         </Button>
       </div>
 
-      {/* Right side - Save & More */}
+      
       <div className="flex items-center gap-1">
-        {/* Save button */}
+        
         <Button
           variant="ghost"
           size="sm"
@@ -195,7 +195,7 @@ export default function PostActionBar({
           />
         </Button>
 
-        {/* More menu */}
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">

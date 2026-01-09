@@ -36,8 +36,6 @@ export default function ImageUpload({ images, onImagesChange, maxImages = 5 }: I
     });
 
     if (validFiles.length === 0) return;
-
-    // Create previews
     const newPreviews = validFiles.map(file => URL.createObjectURL(file));
     setPreviews(prev => [...prev, ...newPreviews]);
     onImagesChange([...images, ...validFiles]);

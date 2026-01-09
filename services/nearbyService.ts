@@ -1,13 +1,7 @@
-// Nearby Service - Real API calls
-// Based on PostController.java (API 10) and MapController.java
 
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import apiClient from '@/common/apiClient';
 import { PostListItem, ApiResponse } from './petPostService';
-
-// ============ Types based on backend DTOs ============
-
-// MapLocationDTO
 export interface MapLocation {
   posts: MapPostItem[];
   rescueCenters: MapRescueCenterItem[];
@@ -32,8 +26,6 @@ export interface MapRescueCenterItem {
   rating: number | null;
 }
 
-// ============ Request Types ============
-
 export interface GetNearbyPostsParams {
   latitude: number;
   longitude: number;
@@ -49,8 +41,6 @@ export interface GetMapLocationsParams {
   radiusKm?: number;
   types?: 'posts' | 'rescue_centers' | 'all';
 }
-
-// ============ Service Functions ============
 
 const nearbyService = {
   /**

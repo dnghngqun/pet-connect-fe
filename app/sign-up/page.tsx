@@ -23,8 +23,6 @@ const errorVariants = {
   visible: { opacity: 1, y: 0 },
   exit: { opacity: 0, y: -5 }
 };
-
-
 export default function SignUpPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -35,16 +33,12 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-
-  // Refs for input fields
   const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
   const termsRef = useRef<HTMLInputElement>(null);
-
-  // Validation functions
   const validateName = (value: string): string => {
     if (!value || !value.trim()) {
       return "Vui lòng nhập họ tên";
@@ -56,7 +50,7 @@ export default function SignUpPage() {
     if (!value || !value.trim()) {
       return "Vui lòng nhập email";
     }
-    // Strict email regex
+
     const emailRegex = /^[a-zA-Z0-9]([a-zA-Z0-9._-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
     if (!emailRegex.test(value)) {
       return "Email không hợp lệ";
@@ -68,7 +62,7 @@ export default function SignUpPage() {
     if (!value || !value.trim()) {
       return "Vui lòng nhập mật khẩu";
     }
-    // Password must have: min 8 chars, uppercase, lowercase, number, special char
+
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(value)) {
       return "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)";
@@ -90,11 +84,7 @@ export default function SignUpPage() {
     if (!value || !value.trim()) {
       return "Vui lòng nhập số điện thoại";
     }
-
-    // Check if it's Vietnamese phone number (10 digits, starts with 03, 05, 07, 08, 09)
     const vnPhoneRegex = /^0[35789][0-9]{8}$/;
-
-    // Check if it's international phone number (starts with +, 7-15 digits after +)
     const intlPhoneRegex = /^\+[0-9]{7,15}$/;
 
     if (!vnPhoneRegex.test(value) && !intlPhoneRegex.test(value)) {
@@ -154,8 +144,6 @@ export default function SignUpPage() {
       confirmPassword: validateConfirmPassword(confirmPassword),
       terms: validateTerms(termsAccepted)
     };
-
-    // Remove empty errors
     Object.keys(newErrors).forEach(key => {
       if (!newErrors[key]) delete newErrors[key];
     });
@@ -169,8 +157,6 @@ export default function SignUpPage() {
       phoneNumber: true,
       terms: true
     });
-
-    // Focus on first error field
     if (Object.keys(newErrors).length > 0) {
       const firstErrorField = Object.keys(newErrors)[0];
       const refMap = {
@@ -184,12 +170,12 @@ export default function SignUpPage() {
 
       const fieldRef = refMap[firstErrorField as keyof typeof refMap];
       if (fieldRef?.current) {
-        // Scroll to the field smoothly
+
         fieldRef.current.scrollIntoView({
           behavior: 'smooth',
           block: 'center'
         });
-        // Focus after a short delay to ensure scroll completes
+
         setTimeout(() => {
           fieldRef.current?.focus();
         }, 300);
@@ -231,8 +217,6 @@ export default function SignUpPage() {
       });
     }
   };
-
-
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
       <motion.div
@@ -278,7 +262,7 @@ export default function SignUpPage() {
             transition={{ duration: 0.3, delay: 0.2 }}
           >
             <CardContent className="space-y-4 px-6">
-              {/* Name Field */}
+              
               <motion.div
                 className="space-y-2"
               >
@@ -333,7 +317,7 @@ export default function SignUpPage() {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Email Field */}
+              
               <motion.div
                 className="space-y-2"
               >
@@ -389,7 +373,7 @@ export default function SignUpPage() {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Phone Number Field */}
+              
               <motion.div
                 className="space-y-2"
               >
@@ -445,7 +429,7 @@ export default function SignUpPage() {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Password Field */}
+              
               <motion.div
                 className="space-y-2"
               >
@@ -502,7 +486,7 @@ export default function SignUpPage() {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Confirm Password Field */}
+              
               <motion.div
                 className="space-y-2"
               >
@@ -573,8 +557,6 @@ export default function SignUpPage() {
                     onChange={(e) => {
                       const newValue = e.target.checked;
                       setTermsAccepted(newValue);
-
-                      // Clear error immediately when checkbox is checked
                       if (newValue) {
                         setErrors(prev => {
                           const newErrors = { ...prev };
@@ -582,7 +564,7 @@ export default function SignUpPage() {
                           return newErrors;
                         });
                       } else if (touched.terms) {
-                        // Re-validate if unchecked and already touched
+
                         setErrors(prev => ({
                           ...prev,
                           terms: validateTerms(false)
@@ -678,13 +660,13 @@ export default function SignUpPage() {
               >
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
                   <Button variant="outline" type="button" className="w-full rounded-xl border-gray-200 hover:bg-gray-50 hover:border-gray-300">
-                    <svg className="h-5 w-5 mr-2"  viewBox="-3 0 262 262" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid"><path d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027" fill="#4285F4"/><path d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055-34.523 0-63.824-22.773-74.269-54.25l-1.531.13-40.298 31.187-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1" fill="#34A853"/><path d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82 0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602l42.356-32.782" fill="#FBBC05"/><path d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251" fill="#EB4335"/></svg>
+                    <svg className="h-5 w-5 mr-2"  viewBox="-3 0 262 262" xmlns="http:
                     Google
                   </Button>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
                   <Button variant="outline" type="button" className="w-full rounded-xl border-gray-200 hover:bg-gray-50 hover:border-gray-300">
-                    <svg className="h-5 w-5 mr-2" viewBox="126.445 2.281 589 589" xmlns="http://www.w3.org/2000/svg"><circle cx="420.945" cy="296.781" r="294.5" fill="#3c5a9a"/><path d="M516.704 92.677h-65.239c-38.715 0-81.777 16.283-81.777 72.402.189 19.554 0 38.281 0 59.357H324.9v71.271h46.174v205.177h84.847V294.353h56.002l5.067-70.117h-62.531s.14-31.191 0-40.249c0-22.177 23.076-20.907 24.464-20.907 10.981 0 32.332.032 37.813 0V92.677h-.032z" fill="#ffffff"/></svg>
+                    <svg className="h-5 w-5 mr-2" viewBox="126.445 2.281 589 589" xmlns="http:
                     Facebook
                   </Button>
                 </motion.div>

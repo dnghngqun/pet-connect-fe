@@ -27,8 +27,6 @@ interface UpdatePostStatusDialogProps {
   currentStatus: string;
   onStatusUpdated?: (newStatus: string) => void;
 }
-
-// Status options based on current post status
 const getStatusOptions = (currentStatus: string) => {
   const baseOptions = {
     lost: [

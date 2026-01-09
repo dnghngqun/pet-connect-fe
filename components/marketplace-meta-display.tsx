@@ -47,7 +47,7 @@ export default function MarketplaceMetaDisplay({
   return (
     <Card className="p-4 bg-gradient-to-br from-cyan-50 to-blue-50 border-cyan-200">
       <div className="space-y-3">
-        {/* Price */}
+        
         <div className="flex items-baseline gap-2">
           <div className="flex items-center gap-1 text-2xl font-bold text-cyan-700">
             <span>{formatPrice(price)}</span>
@@ -65,7 +65,7 @@ export default function MarketplaceMetaDisplay({
           )}
         </div>
 
-        {/* Stock Status */}
+        
         <div>
           {inStock ? (
             <span className="text-sm text-green-600 font-medium">✓ Còn hàng</span>
@@ -74,7 +74,7 @@ export default function MarketplaceMetaDisplay({
           )}
         </div>
 
-        {/* Info Grid */}
+        
         <div className="grid grid-cols-2 gap-2">
           {condition && (
             <div className="flex items-center gap-1.5">
@@ -92,7 +92,7 @@ export default function MarketplaceMetaDisplay({
           )}
         </div>
 
-        {/* Pickup & Location */}
+        
         {(pickupMethod || location) && (
           <div className="pt-2 border-t border-cyan-200 space-y-2">
             {pickupMethod && (

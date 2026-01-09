@@ -59,7 +59,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
     const subscribe = (destination: string, callback: (message: IMessage) => void) => {
         if (client && isConnected) {
-             // Avoid duplicate subscriptions if possible, or handle cleanup
+
              const sub = client.subscribe(destination, callback);
              return sub;
         }

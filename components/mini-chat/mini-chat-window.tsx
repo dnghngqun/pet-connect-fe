@@ -56,17 +56,11 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
   const pendingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map()
   );
-
-  // Calculate position from right
-  const rightPosition = 20 + index * 340; // 340px per window (320px width + 20px gap)
-
-  // Open in full chat page
+  const rightPosition = 20 + index * 340;
   const handleOpenInFullChat = () => {
     closeMiniChat(chat.participantId);
     router.push(`/chat?participantId=${chat.participantId}`);
   };
-
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -122,14 +116,12 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
       pendingTimeoutsRef.current.clear();
     };
   }, []);
-
-  // Create or load chat on mount
   useEffect(() => {
     async function initChat() {
       if (!user) return;
       setIsLoading(true);
       try {
-        // Create or get existing chat
+
         const newChat = await chatAPI.createChat({
           participantId: chat.participantId,
         });
@@ -142,8 +134,6 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
 
         setChatId(chat.participantId, validId);
         setCurrentChat(newChat);
-
-        // Load messages
         const { messages: fetchedMessages } = await chatAPI.getSingleChat(validId);
         setMessages(fetchedMessages);
       } catch (error) {
@@ -155,19 +145,17 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
 
     initChat();
   }, [chat.participantId, user, setChatId]);
-
-  // Listen for WebSocket messages
   useEffect(() => {
     const chatIdToListen = chat.chatId || currentChat?._id;
     if (!chatIdToListen) return;
 
     const handleNewMessage = (wsResponse: any) => {
-      // Extract message data from WebSocket response wrapper
+
       const messageData = wsResponse?.data || wsResponse;
       
       if (!messageData || !messageData.chatId) return;
       
-      // Only handle messages for this chat
+
       if (String(messageData.chatId) !== String(chatIdToListen)) return;
       
       const normalizedMsg = normalizeMessageResponse(messageData);
@@ -413,7 +401,7 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
         height: 450,
       }}
     >
-      {/* Header */}
+      
       <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {chat.participant.avatar ? (
@@ -470,7 +458,7 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
         </div>
       </div>
 
-      {/* Messages Body */}
+      
       <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
@@ -559,9 +547,9 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Footer */}
+      
       <div className="p-2 border-t bg-white">
-        {/* Image preview */}
+        
         {pendingImagePreview && (
           <div className="mb-2 relative inline-block">
             <Image
@@ -586,7 +574,7 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
           </div>
         )}
         <div className="flex gap-2 items-center">
-          {/* Hidden file input */}
+          
           <input
             ref={imageInputRef}
             type="file"
@@ -612,7 +600,7 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
             }}
           />
           
-          {/* Attachment button */}
+          
           <Button
             variant="ghost"
             size="icon"

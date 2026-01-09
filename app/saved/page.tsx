@@ -36,7 +36,7 @@ export default function SavedPage() {
 
   return (
     <div className="min-h-screen py-6 relative">
-      {/* Decorative stickers */}
+      
       <div className="absolute top-24 right-10 text-orange-200/30 animate-pulse">
         <Bookmark size={40} />
       </div>
@@ -110,4 +110,3 @@ export default function SavedPage() {
     </div>
   );
 }
-

@@ -6,7 +6,7 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
     title: "Cứu chó Husky bị tai nạn",
     slug: "cuu-cho-husky-tai-nan",
     description: "Giúp chó Husky bị tai nạn được chữa trị và phục hồi",
-    image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800",
+    image: "https:
     category: "medical",
     targetAmount: 5000000,
     currentAmount: 3500000,
@@ -14,12 +14,12 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
     createdBy: {
       id: "user-1",
       name: "Nguyễn Văn A",
-      avatar: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=100",
+      avatar: "https:
     },
     relatedPet: {
       id: "pet-1",
       name: "Max",
-      image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=200",
+      image: "https:
     },
     status: "active",
     startDate: "2024-11-01T00:00:00Z",
@@ -35,7 +35,7 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
         title: "Max đã qua phẫu thuật thành công",
         content: "Sau 3 giờ phẫu thuật, Max đã tỉnh dậy an toàn. Các bác sĩ thú y cho biết tiên lượng rất tốt.",
         createdAt: "2024-12-08T14:30:00Z",
-        images: ["https://images.unsplash.com/photo-1576091160550-112173f7f477?w=400"],
+        images: ["https:
       },
     ],
   },
@@ -44,7 +44,7 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
     title: "Xây dựng trung tâm cứu hộ mới",
     slug: "xay-dung-trung-tam-cuu-ho",
     description: "Giúp xây dựng một trung tâm cứu hộ hiện đại và khang trang",
-    image: "https://images.unsplash.com/photo-1548681528-6a846cf17f12?w=800",
+    image: "https:
     category: "shelter",
     targetAmount: 50000000,
     currentAmount: 28500000,
@@ -52,7 +52,7 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
     createdBy: {
       id: "org-1",
       name: "Trạm Cứu Hộ PetAid",
-      avatar: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=100",
+      avatar: "https:
     },
     status: "active",
     startDate: "2024-10-01T00:00:00Z",
@@ -67,7 +67,7 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
     title: "Kiêm tiêm cho các mèo hoang",
     slug: "kiem-tiem-meo-hoang",
     description: "Chiến dịch kiêm tiêm vaccine cho các mèo hoang để ngăn ngừa dịch bệnh",
-    image: "https://images.unsplash.com/photo-1574158622682-e40e69881006?w=800",
+    image: "https:
     category: "medical",
     targetAmount: 2000000,
     currentAmount: 1800000,
@@ -75,7 +75,7 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
     createdBy: {
       id: "user-2",
       name: "Trần Thị B",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
+      avatar: "https:
     },
     status: "active",
     startDate: "2024-11-15T00:00:00Z",
@@ -90,7 +90,7 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
     title: "Hỗ trợ thực phẩm cho chó mồ côi",
     slug: "ho-tro-thuc-pham-cho-meo",
     description: "Cung cấp thức ăn, sữa cho các chó con mồ côi tại trạm cứu hộ",
-    image: "https://images.unsplash.com/photo-1633722715463-d30628519d50?w=800",
+    image: "https:
     category: "food",
     targetAmount: 1000000,
     currentAmount: 950000,
@@ -98,7 +98,7 @@ export const fundraisingCampaigns: FundraisingCampaign[] = [
     createdBy: {
       id: "org-1",
       name: "Trạm Cứu Hộ PetAid",
-      avatar: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=100",
+      avatar: "https:
     },
     status: "active",
     startDate: "2024-12-01T00:00:00Z",
@@ -172,4 +172,3 @@ export const donations: Donation[] = [
     createdAt: "2024-12-04T14:30:00Z",
   },
 ]
-

@@ -6,7 +6,7 @@ export const mockPosts: PetPost[] = [
     title: 'Tìm chú Husky mất tích tại Quận 1 🐕',
     slug: 'tim-chu-husky-mat-tich',
     description: 'Chú Husky tên Max, lông xám trắng, đeo vòng cổ xanh dương. Mất tích chiều 3/1 tại công viên Lê Văn Tám. Ai nhìn thấy xin liên hệ ngay! 😢',
-    image: 'https://images.unsplash.com/photo-1605568427561-40dd23c2acea?w=800',
+    image: 'https:
     petType: 'Husky',
     status: 'lost',
     postType: 'LOST_FOUND',
@@ -17,7 +17,7 @@ export const mockPosts: PetPost[] = [
       id: '1',
       name: 'Nguyễn Văn An',
       phone: '0912345678',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
+      avatar: 'https:
       isVerified: false,
     },
     createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
@@ -36,7 +36,7 @@ export const mockPosts: PetPost[] = [
     title: 'Review Phòng Khám Thú Y Sài Gòn PetCare ⭐⭐⭐⭐⭐',
     slug: 'review-phong-kham-saigon-petcare',
     description: 'Vừa đưa bé Miu đi khám tại PetCare. Bác sĩ rất tận tâm, giá cả hợp lý. Phòng khám sạch sẽ, thoáng mát. Mọi người nên đưa bé đi đây! 🏥💕',
-    image: 'https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=800',
+    image: 'https:
     petType: 'Mèo',
     status: 'general',
     postType: 'REVIEW',
@@ -47,7 +47,7 @@ export const mockPosts: PetPost[] = [
       id: '2',
       name: 'Trần Thị Bảo',
       phone: '0987654321',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
+      avatar: 'https:
       isVerified: true,
     },
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
@@ -72,7 +72,7 @@ export const mockPosts: PetPost[] = [
     title: 'Bé Golden 2 tháng tuổi cần tìm nhà mới 🏠💛',
     slug: 'be-golden-can-tim-nha',
     description: 'Gia đình mình chuyển công tác nên cần tìm nhà yêu thương cho bé Golden. Bé 2 tháng tuổi, đã tiêm phòng đầy đủ, rất khỏe mạnh và ngoan. FREE nhận nuôi cho gia đình có trách nhiệm! 🐶',
-    image: 'https://images.unsplash.com/photo-1633566137282-a8c8c0c1c2f0?w=800',
+    image: 'https:
     petType: 'Golden Retriever',
     status: 'for-adoption',
     postType: 'ADOPTION',
@@ -83,7 +83,7 @@ export const mockPosts: PetPost[] = [
       id: '3',
       name: 'Lê Minh Cường',
       phone: '0901234567',
-      avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100',
+      avatar: 'https:
       isVerified: false,
     },
     createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
@@ -102,7 +102,7 @@ export const mockPosts: PetPost[] = [
     title: '[Bác Sĩ Chia Sẻ] 5 Dấu Hiệu Chó Mèo Cần Đi Khám Ngay 🩺',
     slug: 'bs-5-dau-hieu-cho-meo-can-kham',
     description: 'Là bác sĩ thú y 10 năm kinh nghiệm, mình muốn chia sẻ 5 dấu hiệu quan trọng các sen cần chú ý. Nếu thấy bé có những triệu chứng này, hãy đưa đến bác sĩ ngay nhé! 🏥',
-    image: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800',
+    image: 'https:
     petType: 'Chung',
     status: 'general',
     postType: 'TIP',
@@ -113,7 +113,7 @@ export const mockPosts: PetPost[] = [
       id: '4',
       name: 'BS. Nguyễn Thu Hương',
       phone: '0912345678',
-      avatar: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=100',
+      avatar: 'https:
       isVerified: true,
     },
     createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
@@ -137,7 +137,7 @@ export const mockPosts: PetPost[] = [
     title: 'Hỏi: Mèo bị ghẻ tai phải làm sao? 😿',
     slug: 'hoi-meo-bi-ghe-tai',
     description: 'Mèo nhà mình gãi tai liên tục và có mùi hôi. Đã vệ sinh nhưng vẫn không khỏi. Các bạn có kinh nghiệm xin chỉ cho mình với ạ! Cảm ơn mọi người! 🙏',
-    image: 'https://images.unsplash.com/photo-1573865526739-10c1dd4bc990?w=800',
+    image: 'https:
     petType: 'Mèo',
     status: 'general',
     postType: 'QNA',
@@ -148,7 +148,7 @@ export const mockPosts: PetPost[] = [
       id: '5',
       name: 'Phạm Thị Lan',
       phone: '0923456789',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
+      avatar: 'https:
       isVerified: false,
     },
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
@@ -172,7 +172,7 @@ export const mockPosts: PetPost[] = [
     title: 'Thanh Lý Chuồng Mèo 3 Tầng - Như Mới 🏰',
     slug: 'thanh-ly-chuong-meo-3-tang',
     description: 'Do nhà mới không gian nhỏ nên thanh lý chuồng mèo 3 tầng. Mua 3 triệu, xài 2 tháng như mới, bán 1.5 triệu. Tặng kèm nệm và đồ chơi. Quận 9 nhé! 📦',
-    image: 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=800',
+    image: 'https:
     petType: 'Mèo',
     status: 'general',
     postType: 'MARKETPLACE',
@@ -183,7 +183,7 @@ export const mockPosts: PetPost[] = [
       id: '6',
       name: 'Võ Hoàng Kim',
       phone: '0934567890',
-      avatar: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=100',
+      avatar: 'https:
       isVerified: false,
     },
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -210,7 +210,7 @@ export const mockPosts: PetPost[] = [
     title: 'Tìm bạn đời cho Husky đực 2 tuổi 💕🐕',
     slug: 'tim-ban-doi-cho-husky',
     description: 'Tìm bạn gái Husky thuần chủng cho Max nhà mình. Max 2 tuổi, đã tiêm phòng đầy đủ, có giấy chứng nhận sức khỏe. Hy vọng tìm được bạn gái phù hợp! 🎀',
-    image: 'https://images.unsplash.com/photo-1568572933382-74d440642117?w=800',
+    image: 'https:
     petType: 'Husky',
     status: 'general',
     postType: 'BREEDING',
@@ -221,7 +221,7 @@ export const mockPosts: PetPost[] = [
       id: '1',
       name: 'Nguyễn Văn An',
       phone: '0912345678',
-      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
+      avatar: 'https:
       isVerified: false,
     },
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),

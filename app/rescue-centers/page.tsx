@@ -26,12 +26,10 @@ export default function RescueCentersPage() {
       setLoading(true)
       const location = await getUserLocation()
       setUserLocation(location)
-
-      // Load rescue centers - NO radius filter to show all
       const response = await rescueCenterService.getRescueCenters({
         latitude: location.latitude,
         longitude: location.longitude,
-        size: 100, // Load more centers
+        size: 100,
       })
 
       const centersData = response.data?.content || []
@@ -41,19 +39,17 @@ export default function RescueCentersPage() {
       }
     } catch (err: any) {
       setError(err.message || 'Không thể lấy vị trí của bạn')
-      // Try to load centers without location
+
       try {
         const response = await rescueCenterService.getRescueCenters({ size: 100 })
         setCenters(response.data?.content || [])
       } catch {
-        // Silently fail
+
       }
     } finally {
       setLoading(false)
     }
   }
-
-  // Sắp xếp centers
   const sortedCenters = [...centers].sort((a, b) => {
     if (sortBy === 'distance') {
       return (a.distance || 999) - (b.distance || 999)
@@ -72,7 +68,7 @@ export default function RescueCentersPage() {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="container px-4 py-8 md:py-12">
-        {/* Header */}
+        
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Trung Tâm Cứu Hộ & Tiếp Nhận</h1>
           <p className="text-muted-foreground text-lg">
@@ -80,7 +76,7 @@ export default function RescueCentersPage() {
           </p>
         </div>
 
-        {/* Error Message */}
+        
         {error && (
           <Card className="mb-8 border-amber-200 bg-amber-50">
             <CardContent className="pt-6">
@@ -95,7 +91,7 @@ export default function RescueCentersPage() {
           </Card>
         )}
 
-        {/* Nearest Center Highlight */}
+        
         {nearestCenter && (
           <Card className="mb-8 border-green-200 bg-green-50">
             <CardHeader>
@@ -142,7 +138,7 @@ export default function RescueCentersPage() {
                   </Button>
                   <Button asChild variant="outline">
                     <a
-                      href={`https://www.google.com/maps/search/${encodeURIComponent(
+                      href={`https:
                         nearestCenter.name
                       )}`}
                       target="_blank"
@@ -157,7 +153,7 @@ export default function RescueCentersPage() {
           </Card>
         )}
 
-        {/* Sort Controls */}
+        
         <div className="mb-8 flex gap-2">
           <Button
             variant={sortBy === 'distance' ? 'default' : 'outline'}
@@ -175,7 +171,7 @@ export default function RescueCentersPage() {
           </Button>
         </div>
 
-        {/* Rescue Centers Grid */}
+        
         {sortedCenters.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center text-muted-foreground">
@@ -197,7 +193,7 @@ export default function RescueCentersPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Rating */}
+                  
                   {center.rating && (
                     <div className="flex items-center gap-2">
                       <div className="flex gap-0.5">
@@ -219,7 +215,7 @@ export default function RescueCentersPage() {
                     </div>
                   )}
 
-                  {/* Address */}
+                  
                   <div className="space-y-2">
                     <div className="flex items-start gap-2">
                       <MapPin className="h-4 w-4 flex-shrink-0 mt-1" />
@@ -227,7 +223,7 @@ export default function RescueCentersPage() {
                     </div>
                   </div>
 
-                  {/* Contact */}
+                  
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
@@ -250,7 +246,7 @@ export default function RescueCentersPage() {
                       <div className="flex items-center gap-2">
                         <Globe className="h-4 w-4" />
                         <a
-                          href={`https://${center.website}`}
+                          href={`https:
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm text-blue-600 hover:underline truncate"
@@ -261,7 +257,7 @@ export default function RescueCentersPage() {
                     )}
                   </div>
 
-                  {/* Specialties */}
+                  
                   {center.specialties && center.specialties.length > 0 && (
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2">
@@ -283,14 +279,14 @@ export default function RescueCentersPage() {
                     </div>
                   )}
 
-                  {/* Actions */}
+                  
                   <div className="flex gap-2 pt-2">
                     <Button size="sm" variant="outline" className="flex-1" asChild>
                       <a href={`tel:${center.phone}`}>📞</a>
                     </Button>
                     <Button size="sm" variant="outline" className="flex-1" asChild>
                       <a
-                        href={`https://www.google.com/maps/search/${encodeURIComponent(
+                        href={`https:
                           center.name
                         )}`}
                         target="_blank"
@@ -306,7 +302,7 @@ export default function RescueCentersPage() {
           </div>
         )}
 
-        {/* Map Section */}
+        
         {userLocation && (
           <Card className="mb-8">
             <CardHeader>
@@ -334,7 +330,7 @@ export default function RescueCentersPage() {
           </Card>
         )}
 
-        {/* Info Section */}
+        
         <Card>
           <CardHeader>
             <CardTitle>Thông tin thêm</CardTitle>

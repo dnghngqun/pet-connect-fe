@@ -20,7 +20,7 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
         <TabsTrigger value="details">Chi tiết</TabsTrigger>
       </TabsList>
 
-      {/* Overview Tab */}
+      
       <TabsContent value="overview" className="space-y-4">
         <Card>
           <CardHeader>
@@ -147,7 +147,7 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
         </Card>
       </TabsContent>
 
-      {/* Vaccinations Tab */}
+      
       <TabsContent value="vaccinations">
         <Card>
           <CardHeader>
@@ -178,7 +178,7 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
         </Card>
       </TabsContent>
 
-      {/* Medical History Tab */}
+      
       <TabsContent value="medical">
         <Card>
           <CardHeader>
@@ -219,7 +219,7 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
         </Card>
       </TabsContent>
 
-      {/* Details Tab */}
+      
       <TabsContent value="details">
         <div className="space-y-4">
           <Card>
@@ -239,4 +239,3 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
     </Tabs>
   );
 }
-

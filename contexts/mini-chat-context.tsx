@@ -19,7 +19,7 @@ export interface MiniChatParticipant {
 }
 
 export interface MiniChatItem {
-  chatId: string | null; // null if not created yet
+  chatId: string | null;
   participantId: string;
   participant: MiniChatParticipant;
   isMinimized: boolean;
@@ -45,10 +45,10 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
   const openMiniChat = useCallback(
     (participantId: string, participant: MiniChatParticipant) => {
       setOpenChats((prev) => {
-        // Check if already open
+
         const existing = prev.find((c) => c.participantId === participantId);
         if (existing) {
-          // If minimized, expand it
+
           if (existing.isMinimized) {
             return prev.map((c) =>
               c.participantId === participantId
@@ -58,8 +58,6 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
           }
           return prev;
         }
-
-        // Add new chat
         const newChat: MiniChatItem = {
           chatId: null,
           participantId,
@@ -67,8 +65,6 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
           isMinimized: false,
           unreadCount: 0,
         };
-
-        // If at max capacity, close the oldest minimized or first one
         if (prev.length >= MAX_OPEN_CHATS) {
           const minimizedIndex = prev.findIndex((c) => c.isMinimized);
           if (minimizedIndex !== -1) {
@@ -76,7 +72,7 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
             newArr.splice(minimizedIndex, 1);
             return [...newArr, newChat];
           }
-          // Remove oldest (first in array)
+
           return [...prev.slice(1), newChat];
         }
 
@@ -120,8 +116,6 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
     },
     []
   );
-
-  // WebSocket Connection for Auto-Popup
   const pathname = usePathname();
   const { user } = useAuth();
   
@@ -131,24 +125,22 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
     const onMessage = (wsResponse: any) => {
       console.log("MiniChatContext onMessage:", wsResponse);
       
-      // Extract actual message data from WebSocket response wrapper
-      // Backend sends: { type: 'MESSAGE', data: MessageItemDTO, message: string, timestamp: string }
+
+
       const messageData = wsResponse?.data || wsResponse;
       
-      // Skip if no valid message data
+
       if (!messageData || !messageData.sender) {
         console.warn("Invalid WebSocket message format:", wsResponse);
         return;
       }
       
-      // Normalize message
+
       const msg = normalizeMessageResponse(messageData);
       
-      // Don't auto-open if on main chat page
+
       if (pathname === '/chat') return;
 
-      // Don't auto-open if message is from self
-      // Important: Normalizing IDs to string to avoid mismatch
       const senderId = String(msg.sender._id);
       const myId = String(user._id);
       
@@ -157,8 +149,6 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
       if (!senderId) return;
       
       console.log('Auto-opening mini chat for:', { senderId, msg });
-
-      // Auto open mini chat
       openMiniChat(senderId, {
         id: senderId,
         name: msg.sender.name || "Người dùng",
@@ -167,7 +157,7 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
     };
 
     const onError = (error: any) => {
-      // console.error("MiniChat WS Error", error);
+
     };
 
     chatAPI.connectWebSocket(
@@ -176,8 +166,6 @@ export function MiniChatProvider({ children }: { children: ReactNode }) {
       undefined,
       onError
     );
-
-    // Add listener separately so we can cleanup
     const cleanup = chatAPI.addMessageListener(onMessage);
 
     return () => {

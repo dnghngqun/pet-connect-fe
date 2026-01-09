@@ -54,7 +54,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   const [isOwner, setIsOwner] = useState(false);
   const [activeTab, setActiveTab] = useState<'post' | 'pet' | 'health'>('post');
   
-  // Post form data
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -65,7 +65,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     tags: [] as string[],
   });
   
-  // Pet form data
+
   const [petData, setPetData] = useState({
     name: '',
     breed: '',
@@ -81,7 +81,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     bio: '',
   });
   
-  // Health record form data
+
   const [healthData, setHealthData] = useState({
     allergies: [] as string[],
     weight: '',
@@ -90,11 +90,11 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     medicalHistory: [] as { id?: number; condition: string; treatment: string; date: string; notes?: string; weight?: string }[],
   });
   
-  // Track deleted items IDs
+
   const [deletedVaccinations, setDeletedVaccinations] = useState<number[]>([]);
   const [deletedMedicalHistory, setDeletedMedicalHistory] = useState<number[]>([]);
   
-  // Temp inputs
+
   const [newAllergy, setNewAllergy] = useState('');
   const [newVaccine, setNewVaccine] = useState({ name: '', date: '', nextDueDate: '' });
   const [newMedical, setNewMedical] = useState({ condition: '', treatment: '', date: '', notes: '', weight: '' });
@@ -117,7 +117,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
       if (data) {
         setPostDetail(data);
         
-        // Check ownership
+
         const currentUser = authService.getCurrentUser();
         const ownerMatch = currentUser && String(currentUser.id) === String(data.postedBy?.id);
         setIsOwner(!!ownerMatch);
@@ -132,7 +132,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           return;
         }
         
-        // Set post data
+
         setFormData({
           title: data.title || '',
           description: data.description || '',
@@ -143,7 +143,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           tags: data.tags || [],
         });
         
-        // Set pet data if exists
+
         if (data.pet) {
           setPetData({
             name: data.pet.name || '',
@@ -154,30 +154,30 @@ export default function EditPostPage({ params }: EditPostPageProps) {
             size: data.pet.size?.toUpperCase() || '',
             weight: data.pet.weight?.toString() || '',
             isNeutered: data.pet.isNeutered || false,
-            // Assuming isVaccinated is on PetInfo, if not default false
+
             isVaccinated: (data.pet as any).isVaccinated || false, 
             personality: data.pet.personality || [],
             specialNeeds: data.pet.specialNeeds || '',
             bio: data.pet.bio || '',
           });
           
-          // Set health record if exists
+
           if (data.pet.healthRecord) {
             const hr = data.pet.healthRecord;
             
-            // Map vaccinations with IDs
+
             const mappedVaccinations = hr.vaccinations?.map(v => ({
                id: v.id,
                name: v.name,
-               date: v.vaccinationDate ? v.vaccinationDate.split('T')[0] : '', // Convert to YYYY-MM-DD
-               nextDueDate: v.nextDueDate ? v.nextDueDate.split('T')[0] : '' // Convert to YYYY-MM-DD
+               date: v.vaccinationDate ? v.vaccinationDate.split('T')[0] : '',
+               nextDueDate: v.nextDueDate ? v.nextDueDate.split('T')[0] : ''
             })) || [];
 
             const mappedMedicalHistory = hr.medicalHistory?.map(m => ({
                id: m.id,
                condition: m.condition,
                treatment: m.treatment,
-               date: m.visitDate ? m.visitDate.split('T')[0] : '', // Convert to YYYY-MM-DD
+               date: m.visitDate ? m.visitDate.split('T')[0] : '',
                notes: m.notes,
                weight: m.weight?.toString() || ''
             })) || [];
@@ -192,7 +192,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           }
         }
         
-        // Load districts for the city
+
         if (data.city) {
           const districtRes = await locationService.getDistricts(data.city);
           setDistricts(districtRes.data || []);
@@ -229,7 +229,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     }
   };
   
-  // Allergy handlers
+
   const addAllergy = () => {
     if (newAllergy.trim()) {
       setHealthData(prev => ({ ...prev, allergies: [...prev.allergies, newAllergy.trim()] }));
@@ -241,7 +241,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     setHealthData(prev => ({ ...prev, allergies: prev.allergies.filter((_, i) => i !== index) }));
   };
   
-  // Vaccination handlers
+
   const addVaccination = () => {
     if (newVaccine.name.trim() && newVaccine.date) {
       setHealthData(prev => ({ ...prev, vaccinations: [...prev.vaccinations, { ...newVaccine }] }));
@@ -257,7 +257,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     setHealthData(prev => ({ ...prev, vaccinations: prev.vaccinations.filter((_, i) => i !== index) }));
   };
   
-  // Medical history handlers
+
   const addMedicalHistory = () => {
     if (newMedical.condition.trim() && newMedical.treatment.trim()) {
       setHealthData(prev => ({ ...prev, medicalHistory: [...prev.medicalHistory, { ...newMedical }] }));
@@ -287,7 +287,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
     try {
       setSaving(true);
       
-      // Prepare health record general fields
+
       const hasHealthData = 
         healthData.allergies.length > 0 ||
         healthData.notes || 
@@ -298,8 +298,6 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           notes: healthData.notes || undefined,
           weight: healthData.weight ? parseFloat(healthData.weight) : undefined,
       } : undefined;
-
-      // 1. Update post data, pet data AND health record general data together
       await petPostService.updatePost(Number(resolvedParams.id), {
         title: formData.title,
         description: formData.description,
@@ -325,11 +323,9 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         healthRecord: healthRecordPayload
       });
       
-      // 2. Handle Vaccinations and Medical History separately if pet exists
+
       if (postDetail?.pet?.id) {
         const petId = postDetail.pet.id;
-
-        // Add new vaccinations (no ID)
         for (const vac of healthData.vaccinations) {
             if (!vac.id) {
                 await petPostService.addVaccination(petId, { 
@@ -339,12 +335,10 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 });
             }
         }
-        // Delete removed vaccinations
+
         for (const vacId of deletedVaccinations) {
             await petPostService.deleteVaccination(petId, vacId);
         }
-
-        // Add new medical history (no ID)
         for (const med of healthData.medicalHistory) {
             if (!med.id) {
                 await petPostService.addMedicalHistory(petId, { 
@@ -356,7 +350,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
                 });
             }
         }
-        // Delete removed medical history
+
         for (const medId of deletedMedicalHistory) {
              await petPostService.deleteMedicalHistory(petId, medId);
         }
@@ -367,7 +361,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         description: 'Đã cập nhật bài đăng và thông tin thú cưng',
       });
       
-      // Reload the page to show updated data
+
       router.refresh();
       router.push(`/pet/${resolvedParams.id}`);
     } catch (error) {
@@ -396,7 +390,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
   
   return (
     <div className="container max-w-3xl mx-auto px-4 py-8">
-      {/* Header */}
+      
       <div className="flex items-center gap-4 mb-6">
         <Button variant="ghost" size="icon" asChild>
           <Link href={`/pet/${resolvedParams.id}`}>
@@ -409,7 +403,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         </div>
       </div>
       
-      {/* Tab Buttons */}
+      
       <div className="flex gap-2 mb-6">
         <Button
           variant={activeTab === 'post' ? 'default' : 'outline'}
@@ -436,7 +430,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         </Button>
       </div>
       
-      {/* Post Info Tab */}
+      
       {activeTab === 'post' && (
         <Card>
           <CardHeader>
@@ -537,7 +531,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         </Card>
       )}
       
-      {/* Pet Info Tab */}
+      
       {activeTab === 'pet' && (
         <Card>
           <CardHeader>
@@ -655,7 +649,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         </Card>
       )}
       
-      {/* Health Record Tab */}
+      
       {activeTab === 'health' && (
         <Card>
           <CardHeader>
@@ -668,7 +662,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Allergies */}
+            
             <div className="space-y-2">
               <Label>Dị ứng</Label>
               <div className="flex gap-2">
@@ -694,7 +688,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               </div>
             </div>
             
-            {/* Vaccinations */}
+            
             <div className="space-y-2">
               <Label>Tiêm phòng</Label>
               <div className="flex gap-2 items-end">
@@ -744,7 +738,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               </div>
             </div>
             
-            {/* Medical History */}
+            
             <div className="space-y-2">
               <Label>Lịch sử khám bệnh</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -811,7 +805,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
               </div>
             </div>
             
-            {/* Notes */}
+            
             <div className="space-y-2">
               <Label>Ghi chú y tế</Label>
               <Textarea
@@ -824,7 +818,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         </Card>
       )}
       
-      {/* Actions */}
+      
       <div className="flex gap-4 mt-6">
         <Button
           variant="outline"

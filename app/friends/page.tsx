@@ -25,7 +25,7 @@ export default function FriendsPage() {
       const data = await getFriends(pageNum, 12);
       
       if ((data.code === '0000' || data.success) && data.data) {
-        // Handle both paginated (content array) and direct array response
+
         const newFriends = Array.isArray(data.data) ? data.data : (data.data.content || []);
         if (pageNum === 0) {
           setFriends(newFriends);
@@ -33,7 +33,7 @@ export default function FriendsPage() {
           setFriends((prev) => [...prev, ...newFriends]);
         }
         
-        // Check if more pages
+
         const totalPages = data.totalPages || 1;
         if (pageNum >= totalPages - 1 || newFriends.length < 12) {
           setHasMore(false);
@@ -61,7 +61,7 @@ export default function FriendsPage() {
 
     try {
       await unfriend(friendId);
-      setFriends((prev) => prev.filter((f) => f.friendId !== friendId && f.userId !== friendId)); // Check both just in case
+      setFriends((prev) => prev.filter((f) => f.friendId !== friendId && f.userId !== friendId));
       toast({
         title: "Đã hủy kết bạn",
         description: `Đã hủy kết bạn với ${friendName}`,
@@ -94,7 +94,7 @@ export default function FriendsPage() {
 
   return (
     <div className="min-h-screen py-8 relative">
-      {/* Decorative stickers */}
+      
       <div className="absolute top-24 right-12 text-orange-200/30 animate-pulse">
         <Users size={36} />
       </div>
@@ -107,7 +107,7 @@ export default function FriendsPage() {
 
       <div className="container mx-auto px-4">
         <div className="flex flex-col gap-8 max-w-4xl mx-auto">
-          {/* Header */}
+          
           <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-white/50 p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl shadow-md">
@@ -122,7 +122,7 @@ export default function FriendsPage() {
             </div>
           </div>
 
-          {/* Requests Section */}
+          
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -135,7 +135,7 @@ export default function FriendsPage() {
             <FriendRequestList />
           </div>
 
-          {/* My Friends Section */}
+          
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -158,7 +158,7 @@ export default function FriendsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {friends.map((friend) => {
-                  const friendId = friend.friendId || friend.userId; // Adjust based on DTO
+                  const friendId = friend.friendId || friend.userId;
                   const friendName = friend.friendName || friend.userName;
                   const friendAvatar = friend.friendAvatar || friend.userAvatar;
 
@@ -225,4 +225,3 @@ export default function FriendsPage() {
     </div>
   );
 }
-

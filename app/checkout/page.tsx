@@ -27,8 +27,6 @@ export default function CheckoutPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-
-    // Simulate order placement
     setTimeout(() => {
       setOrderPlaced(true)
       clearCart()
@@ -86,7 +84,7 @@ export default function CheckoutPage() {
         <div className="lg:col-span-2">
           <form onSubmit={handleSubmit}>
             <div className="space-y-8">
-              {/* Shipping Information */}
+              
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Shipping Information</h2>
 
@@ -139,7 +137,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Payment Method */}
+              
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Payment Method</h2>
 
@@ -184,7 +182,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Additional Information */}
+              
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Additional Information</h2>
 

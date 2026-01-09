@@ -41,12 +41,12 @@ export default function PostShareButton({ postSlug, postTitle }: PostShareButton
   };
 
   const handleShareFacebook = () => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    const url = `https:
     window.open(url, '_blank', 'width=600,height=400');
   };
 
   const handleShareTwitter = () => {
-    const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(postTitle)}`;
+    const url = `https:
     window.open(url, '_blank', 'width=600,height=400');
   };
 

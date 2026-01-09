@@ -13,7 +13,7 @@ export interface PetHealthRecord {
   }[]
   weight: {
     date: string
-    value: number // kg
+    value: number
   }[]
   lastCheckup: string
   allergies: string[]
@@ -23,19 +23,19 @@ export interface PetHealthRecord {
 export interface PetProfile {
   id: string
   name: string
-  type: string // Husky, Golden Retriever, etc.
+  type: string
   breed?: string
-  age: number // months
+  age: number
   gender: "male" | "female"
   color?: string
   size?: "small" | "medium" | "large"
-  weight?: number // kg
-  personality: string[] // friendly, playful, gentle, etc.
+  weight?: number
+  personality: string[]
   specialNeeds?: string
   bio?: string
   healthRecord: PetHealthRecord
-  photos: string[] // array of image URLs
-  qrCodeUrl?: string // URL để fetch QR code từ backend (trả về binary data)
+  photos: string[]
+  qrCodeUrl?: string
 }
 
 export interface PetPost {
@@ -44,14 +44,14 @@ export interface PetPost {
   slug: string
   description: string
   image: string
-  images?: string[] // List of all images
+  images?: string[]
   petType: string
   status: "lost" | "found" | "for-adoption" | "rescue" | "general"
   postType?: string
   location: string
   city?: string
   district?: string
-  // Optional: location object for geolocation features
+
   locationCoords?: {
     latitude: number
     longitude: number
@@ -72,8 +72,8 @@ export interface PetPost {
   commentCount: number
   userReaction?: string | null
   isFavorited?: boolean
-  meta?: Record<string, any> // Post-type specific metadata
-  pet?: PetProfile // thông tin chi tiết pet liên quan
+  meta?: Record<string, any>
+  pet?: PetProfile
 }
 
 export interface Product {
@@ -133,8 +133,8 @@ export interface RescueCenter {
   email?: string
   website?: string
   hours?: string
-  specialties?: string[] // "dog", "cat", "bird", etc.
-  distance?: number // km from user
+  specialties?: string[]
+  distance?: number
   rating?: number
   reviewCount?: number
 }
@@ -183,7 +183,7 @@ export interface FundraisingCampaign {
   category: "medical" | "rescue" | "shelter" | "food" | "other"
   targetAmount: number
   currentAmount: number
-  currency: string // VND, USD, etc.
+  currency: string
   createdBy: {
     id: string
     name: string
@@ -200,7 +200,7 @@ export interface FundraisingCampaign {
   createdAt: string
   updatedAt: string
   description_detailed?: string
-  beneficiary?: string // Tổ chức nhận tiền
+  beneficiary?: string
   updates?: FundraisingUpdate[]
 }
 
@@ -216,7 +216,7 @@ export interface FundraisingUpdate {
 export interface Donation {
   id: string
   campaignId: string
-  donorId?: string // null nếu ẩn danh
+  donorId?: string
   amount: number
   currency: string
   message?: string

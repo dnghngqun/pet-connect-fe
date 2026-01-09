@@ -67,8 +67,6 @@ export default function CommentSection({
 
   const loadReplies = async (parentCommentId: number) => {
     try {
-      // Backend already includes replies in the comment response
-      // But if we need to load them separately:
       const response = await petPostService.getReplies(parentCommentId);
       if (response.success) {
         setComments(prev => prev.map(comment => 
@@ -107,7 +105,7 @@ export default function CommentSection({
         const newComment = response.data;
         
         if (replyingTo) {
-          // Add as reply to parent comment
+
           setComments(prev => prev.map(comment => {
             if (comment.id === replyingTo.id) {
               return {
@@ -119,7 +117,7 @@ export default function CommentSection({
             return comment;
           }));
         } else {
-          // Add as top-level comment
+
           setComments(prev => [newComment, ...prev]);
         }
         
@@ -135,13 +133,13 @@ export default function CommentSection({
 
   const handleReply = (commentId: number, userName: string) => {
     setReplyingTo({ id: commentId, name: userName });
-    // Focus on textarea
+
     document.querySelector<HTMLTextAreaElement>('textarea')?.focus();
   };
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Comment List */}
+      
       <div className="flex-1 overflow-y-auto space-y-3 pr-2">
         {loading ? (
           <div className="text-center py-8">
@@ -165,7 +163,7 @@ export default function CommentSection({
         )}
       </div>
 
-      {/* Comment Input */}
+      
       <div className="border-t pt-3 mt-3 bg-background sticky bottom-0">
         {replyingTo && (
           <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-blue-50 rounded-lg text-sm">

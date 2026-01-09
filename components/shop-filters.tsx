@@ -13,22 +13,16 @@ import { Badge } from "@/components/ui/badge"
 export default function ShopFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
-
-  // Get current filter values from URL
   const currentStatus = searchParams.get("status") || ""
   const currentPetType = searchParams.get("petType") || ""
   const currentLocation = searchParams.get("location") || ""
   const currentSort = searchParams.get("sort") || ""
   const currentPostType = searchParams.get("type") || ""
-
-  // Local state for filters
   const [status, setStatus] = useState(currentStatus)
   const [petType, setPetType] = useState(currentPetType)
   const [location, setLocation] = useState(currentLocation)
   const [sort, setSort] = useState(currentSort)
   const [postType, setPostType] = useState(currentPostType)
-
-  // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
 
@@ -64,8 +58,6 @@ export default function ShopFilters() {
 
     router.push(`/shop?${params.toString()}`)
   }, [status, petType, location, sort, router, searchParams])
-
-  // Reset all filters
   const resetFilters = () => {
     setStatus("")
     setPetType("")
@@ -74,8 +66,6 @@ export default function ShopFilters() {
     setSort("")
     router.push("/shop")
   }
-
-  // Check if any filters are active
   const hasActiveFilters = status || petType || location || sort || postType
 
   return (

@@ -13,23 +13,17 @@ interface Props {
 export function ChatBody({ onReply }: Props) {
   const { messages, isMessagesLoading, refreshMessages } = useChat();
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  // Debug mount count (helps find duplicate renders)
   useEffect(() => {
-    // eslint-disable-next-line no-console
+
     console.debug("ChatBody mounted", { messagesLength: messages.length });
     return () => {
-      // eslint-disable-next-line no-console
+
       console.debug("ChatBody unmounted");
     };
   }, []);
-
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // Handle message recall - refresh messages to update UI
   const handleRecall = useCallback(async () => {
     await refreshMessages();
   }, [refreshMessages]);

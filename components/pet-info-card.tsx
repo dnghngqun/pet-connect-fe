@@ -18,7 +18,7 @@ export default function PetInfoCard({ pet }: PetInfoCardProps) {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Side - Pet Details */}
+          
           <div className="space-y-4">
             <div>
               <p className="text-sm font-semibold text-muted-foreground mb-1">Tên</p>
@@ -78,7 +78,7 @@ export default function PetInfoCard({ pet }: PetInfoCardProps) {
             )}
           </div>
 
-          {/* Right Side - Photos & Special Needs */}
+          
           <div className="space-y-4">
             {pet.photos && pet.photos.length > 0 && (
               <div>
@@ -122,4 +122,3 @@ export default function PetInfoCard({ pet }: PetInfoCardProps) {
     </Card>
   );
 }
-

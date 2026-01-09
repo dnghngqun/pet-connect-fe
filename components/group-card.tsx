@@ -30,7 +30,7 @@ export default function GroupCard({ group }: GroupCardProps) {
     <Link href={`/groups/${group.slug}`}>
       <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
         <CardContent className="p-0">
-          {/* Cover Image */}
+          
           <div className="relative h-32 bg-gradient-to-r from-primary/20 to-orange-500/20">
             {group.coverImageUrl ? (
               <img
@@ -51,9 +51,9 @@ export default function GroupCard({ group }: GroupCardProps) {
             )}
           </div>
 
-          {/* Group Info */}
+          
           <div className="p-4">
-            {/* Avatar & Title */}
+            
             <div className="flex items-start gap-3 mb-3">
               <Avatar className="h-12 w-12 border-2 border-background -mt-8 relative z-10">
                 <AvatarImage src={group.avatarUrl} alt={group.name} />
@@ -83,12 +83,12 @@ export default function GroupCard({ group }: GroupCardProps) {
               </div>
             </div>
 
-            {/* Description */}
+            
             <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
               {group.description}
             </p>
 
-            {/* Stats */}
+            
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4" />

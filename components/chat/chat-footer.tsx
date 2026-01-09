@@ -37,11 +37,9 @@ export function ChatFooter({ onReplyCancel, replyTo }: Props) {
       });
       return;
     }
-
-    // Store the file for upload
     setImageFile(file);
     
-    // Create preview
+
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);

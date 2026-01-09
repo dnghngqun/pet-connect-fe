@@ -15,7 +15,7 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Try to get user from localStorage or session
+
     try {
       const storedUser = localStorage.getItem("pet-connect-user");
       if (storedUser) {
