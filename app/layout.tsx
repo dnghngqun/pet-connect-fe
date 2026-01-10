@@ -17,9 +17,8 @@ import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
 export const metadata: Metadata = {
-  title: "PetPals - What your pet needs, when they need it",
-  description: "Premium pet products for cats and dogs with same-day delivery",
-  generator: "v0.dev",
+  title: "Pet Connect",
+  description: "A social network for pet lovers.",
 };
 
 import { PostModalProvider } from "@/components/post-modal-provider";
