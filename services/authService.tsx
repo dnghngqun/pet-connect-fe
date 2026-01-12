@@ -37,7 +37,13 @@ export const logout = () => {
 };
 
 export const register = async (fullName: string, phoneNumber: string, email: string, password: string) => {
-  const response = await apiClient.post(COMMON_API.register, {fullName, phoneNumber, email, password });
+  // Backend expects: email, password, fullName, phoneNumber
+  const response = await apiClient.post(COMMON_API.register, {
+    email,
+    password,
+    fullName,
+    phoneNumber
+  });
 
   // Auto login after successful registration
   if (response.data?.data?.token) {
@@ -91,10 +97,31 @@ export const getCurrentUser = () => {
   return null;
 };
 
+// Forgot Password - Request OTP
+export const forgotPassword = async (email: string) => {
+  const response = await apiClient.post(COMMON_API.forgotPassword, { email });
+  return response.data;
+};
+
+// Verify OTP
+export const verifyOtp = async (email: string, otpCode: string) => {
+  const response = await apiClient.post(COMMON_API.verifyOtp, { email, otpCode });
+  return response.data;
+};
+
+// Reset Password
+export const resetPassword = async (email: string, otpCode: string, newPassword: string) => {
+  const response = await apiClient.post(COMMON_API.resetPassword, { email, otpCode, newPassword });
+  return response.data;
+};
+
 export default {
   login,
   logout,
   register,
   getCurrentUser,
   refreshToken,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 };

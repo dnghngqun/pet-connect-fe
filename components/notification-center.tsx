@@ -154,7 +154,7 @@ export default function NotificationCenter() {
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {!notif.isRead && (
-                      <div className="w-2 h-2 rounded-full bg-blue-600" />
+                      <div className="w-2 h-2 rounded-full bg-orange-500" />
                     )}
                     <Button
                       variant="ghost"

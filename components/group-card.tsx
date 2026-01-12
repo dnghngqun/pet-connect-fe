@@ -18,7 +18,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  BREED: 'bg-blue-100 text-blue-700',
+  BREED: 'bg-orange-100 text-blue-700',
   LOCATION: 'bg-green-100 text-green-700',
   INTEREST: 'bg-purple-100 text-purple-700',
   ACTIVITY: 'bg-orange-100 text-orange-700',

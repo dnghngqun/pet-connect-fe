@@ -186,8 +186,8 @@ export default function PetDetailClient({ post, statusConfig }: PetDetailClientP
                     <div className="h-2 w-2 bg-green-600 rounded-full"></div>
                     <span className="font-semibold">Tiêm chủng cập nhật</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs p-2 bg-blue-100/50 rounded">
-                    <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+                  <div className="flex items-center gap-2 text-xs p-2 bg-orange-100/50 rounded">
+                    <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
                     <span className="font-semibold">
                       Kiểm tra: {new Date(post.pet.healthRecord.lastCheckup).toLocaleDateString('vi-VN')}
                     </span>

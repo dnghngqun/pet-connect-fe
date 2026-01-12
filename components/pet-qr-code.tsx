@@ -47,8 +47,8 @@ export default function PetQRCode({ petId, petName, qrCodeUrl }: PetQRCodeProps)
         </div>        {/* Sample Data Warning */}
         {!qrCodeUrl && (
           <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-blue-600">
+            <AlertCircle className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-orange-500">
               <strong>Dữ liệu mẫu:</strong> Đây là QR code mẫu để test. Backend sẽ cung cấp QR code thực khi integrate.
             </p>
           </div>

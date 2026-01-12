@@ -105,7 +105,7 @@ export default function OrganizationReportDetail({
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-lg">{report.organization.name}</h3>
                     {report.organization.isVerified && (
-                      <CheckCircle2 className="h-5 w-5 text-blue-500" />
+                      <CheckCircle2 className="h-5 w-5 text-orange-500" />
                     )}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-sm text-muted-foreground">

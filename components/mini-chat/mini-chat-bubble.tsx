@@ -38,7 +38,7 @@ export function MiniChatBubble({ chat, index }: MiniChatBubbleProps) {
       {/* Bubble */}
       <button
         onClick={() => toggleMinimize(chat.participantId)}
-        className="relative w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ring-2 ring-white overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600"
+        className="relative w-12 h-12 rounded-full shadow-lg hover:shadow-xl transition-shadow ring-2 ring-white overflow-hidden bg-gradient-to-br from-orange-500 to-orange-500"
       >
         {chat.participant.avatar ? (
           <Image

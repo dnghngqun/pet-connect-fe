@@ -170,10 +170,10 @@ export default function CommentSection({
         {replyingTo && (
           <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-blue-50 rounded-lg text-sm">
             <span className="text-gray-600">Đang trả lời</span>
-            <span className="font-semibold text-blue-600">{replyingTo.name}</span>
+            <span className="font-semibold text-orange-500">{replyingTo.name}</span>
             <button
               onClick={() => setReplyingTo(null)}
-              className="ml-auto p-1 hover:bg-blue-100 rounded"
+              className="ml-auto p-1 hover:bg-orange-100 rounded"
             >
               <X className="h-4 w-4" />
             </button>

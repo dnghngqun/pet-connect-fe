@@ -147,7 +147,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
       <ProfileHeader profile={profile} />
 
-      <div className="container max-w-5xl mx-auto px-0 md:px-4 mt-4">
+      <div className="container max-w-[1440px] mx-auto px-0 md:px-4 mt-4">
         <Tabs defaultValue="posts" className="w-full">
           <TabsList className="w-full justify-start h-12 bg-white rounded-lg shadow-sm p-1 mb-4 sticky top-[60px] z-40 md:static">
             <TabsTrigger value="posts" className="flex-1 md:flex-none md:w-32">Bài viết</TabsTrigger>

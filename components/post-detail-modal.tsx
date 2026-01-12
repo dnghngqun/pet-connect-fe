@@ -131,7 +131,7 @@ export default function PostDetailModal({
     LOST_FOUND: { label: 'Lost/Found', color: 'bg-red-100 text-red-700 border-red-200', icon: '🔍' },
     ADOPTION: { label: 'Nhận nuôi', color: 'bg-green-100 text-green-700 border-green-200', icon: '🏠' },
     REVIEW: { label: 'Review', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: '⭐' },
-    QNA: { label: 'Hỏi đáp', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: '❓' },
+    QNA: { label: 'Hỏi đáp', color: 'bg-orange-100 text-blue-700 border-blue-200', icon: '❓' },
     TIP: { label: 'Mẹo hay', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: '💡' },
     BREEDING: { label: 'Phối giống', color: 'bg-pink-100 text-pink-700 border-pink-200', icon: '💕' },
     MARKETPLACE: { label: 'Chợ đồ', color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: '🛒' },
@@ -139,7 +139,7 @@ export default function PostDetailModal({
 
   const statusConfig = {
     lost: { label: 'Thất lạc', color: 'bg-red-500' },
-    found: { label: 'Tìm thấy', color: 'bg-blue-500' },
+    found: { label: 'Tìm thấy', color: 'bg-orange-500' },
     'for-adoption': { label: 'Cần nhà', color: 'bg-green-500' },
     rescue: { label: 'Cứu hộ', color: 'bg-orange-500' },
     general: { label: 'Bài viết', color: 'bg-slate-500' },
@@ -234,7 +234,7 @@ export default function PostDetailModal({
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-sm truncate">{post.postedBy.name}</p>
                     {post.postedBy.isVerified && (
-                      <Verified className="h-4 w-4 text-blue-500 fill-current shrink-0" />
+                      <Verified className="h-4 w-4 text-orange-500 fill-current shrink-0" />
                     )}
                     {post.postType && (
                       <Badge variant="outline" className={cn("text-xs border px-2 py-0", typeConfig.color)}>

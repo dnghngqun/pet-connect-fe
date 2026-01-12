@@ -42,26 +42,16 @@ export default function Footer() {
             </div>
           </div>
           <div>
-            <h3 className="text-sm font-semibold">Danh sách</h3>
+            <h3 className="text-sm font-semibold">Khám phá</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/shop?status=lost" className="text-sm text-muted-foreground hover:text-primary">
-                  Thú cưng thất lạc
+                <Link href="/" className="text-sm text-muted-foreground hover:text-primary">
+                  Bảng tin
                 </Link>
               </li>
               <li>
-                <Link href="/shop?status=found" className="text-sm text-muted-foreground hover:text-primary">
-                  Thú cưng tìm thấy
-                </Link>
-              </li>
-              <li>
-                <Link href="/shop?status=for-adoption" className="text-sm text-muted-foreground hover:text-primary">
-                  Cần nhà
-                </Link>
-              </li>
-              <li>
-                <Link href="/shop?status=rescue" className="text-sm text-muted-foreground hover:text-primary">
-                  Cứu hộ động vật
+                <Link href="/groups" className="text-sm text-muted-foreground hover:text-primary">
+                  Hội nhóm
                 </Link>
               </li>
             </ul>

@@ -93,7 +93,7 @@ export function ChatFooter({ onReplyCancel, replyTo }: Props) {
   return (
     <div className="absolute bottom-0 left-0 right-0 z-10 border-t border-white/20 bg-white/60 backdrop-blur-md p-4 space-y-3">
       {replyTo && (
-        <div className="flex items-center justify-between bg-gray-100 p-3 rounded border-l-4 border-blue-500">
+        <div className="flex items-center justify-between bg-gray-100 p-3 rounded border-l-4 border-orange-500">
           <div className="text-sm">
             <p className="font-semibold text-gray-700">{replyTo.sender.name}</p>
             <p className="text-gray-600 truncate">{replyTo.content}</p>

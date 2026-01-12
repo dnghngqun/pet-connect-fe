@@ -27,9 +27,9 @@ const REACTIONS = [
     type: 'LIKE' as const,
     icon: ThumbsUp,
     label: 'Thích',
-    color: 'text-blue-600',
+    color: 'text-orange-500',
     bgColor: 'bg-blue-50',
-    hoverColor: 'hover:bg-blue-100',
+    hoverColor: 'hover:bg-orange-100',
   },
   {
     type: 'LOVE' as const,
@@ -113,7 +113,7 @@ export default function PostReactions({
               'gap-2 transition-all',
               userReaction && currentReaction?.color,
               userReaction && currentReaction?.bgColor,
-              !userReaction && 'hover:bg-blue-50 hover:text-blue-600'
+              !userReaction && 'hover:bg-blue-50 hover:text-orange-500'
             )}
             onClick={() => handleReaction(userReaction || 'LIKE')}
             onMouseEnter={() => setShowPicker(true)}

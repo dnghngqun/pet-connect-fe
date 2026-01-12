@@ -33,6 +33,7 @@ import PetHealthProfileDialog from '@/components/pet-health-profile-dialog';
 import PetInfoCard from '@/components/pet-info-card';
 import UpdatePostStatusDialog from '@/components/update-post-status-dialog';
 import DeletePostDialog from '@/components/delete-post-dialog';
+import { TransferPetDialog } from '@/components/pet/transfer-pet-dialog';
 import petPostService from '@/services/petPostService';
 import authService from '@/services/authService';
 import type { PetProfile } from '@/lib/types';
@@ -762,6 +763,9 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
                       postId={Number(post.id)}
                       postTitle={post.title}
                     />
+                    {post.pet && (
+                        <TransferPetDialog petId={post.pet.id} petName={post.pet.name} />
+                    )}
                   </CardContent>
                 </Card>
               )}

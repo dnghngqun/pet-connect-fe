@@ -4,21 +4,21 @@
 
 @layer base {
   :root {
-    /* Pet-themed warm color palette */
-    --background: 30 25% 97%; /* Warm cream/off-white */
-    --foreground: 25 30% 15%; /* Warm dark brown */
-    --card: 30 30% 99%; /* Soft white with warm tint */
-    --card-foreground: 25 30% 15%;
-    --popover: 30 30% 99%;
-    --popover-foreground: 25 30% 15%;
+    /* Pet-themed warm color palette (Coral Red dominance) */
+    --background: 30 11% 98%; /* #fbfaf9 */
+    --foreground: 10 41% 8%; /* #1d0e0c */
+    --card: 0 0% 100%;
+    --card-foreground: 10 41% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 10 41% 8%;
     
-    /* Primary - Warm Orange (pet-friendly) */
-    --primary: 25 95% 53%; /* #f97316 warm orange */
+    /* Primary - Coral Red #ff7366 -> HSL 6 100% 70% */
+    --primary: 6 100% 70%; 
     --primary-foreground: 0 0% 100%;
     
-    /* Secondary - Soft Brown */
-    --secondary: 30 30% 90%; /* Soft beige */
-    --secondary-foreground: 25 30% 25%;
+    /* Secondary - Muted Teal #26BFBA -> HSL 178 67% 45% */
+    --secondary: 178 67% 45%;
+    --secondary-foreground: 0 0% 100%;
     
     --muted: 30 20% 94%; /* Warm muted background */
     --muted-foreground: 25 15% 45%;

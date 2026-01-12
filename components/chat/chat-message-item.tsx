@@ -156,7 +156,7 @@ export default function ChatMessageItem({ message, onReply, onRecall }: Props) {
           <div
             className={`p-3 rounded-lg ${
               isCurrentUser
-                ? "bg-blue-500 text-white rounded-br-none"
+                ? "bg-orange-500 text-white rounded-br-none"
                 : "bg-gray-200 text-gray-900 rounded-bl-none"
             } ${message.status === "sending" ? "opacity-70" : ""} ${
               message.status === "failed" ? "border border-red-500" : ""

@@ -369,7 +369,7 @@ export default function OrganizationReportForm({
                             <div className="flex items-center gap-2">
                               <h4 className="font-semibold truncate">{org.name}</h4>
                               {org.isVerified && (
-                                <CheckCircle2 className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                                <CheckCircle2 className="h-4 w-4 text-orange-500 flex-shrink-0" />
                               )}
                             </div>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
@@ -481,7 +481,7 @@ export default function OrganizationReportForm({
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{selectedOrg.name}</span>
                         {selectedOrg.isVerified && (
-                          <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                          <CheckCircle2 className="h-4 w-4 text-orange-500" />
                         )}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">

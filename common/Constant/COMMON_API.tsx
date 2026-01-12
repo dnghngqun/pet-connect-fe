@@ -6,6 +6,9 @@ export const COMMON_API = {
   register: `${BASE_URL}/api/auth/register`,
   profile: `${BASE_URL}/api/auth/me`,
   refreshToken: `${BASE_URL}/api/auth/refresh-token`,
+  forgotPassword: `${BASE_URL}/api/auth/forgot-password`,
+  verifyOtp: `${BASE_URL}/api/auth/verify-otp`,
+  resetPassword: `${BASE_URL}/api/auth/reset-password`,
   // Posts - /api/v1/posts
   posts: `${BASE_URL}/api/v1/posts`,
   postDetail: (idOrSlug: string) => `${BASE_URL}/api/v1/posts/${idOrSlug}`,
@@ -19,7 +22,7 @@ export const COMMON_API = {
   postFavorite: (id: number) => `${BASE_URL}/api/v1/posts/${id}/favorite`,
   favoritePosts: `${BASE_URL}/api/v1/posts/favorites`,
   likedPosts: `${BASE_URL}/api/v1/posts/liked`,
-  postComments: (postId: number) => `${BASE_URL}/api/posts/${postId}/comments`,
+  postComments: (postId: number) => `${BASE_URL}/api/v1/posts/${postId}/comments`,
 
   // Fundraising - /api/v1/fundraising
   fundraisingCampaigns: `${BASE_URL}/api/v1/fundraising/campaigns`,

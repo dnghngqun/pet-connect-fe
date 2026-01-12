@@ -414,7 +414,7 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
+      <div className="flex items-center justify-between px-3 py-2 bg-gradient-to-r from-orange-500 to-orange-500 text-white">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {chat.participant.avatar ? (
             <Image
@@ -474,7 +474,7 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
       <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+            <Loader2 className="w-6 h-6 animate-spin text-orange-500" />
           </div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-400 text-sm">
@@ -496,7 +496,7 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
                   className={cn(
                     "max-w-[80%] px-3 py-2 rounded-2xl text-sm",
                     mine
-                      ? "bg-blue-500 text-white rounded-br-sm"
+                      ? "bg-orange-500 text-white rounded-br-sm"
                       : "bg-white text-gray-900 border rounded-bl-sm",
                     message.status === "sending" && "opacity-70",
                     message.status === "failed" && "border border-red-500"

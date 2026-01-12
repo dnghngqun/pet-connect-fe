@@ -59,7 +59,7 @@ export default function QnaMetaDisplay({
         {/* Topic & Difficulty */}
         <div className="flex flex-wrap gap-2">
           {topic && (
-            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+            <Badge variant="secondary" className="bg-orange-100 text-blue-700">
               📚 {topic}
             </Badge>
           )}

@@ -161,7 +161,7 @@ export default function PostActionBar({
           variant="ghost"
           size="sm"
           onClick={onCommentClick}
-          className="gap-2 hover:text-blue-600"
+          className="gap-2 hover:text-orange-500"
         >
           <MessageCircle className="h-5 w-5" />
           {showCounts && initialCommentCount > 0 && (
@@ -188,10 +188,10 @@ export default function PostActionBar({
           size="sm"
           onClick={handleSave}
           disabled={isProcessing}
-          className={`gap-2 ${saved ? 'text-blue-600 hover:text-blue-700' : 'hover:text-blue-600'}`}
+          className={`gap-2 ${saved ? 'text-orange-500 hover:text-blue-700' : 'hover:text-orange-500'}`}
         >
           <Bookmark 
-            className={`h-5 w-5 transition-all ${saved ? 'fill-blue-600' : ''}`}
+            className={`h-5 w-5 transition-all ${saved ? 'fill-orange-500' : ''}`}
           />
         </Button>
 

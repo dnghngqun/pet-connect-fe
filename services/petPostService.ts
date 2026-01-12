@@ -99,6 +99,7 @@ export interface PostDetail {
   favoriteCount?: number;
   userReaction?: string | null;
   isFavorited?: boolean;
+  commentCount?: number;
   postedBy: {
     id: number;
     name: string;
@@ -433,7 +434,7 @@ const petPostService = {
   /**
    * Add comment
    */
-  async addComment(postId: number, payload: { content: string; parentCommentId?: number }): Promise<ApiResponse<any>> {
+  async addComment(postId: number, payload: { content: string; parentCommentId?: number; petId?: number }): Promise<ApiResponse<any>> {
     const response = await apiClient.post(COMMON_API.postComments(postId), payload);
     return response.data;
   },

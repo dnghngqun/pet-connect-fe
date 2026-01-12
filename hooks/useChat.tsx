@@ -279,37 +279,81 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
   }, []);
 
 
-  // Connect WebSocket
+  // SSE Connection for Notifications (Global)
   useEffect(() => {
     if (!currentUser || demo) return;
 
     const userStr = localStorage.getItem('pet-connect-user');
     const token = userStr ? JSON.parse(userStr).token : null;
 
-    let cleanupMessage: (() => void) | undefined;
-    let cleanupNotification: (() => void) | undefined;
+    if (!token) return;
 
-    if (token) {
-      // Ensure connection is active
-      chatAPI.connectWebSocket(
-        token,
-        undefined, // Don't pass listeners here to avoid duplication logic inside connect
-        undefined, 
-        handleError
-      );
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const sseUrl = `${backendUrl}/api/sse/notifications?token=${token}`;
 
-      // Add listeners separately with cleanup
-      cleanupMessage = chatAPI.addMessageListener(handleWebSocketMessage);
-      cleanupNotification = chatAPI.addNotificationListener(handleNotification);
-    }
+    console.log("Connecting to Global SSE:", sseUrl);
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onopen = () => {
+        console.log("Global SSE Connected");
+    };
+
+    eventSource.addEventListener("NOTIFICATION", (event: MessageEvent) => {
+        console.log("SSE Notification:", event.data);
+        try {
+            const data = JSON.parse(event.data);
+            handleNotification(data);
+        } catch (e) {
+            console.error("Failed to parse notification", e);
+        }
+    });
+
+    eventSource.onerror = (err) => {
+        console.error("Global SSE Error:", err);
+        // EventSource automatically retries, but we can log user friendly message
+    };
 
     return () => {
-      // Do NOT disconnect WebSocket here as it might be used by MiniChat (Global)
-      // Just remove listeners
-      if (cleanupMessage) cleanupMessage();
-      if (cleanupNotification) cleanupNotification();
+        console.log("Closing Global SSE");
+        eventSource.close();
     };
-  }, [currentUser, demo, handleWebSocketMessage, handleNotification, handleError]);
+  }, [currentUser, demo, handleNotification]);
+
+  // SSE Connection for Chat (Active Conversation)
+  useEffect(() => {
+    if (!currentUser || demo || !selectedChatId) return;
+
+    const userStr = localStorage.getItem('pet-connect-user');
+    const token = userStr ? JSON.parse(userStr).token : null;
+
+    if (!token) return;
+
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+    const sseUrl = `${backendUrl}/api/sse/conversations/${selectedChatId}?token=${token}`;
+
+    console.log(`Connecting to Chat SSE [${selectedChatId}]:`, sseUrl);
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onopen = () => {
+        console.log(`Chat SSE [${selectedChatId}] Connected`);
+    };
+
+    eventSource.addEventListener("MESSAGE", (event: MessageEvent) => {
+        const rawData = JSON.parse(event.data);
+        // Reuse existing handler logic, wrapping in object structure if needed
+        // Assuming handleWebSocketMessage expects { type: ..., data: ... } or just data
+        handleWebSocketMessage({ type: 'MESSAGE', data: rawData });
+    });
+
+    eventSource.onerror = (err) => {
+        console.error(`Chat SSE [${selectedChatId}] Error:`, err);
+    };
+
+    return () => {
+        console.log(`Closing Chat SSE [${selectedChatId}]`);
+        eventSource.close();
+    };
+  }, [currentUser, demo, selectedChatId, handleWebSocketMessage]);
 
 
   // Fetch all chats

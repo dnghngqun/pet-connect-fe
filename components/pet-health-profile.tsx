@@ -124,7 +124,7 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
             </div>
             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-600" />
+                <Calendar className="h-5 w-5 text-orange-500" />
                 <span className="font-semibold">Kiểm tra cuối cùng</span>
               </div>
               <span className="text-sm font-semibold">
@@ -189,7 +189,7 @@ export default function PetHealthProfile({ pet }: PetHealthProfileProps) {
               pet.healthRecord.medicalHistory.map((history, idx) => (
                 <div key={idx} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                   <div className="flex items-start gap-3">
-                    <Activity className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <Activity className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-semibold">{history.condition}</p>

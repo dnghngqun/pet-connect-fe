@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Plus } from "lucide-react";
 import Image from "next/image";
 import { ChatType } from "@/lib/chat.types";
-import { getFriends } from "@/services/friendshipService";
+import friendRequestService from "@/services/friendRequestService";
+import authService from "@/services/authService";
 
 interface Props {
   onChatCreated?: (chat: ChatType) => void;
@@ -30,7 +31,10 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
       const fetchFriends = async () => {
         setIsLoading(true);
         try {
-          const response = await getFriends(0, 50); // Fetch first 50 friends
+          const currentUser = authService.getCurrentUser();
+          if (!currentUser) return;
+          
+          const response = await friendRequestService.getUserFriends(currentUser.id, 0, 50); // Fetch first 50 friends
           if (response.code === "0000" && response.data) {
             setFriends(response.data.content || []);
           }
@@ -114,7 +118,7 @@ export function NewChatDialog({ onChatCreated, trigger }: Props) {
                     key={friend.userId}
                     onClick={() => setSelectedUserId(String(friend.userId))}
                     className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${selectedUserId === String(friend.userId)
-                        ? "bg-blue-100 border border-blue-500"
+                        ? "bg-orange-100 border border-orange-500"
                         : "hover:bg-gray-100 border border-transparent"
                       }`}
                   >

@@ -87,7 +87,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
     LOST_FOUND: { label: 'Lost/Found', color: 'bg-red-100 text-red-700 border-red-200', icon: '🔍' },
     ADOPTION: { label: 'Nhận nuôi', color: 'bg-green-100 text-green-700 border-green-200', icon: '🏠' },
     REVIEW: { label: 'Review', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: '⭐' },
-    QNA: { label: 'Hỏi đáp', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: '❓' },
+    QNA: { label: 'Hỏi đáp', color: 'bg-orange-100 text-blue-700 border-blue-200', icon: '❓' },
     TIP: { label: 'Mẹo hay', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: '💡' },
     BREEDING: { label: 'Phối giống', color: 'bg-pink-100 text-pink-700 border-pink-200', icon: '💕' },
     MARKETPLACE: { label: 'Chợ đồ', color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: '🛒' },
@@ -95,7 +95,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
 
   const statusConfig = {
     lost: { label: 'Thất lạc', color: 'bg-red-500' },
-    found: { label: 'Tìm thấy', color: 'bg-blue-500' },
+    found: { label: 'Tìm thấy', color: 'bg-orange-500' },
     'for-adoption': { label: 'Cần nhà', color: 'bg-green-500' },
     rescue: { label: 'Cứu hộ', color: 'bg-orange-500' },
     general: { label: 'Bài viết', color: 'bg-slate-500' },
@@ -127,7 +127,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
                 className="w-10 h-10 rounded-full object-cover ring-2 ring-offset-1 ring-primary/20"
               />
               {post.postedBy?.isVerified && (
-                <Verified className="absolute -bottom-1 -right-1 h-4 w-4 text-blue-500 fill-current bg-white rounded-full" />
+                <Verified className="absolute -bottom-1 -right-1 h-4 w-4 text-orange-500 fill-current bg-white rounded-full" />
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
           <div className="px-4 pb-3">
             {/* Phone Number if available */}
             {post.postedBy?.phone && (
-              <p className="text-sm font-semibold text-blue-600 mb-2">
+              <p className="text-sm font-semibold text-orange-500 mb-2">
                 📞 Liên hệ: {post.postedBy.phone}
               </p>
             )}
@@ -421,7 +421,7 @@ export default function PetPostCard({ post, onFavoriteToggle, onPostClick, onEdi
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2 hover:bg-blue-50 hover:text-blue-600"
+            className="gap-2 hover:bg-blue-50 hover:text-orange-500"
             onClick={(e) => {
               e.preventDefault();
               onPostClick?.(post);

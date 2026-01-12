@@ -19,7 +19,7 @@ interface GeneralPostFormProps {
 
 const PET_TYPES = [
   { value: 'dog', label: '🐕 Chó', color: 'bg-orange-100 border-orange-200' },
-  { value: 'cat', label: '🐈 Mèo', color: 'bg-blue-100 border-blue-200' },
+  { value: 'cat', label: '🐈 Mèo', color: 'bg-orange-100 border-blue-200' },
   { value: 'bird', label: '🦜 Chim', color: 'bg-green-100 border-green-200' },
   { value: 'rabbit', label: '🐰 Thỏ', color: 'bg-pink-100 border-pink-200' },
   { value: 'hamster', label: '🐹 Hamster', color: 'bg-yellow-100 border-yellow-200' },
@@ -132,14 +132,14 @@ export default function GeneralPostForm({ postType, onSuccess }: GeneralPostForm
             <div className={`
               flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm transition-all duration-300
               ${currentStep >= step.id 
-                ? 'bg-blue-600 text-white shadow-lg scale-110' 
+                ? 'bg-orange-500 text-white shadow-lg scale-110' 
                 : 'bg-gray-100 text-gray-400'
               }
             `}>
               {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
             </div>
             {index < STEPS.length - 1 && (
-              <div className={`w-12 h-1 mx-2 rounded transition-all duration-300 ${currentStep > step.id ? 'bg-blue-600' : 'bg-gray-100'}`} />
+              <div className={`w-12 h-1 mx-2 rounded transition-all duration-300 ${currentStep > step.id ? 'bg-orange-500' : 'bg-gray-100'}`} />
             )}
           </div>
         ))}
@@ -164,7 +164,7 @@ export default function GeneralPostForm({ postType, onSuccess }: GeneralPostForm
                       onClick={() => setFormData(prev => ({ ...prev, status: s.value }))}
                       className={`cursor-pointer p-4 rounded-xl border-2 transition-all ${
                         formData.status === s.value 
-                          ? 'border-blue-500 bg-blue-50 shadow-md' 
+                          ? 'border-orange-500 bg-blue-50 shadow-md' 
                           : 'border-gray-200 hover:border-blue-300'
                       }`}
                     >
@@ -298,7 +298,7 @@ export default function GeneralPostForm({ postType, onSuccess }: GeneralPostForm
             >
               <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4">
                 <h4 className="font-bold text-blue-800 mb-1">📸 Hình ảnh là rất quan trọng!</h4>
-                <p className="text-sm text-blue-600">
+                <p className="text-sm text-orange-500">
                   Hãy đăng tải những hình ảnh rõ nét nhất để mọi người dễ dàng nhận diện thú cưng của bạn.
                 </p>
               </div>
@@ -320,11 +320,11 @@ export default function GeneralPostForm({ postType, onSuccess }: GeneralPostForm
         )}
 
         {currentStep < 3 ? (
-          <Button onClick={handleNext} className="gap-2 bg-blue-600 hover:bg-blue-700">
+          <Button onClick={handleNext} className="gap-2 bg-orange-500 hover:bg-blue-700">
             Tiếp tục <ArrowRight className="h-4 w-4" />
           </Button>
         ) : (
-          <Button onClick={handleSubmit} disabled={loading} className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all">
+          <Button onClick={handleSubmit} disabled={loading} className="gap-2 bg-gradient-to-r from-orange-500 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all">
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (

@@ -26,7 +26,7 @@ export default function MarketplaceMetaDisplay({
   const conditionConfig = {
     new: { label: 'Mới 100%', color: 'bg-emerald-100 text-emerald-700' },
     'like-new': { label: 'Như mới', color: 'bg-green-100 text-green-700' },
-    good: { label: 'Tốt', color: 'bg-blue-100 text-blue-700' },
+    good: { label: 'Tốt', color: 'bg-orange-100 text-blue-700' },
     fair: { label: 'Khá', color: 'bg-yellow-100 text-yellow-700' },
   };
 

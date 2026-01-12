@@ -87,11 +87,35 @@ export function useNotifications() {
   useEffect(() => {
     if (!user?.token) return
 
-    chatAPI.connectWebSocket(user.token, undefined, undefined)
-    const cleanup = chatAPI.addNotificationListener(handleSocketNotification)
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    const sseUrl = `${backendUrl}/api/sse/notifications?token=${user.token}`
+
+    console.log('useNotifications: Connecting to SSE', sseUrl)
+    const eventSource = new EventSource(sseUrl)
+
+    eventSource.onopen = () => {
+      console.log('useNotifications: Connected')
+    }
+
+    eventSource.addEventListener('NOTIFICATION', (event: MessageEvent) => {
+      console.log('useNotifications: Received Event', event.data)
+      try {
+        const data = JSON.parse(event.data)
+        handleSocketNotification({ data })
+      } catch (e) {
+        console.error('Failed to parse SSE notification', e)
+      }
+    })
+
+    eventSource.onerror = (err) => {
+      console.error('useNotifications: SSE Error', err)
+      eventSource.close() // Close to avoid infinite rapid retries in development if error persists
+      // In prod, let it retry or implement exponential backoff
+    }
 
     return () => {
-      if (cleanup) cleanup()
+      console.log('useNotifications: Closing SSE')
+      eventSource.close()
     }
   }, [user?.token, handleSocketNotification])
 

@@ -77,7 +77,7 @@ export default function BreedingMetaDisplay({
             </div>
           )}
           {!isNeutered && (
-            <div className="flex items-center gap-1 text-xs text-blue-600">
+            <div className="flex items-center gap-1 text-xs text-orange-500">
               <CheckCircle2 className="h-3 w-3" />
               <span>Chưa triệt sản</span>
             </div>

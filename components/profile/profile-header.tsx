@@ -87,7 +87,7 @@ export default function ProfileHeader({ profile }: ProfileHeaderProps) {
   
   return (
     <div className="bg-white shadow-sm pb-4">
-      <div className="relative max-w-5xl mx-auto">
+      <div className="relative max-w-[1440px] mx-auto">
         {/* Cover Photo */}
         <div className="h-[200px] md:h-[350px] w-full rounded-b-xl overflow-hidden relative group">
           <img 
