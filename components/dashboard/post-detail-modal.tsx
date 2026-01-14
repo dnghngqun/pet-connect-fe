@@ -13,9 +13,10 @@ interface PostDetailModalProps {
   post: PostListItem;
   onClose: () => void;
   onPostUpdate?: (updatedPost: PostListItem) => void;
+  currentPetId?: number;
 }
 
-export default function PostDetailModal({ post: initialPost, onClose, onPostUpdate }: PostDetailModalProps) {
+export default function PostDetailModal({ post: initialPost, onClose, onPostUpdate, currentPetId }: PostDetailModalProps) {
   const { user } = useAuth();
   const [postDetail, setPostDetail] = useState<PostDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,7 +47,7 @@ export default function PostDetailModal({ post: initialPost, onClose, onPostUpda
       try {
         setLoading(true);
         // Fetch full details
-        const detailRes = await petPostService.getPostBySlug(String(initialPost.id)); // Using ID as slug fallback
+        const detailRes = await petPostService.getPostBySlug(String(initialPost.id), currentPetId); // Using ID as slug fallback
         if (detailRes.success) {
             setPostDetail(detailRes.data);
             setIsLiked(detailRes.data.isFavorited || false); // Note: backend DTO might have mixed up fields, userReaction check needed or isFavorited? 
@@ -133,7 +134,10 @@ export default function PostDetailModal({ post: initialPost, onClose, onPostUpda
              }
         }
 
-        if (selectedPetId) {
+        // Use prop if available, else fallback
+        if (currentPetId) {
+            payload.petId = currentPetId;
+        } else if (selectedPetId) {
             payload.petId = selectedPetId;
         }
 
@@ -179,7 +183,7 @@ export default function PostDetailModal({ post: initialPost, onClose, onPostUpda
     setLikeCount(newLikeCount);
     
     try {
-        await petPostService.reactToPost(initialPost.id, newIsLiked ? 'LIKE' : 'LIKE');
+        await petPostService.reactToPost(initialPost.id, newIsLiked ? 'LIKE' : 'LIKE', currentPetId);
         
         // Callback to parent
         if (onPostUpdate) {

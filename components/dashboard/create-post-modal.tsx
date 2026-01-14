@@ -10,21 +10,17 @@ interface CreatePostModalProps {
   pet: any;
   post?: any; // Post to edit
   onPostCreated?: () => void;
+  groupId?: number; // Optional group ID for group posts
 }
 
-export default function CreatePostModal({ isOpen, onClose, pet, post, onPostCreated }: CreatePostModalProps) {
+export default function CreatePostModal({ isOpen, onClose, pet, post, onPostCreated, groupId }: CreatePostModalProps) {
   const [content, setContent] = useState(post?.description || '');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   
   // Initialize previews from existing post media
-  const [previews, setPreviews] = useState<{ url: string; type: 'image' | 'video' }[]>(() => {
-    if (post && post.images && post.images.length > 0) {
-        return post.images.map((img: any) => ({
-            url: img.url || img, // Handle object or string
-            type: 'image' // Assuming images for now, if video supported in backend it needs type check
-        }));
-    }
+  const [previews, setPreviews] = useState<{ id?: number; url: string; type: 'image' | 'video' }[]>(() => {
+    // Initial state will be populated by useEffect for existing posts
     return [];
   });
   
@@ -109,22 +105,111 @@ export default function CreatePostModal({ isOpen, onClose, pet, post, onPostCrea
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+
+
+  // State for media handling
+  const [existingMedia, setExistingMedia] = useState<{ id: number; url: string; type: 'image' | 'video' }[]>([]);
+  const [deletedMediaIds, setDeletedMediaIds] = useState<number[]>([]);
+
+  // Fetch full details on mount if editing
+  useEffect(() => {
+    if (post && post.id) {
+        const fetchDetails = async () => {
+            try {
+                const res = await petPostService.getPostBySlug(String(post.id));
+                if (res.success && res.data.media) {
+                    const media = res.data.media.map((m: any) => ({
+                        id: m.id,
+                        url: m.imageUrl,
+                        type: (m.imageUrl.includes('.mp4') || m.imageUrl.includes('.webm')) ? 'video' : 'image'
+                    }));
+                    setExistingMedia(media as any);
+                    setPreviews(media as any);
+                } else if (post.images) {
+                    // Fallback to existing strings if fetch fails or no media object (legacy)
+                    const media = post.images.map((url: string, idx: number) => ({
+                         id: -1, // Placeholder, can't delete these
+                         url: url,
+                         type: 'image'
+                    }));
+                     setExistingMedia(media);
+                     setPreviews(media);
+                }
+            } catch (e) {
+                console.error("Failed to fetch post details for editing", e);
+            }
+        };
+        fetchDetails();
+    }
+  }, [post]);
+
   const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    const target = previews[index];
+    
+    // If it's an existing media (has ID > 0), mark for deletion
+    if (target.id && target.id > 0) {
+        setDeletedMediaIds(prev => [...prev, target.id as number]);
+        setExistingMedia(prev => prev.filter(m => m.id !== target.id));
+    } else {
+        // It's a new file (from selectedFiles), remove from there
+        // Note: selectedFiles tracks *only new files*. We need to map index correctly.
+        // The index in 'previews' might mix existing and new.
+        // Strategy: Filter previews, rebuild selectedFiles?
+        // Easier: Verify if 'target' corresponds to a File.
+        // If we store the File object in previews? No, we store URL.
+        
+        // Let's refine the remove logic:
+        // 'previews' is the source of truth for UI.
+        // We need to sync selectedFiles. 
+        // If we remove a new file, we need to find which File it was.
+        // Since we blindly append to selectedFiles, let's keep it simple:
+        // We'll trust the 'previews' state as the visual list.
+        // For new files removal, we might need a better way to link Preview -> File.
+        // Current implementation of 'handleFileSelect' appends to both.
+        // The index in 'previews' includes existingMedia. 
+        // e.g. [Existing1, Existing2, New1, New2]
+        // If we remove index 2 (New1), it's the 0th element of selectedFiles.
+        
+        const existingCount = existingMedia.filter(m => !deletedMediaIds.includes(m.id)).length; 
+        // Actually existingMedia state is already filtered when we remove? 
+        // Wait, removeFile updates existingMedia or sets deletedMediaIds.
+        
+        // Correct approach:
+        // If target has ID, it's existing.
+        // If target has NO ID, it's new.
+        // Find its index among *new* files.
+    }
+
     setPreviews(prev => {
         const newPrev = [...prev];
-        URL.revokeObjectURL(newPrev[index].url);
+        const item = newPrev[index];
+        if (item && !item.id) { // Only revoke if it's a blob url (new file)
+             URL.revokeObjectURL(item.url);
+        }
         return newPrev.filter((_, i) => i !== index);
     });
+    
+    // Sync selectedFiles
+    if (!target.id || target.id === -1) {
+         // It is a new file. We need to find which one.
+         // This is tricky with current state. 
+         // FIX: Let's reconstruct selectedFiles on submit or track them better.
+         // Or, simply:
+         // count how many *new* items were before this index.
+         const priorNewCount = previews.slice(0, index).filter(p => !p.id || p.id === -1).length;
+         setSelectedFiles(prev => prev.filter((_, i) => i !== priorNewCount));
+    }
   };
 
   const handleCreatePost = async () => {
-    if (!content.trim() && selectedFiles.length === 0 && !post) return;
+    if (!content.trim() && selectedFiles.length === 0 && previews.length === 0 && !post) return;
     
     setIsLoading(true);
     try {
       if (post) {
         // Edit mode
+        
+        // 1. Update Post Details
         const response = await petPostService.updatePost(post.id, {
             description: content,
             status: 'PUBLISHED',
@@ -132,16 +217,26 @@ export default function CreatePostModal({ isOpen, onClose, pet, post, onPostCrea
             city: post.city || 'Unknown',
         });
         
-        if (response && (response.success || response.data?.id)) {
-            toast({
-              title: "Thành công",
-              description: "Bài viết của bạn đã được cập nhật.",
-            });
-            if (onPostCreated) onPostCreated();
-            onClose();
-        } else {
-             throw new Error(response?.message || 'Failed to update post');
+        if (!response || (!response.success && !response.data?.id)) {
+             throw new Error(response?.message || 'Failed to update post content');
         }
+
+        // 2. Upload New Images
+        if (selectedFiles.length > 0) {
+            await petPostService.uploadImages(post.id, selectedFiles);
+        }
+
+        // 3. Delete Removed Images
+        if (deletedMediaIds.length > 0) {
+            await Promise.all(deletedMediaIds.map(id => petPostService.deleteImage(post.id, id)));
+        }
+
+        toast({
+            title: "Thành công",
+            description: "Bài viết của bạn đã được cập nhật.",
+        });
+        if (onPostCreated) onPostCreated();
+        onClose();
 
       } else {
         // Create mode
@@ -154,6 +249,7 @@ export default function CreatePostModal({ isOpen, onClose, pet, post, onPostCrea
             city: 'Unknown',
             petId: pet.id,
             tags: [],
+            ...(groupId && { groupIds: [groupId] }), // Backend expects groupIds array
           };
     
           const response = await petPostService.createPost(postData, selectedFiles);
@@ -265,28 +361,27 @@ export default function CreatePostModal({ isOpen, onClose, pet, post, onPostCrea
 
             
             {/* Disable file upload in edit mode for now */}
-           {!post && (
-              <div 
-                 className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 hover:border-[#f06e42]/50 hover:bg-[#f06e42]/5 transition-all duration-300"
-                 onClick={() => fileInputRef.current?.click()}
-              >
-                <input 
-                   ref={fileInputRef}
-                   className="hidden" 
-                   type="file" 
-                   multiple
-                   accept="image/*,video/*"
-                   onChange={handleFileSelect}
-                />
-                <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                  <div className="w-12 h-12 mb-3 rounded-full bg-orange-50 dark:bg-white/5 text-[#f06e42] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <span className="material-symbols-outlined text-3xl">add_a_photo</span>
-                  </div>
-                  <p className="font-semibold text-[#1b110d] dark:text-white">Thêm ảnh hoặc video</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Kéo thả hoặc nhấn để tải lên (Tối đa 5MB)</p>
-                </div>
-              </div>
-           )}
+            {/* File Upload Area - Always visible now */}
+            <div 
+                  className="relative group cursor-pointer overflow-hidden rounded-xl border-2 border-dashed border-gray-200 dark:border-white/10 hover:border-[#f06e42]/50 hover:bg-[#f06e42]/5 transition-all duration-300"
+                  onClick={() => fileInputRef.current?.click()}
+               >
+                 <input 
+                    ref={fileInputRef}
+                    className="hidden" 
+                    type="file" 
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={handleFileSelect}
+                 />
+                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                   <div className="w-12 h-12 mb-3 rounded-full bg-orange-50 dark:bg-white/5 text-[#f06e42] flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                     <span className="material-symbols-outlined text-3xl">add_a_photo</span>
+                   </div>
+                   <p className="font-semibold text-[#1b110d] dark:text-white">Thêm ảnh hoặc video</p>
+                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Kéo thả hoặc nhấn để tải lên (Tối đa 5MB)</p>
+                 </div>
+               </div>
         </div>
 
         {/* Footer */}

@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import GroupCard from '@/components/group-card';
 import { getMyGroups, Group } from '@/services/groupService';
 import authService from '@/services/authService';
+import { Pet } from '@/services/petService';
 
 export default function MyGroupsPage() {
   const router = useRouter();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPet, setCurrentPet] = useState<Pet | null>(null);
   const currentUser = authService.getCurrentUser();
 
   useEffect(() => {
@@ -20,13 +22,24 @@ export default function MyGroupsPage() {
       router.push('/sign-in');
       return;
     }
-    loadMyGroups();
+    const storedPet = localStorage.getItem('current-pet');
+    if (storedPet) {
+      const pet = JSON.parse(storedPet);
+      setCurrentPet(pet);
+    }
   }, []);
 
+  useEffect(() => {
+    if (currentPet) {
+      loadMyGroups();
+    }
+  }, [currentPet?.id]);
+
   const loadMyGroups = async () => {
+    if (!currentPet) return;
     try {
       setLoading(true);
-      const response = await getMyGroups(0, 50);
+      const response = await getMyGroups(currentPet.id, 0, 50);
       if (response.success) {
         setGroups(response.data || []);
       }

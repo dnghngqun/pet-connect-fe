@@ -68,4 +68,7 @@ export const COMMON_API = {
   notificationsReadAll: `${BASE_URL}/api/notifications/read-all`,
   notificationDelete: (id: string | number) => `${BASE_URL}/api/notifications/${id}`,
   notificationsClear: `${BASE_URL}/api/notifications`,
+
+  // Activities - /api/v1/activities
+  activities: `${BASE_URL}/api/v1/activities`,
 };

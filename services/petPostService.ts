@@ -71,6 +71,8 @@ export interface PostListItem {
   reactionCount?: number;
   favoriteCount?: number;
   commentCount?: number;
+  userReaction?: string;
+  isFavorited?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -163,6 +165,7 @@ export interface GetPostsParams {
   tags?: string[];
   featured?: boolean;
   sort?: string;
+  petId?: number;
 }
 
 export interface CreatePostRequest {
@@ -179,6 +182,7 @@ export interface CreatePostRequest {
   tags?: string[];
   meta?: Record<string, any>;
   petId?: number;
+  groupIds?: number[];
   pet?: {
     name?: string;
     breed?: string;
@@ -260,6 +264,7 @@ const petPostService = {
         tags: params.tags,
         featured: params.featured,
         sort: params.sort || 'createdAt,desc',
+        petId: params.petId,
       },
     });
     return response.data as ApiResponse<{ posts: PostListItem[] }>;
@@ -269,8 +274,10 @@ const petPostService = {
    * API 2: Get post detail by ID or slug
    * GET /api/v1/posts/{idOrSlug}
    */
-  async getPostBySlug(idOrSlug: string): Promise<ApiResponse<PostDetail>> {
-    const response = await apiClient.get(COMMON_API.postDetail(idOrSlug));
+  async getPostBySlug(idOrSlug: string, petId?: number): Promise<ApiResponse<PostDetail>> {
+    const response = await apiClient.get(COMMON_API.postDetail(idOrSlug), {
+      params: { petId }
+    });
     return response.data;
   },
 
@@ -396,8 +403,10 @@ const petPostService = {
   /**
    * React / like post
    */
-  async reactToPost(id: number, type: string = "LIKE"): Promise<ApiResponse<{ reaction?: string; reactionCount: number }>> {
-    const response = await apiClient.post(COMMON_API.postReaction(id, type));
+  async reactToPost(id: number, type: string = "LIKE", petId?: number): Promise<ApiResponse<{ reaction?: string; reactionCount: number }>> {
+    const response = await apiClient.post(COMMON_API.postReaction(id, type), null, {
+      params: { petId }
+    });
     return response.data;
   },
 
@@ -443,9 +452,11 @@ const petPostService = {
    * Toggle reaction on a post
    * POST /api/v1/posts/{id}/reactions
    */
-  async toggleReaction(postId: number, reactionType: string | null): Promise<ApiResponse<void>> {
+  async toggleReaction(postId: number, reactionType: string | null, petId?: number): Promise<ApiResponse<void>> {
     const response = await apiClient.post(`/api/v1/posts/${postId}/reactions`, {
       reactionType: reactionType || 'LIKE'
+    }, {
+        params: { type: reactionType || 'LIKE', petId }
     });
     return response.data;
   },

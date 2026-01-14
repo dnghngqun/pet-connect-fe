@@ -1,14 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import authService from '@/services/authService';
 import { useState, useEffect } from 'react';
+import { useSseNotifications } from '@/hooks/useSseNotifications';
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const [currentPet, setCurrentPet] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  
+  // SSE Notifications
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useSseNotifications();
 
   useEffect(() => {
     // Load current pet from localStorage
@@ -36,6 +42,18 @@ export default function Header() {
     router.push('/sign-in');
   };
 
+  const isActive = (path: string) => {
+    if (path === '/') return pathname === '/';
+    return pathname?.startsWith(path);
+  };
+
+  const linkClass = (path: string) => `
+    font-medium text-sm transition-colors relative
+    ${isActive(path) 
+      ? 'text-[#f06e42] font-bold' 
+      : 'text-[#1b110d] dark:text-gray-300 hover:text-[#f06e42]'}
+  `;
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-[#19191f]/90 backdrop-blur-md border-b border-[#f3eae7] dark:border-gray-800">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -50,15 +68,17 @@ export default function Header() {
           </Link>
 
           <nav className="hidden lg:flex items-center gap-8">
-            <Link href="/" className="text-[#f06e42] font-bold text-sm relative">
+            <Link href="/" className={linkClass('/')}>
               Trang chủ
-              {/* <span className="absolute -bottom-6 left-0 w-full h-1 bg-[#f06e42] rounded-t-full"></span> */}
+              {isActive('/') && <span className="absolute -bottom-6 left-0 w-full h-1 bg-[#f06e42] rounded-t-full"></span>}
             </Link>
-            <Link href="/groups" className="text-[#1b110d] dark:text-gray-300 hover:text-[#f06e42] font-medium text-sm transition-colors">
-              Hội nhóm
+            <Link href="/groups" className={linkClass('/groups')}>
+              Nhóm & Sự kiện
+              {isActive('/groups') && <span className="absolute -bottom-6 left-0 w-full h-1 bg-[#f06e42] rounded-t-full"></span>}
             </Link>
-            <Link href="/chat" className="text-[#1b110d] dark:text-gray-300 hover:text-[#f06e42] font-medium text-sm transition-colors">
+            <Link href="/messages" className={linkClass('/messages')}>
               Tin nhắn
+              {isActive('/messages') && <span className="absolute -bottom-6 left-0 w-full h-1 bg-[#f06e42] rounded-t-full"></span>}
             </Link>
           </nav>
 
@@ -75,10 +95,91 @@ export default function Header() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-               {/* Mobile Notifications/Chat could go here */}
+               {/* Mobile Search */}
                <button className="sm:hidden p-2 text-[#1b110d] dark:text-white">
                   <span className="material-symbols-outlined text-[24px]">search</span>
                </button>
+               
+               {/* Notifications Bell */}
+               <div className="relative">
+                 <button 
+                   onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                   className="p-2 text-[#1b110d] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors relative"
+                 >
+                   <span className="material-symbols-outlined text-[24px]">notifications</span>
+                   {unreadCount > 0 && (
+                     <span className="absolute -top-0.5 -right-0.5 size-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                       {unreadCount > 9 ? '9+' : unreadCount}
+                     </span>
+                   )}
+                 </button>
+                 
+                 {/* Notifications Dropdown */}
+                 {isNotificationsOpen && (
+                   <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-[#232329] rounded-xl shadow-lg border border-gray-100 dark:border-white/5 py-1 z-50 animate-fade-in-up max-h-96 overflow-y-auto">
+                     <div className="flex items-center justify-between px-4 py-2 border-b dark:border-white/5">
+                       <span className="font-bold text-[#1b110d] dark:text-white">Thông báo</span>
+                       {unreadCount > 0 && (
+                         <button 
+                           onClick={markAllAsRead} 
+                           className="text-xs text-[#f06e42] hover:underline"
+                         >
+                           Đánh dấu tất cả đã đọc
+                         </button>
+                       )}
+                     </div>
+                     {notifications.length === 0 ? (
+                       <div className="px-4 py-8 text-center text-gray-500">
+                         <span className="material-symbols-outlined text-4xl mb-2 block">notifications_off</span>
+                         <p className="text-sm">Chưa có thông báo</p>
+                       </div>
+                     ) : (
+                       notifications.slice(0, 10).map(notification => (
+                         <div 
+                           key={notification.id}
+                           onClick={() => {
+                             markAsRead(notification.id);
+                             if (notification.link) {
+                               router.push(notification.link);
+                             }
+                             setIsNotificationsOpen(false);
+                           }}
+                           className={`px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${
+                             !notification.isRead ? 'bg-[#f06e42]/5' : ''
+                           }`}
+                         >
+                           <div className="flex gap-3">
+                             {notification.fromUserAvatar && (
+                               <img 
+                                 src={notification.fromUserAvatar} 
+                                 alt="" 
+                                 className="size-10 rounded-full object-cover"
+                               />
+                             )}
+                             <div className="flex-1 min-w-0">
+                               <p className="text-sm font-medium text-[#1b110d] dark:text-white truncate">
+                                 {notification.title}
+                               </p>
+                               <p className="text-xs text-gray-500 truncate">
+                                 {notification.content}
+                               </p>
+                               <p className="text-xs text-gray-400 mt-1">
+                                 {new Date(notification.createdAt).toLocaleTimeString('vi-VN', {
+                                   hour: '2-digit',
+                                   minute: '2-digit'
+                                 })}
+                               </p>
+                             </div>
+                             {!notification.isRead && (
+                               <span className="size-2 bg-[#f06e42] rounded-full mt-2"></span>
+                             )}
+                           </div>
+                         </div>
+                       ))
+                     )}
+                   </div>
+                 )}
+               </div>
                
                {/* User/Pet Avatar */}
                {currentPet ? (
@@ -98,12 +199,28 @@ export default function Header() {
                     {isDropdownOpen && (
                       <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#232329] rounded-xl shadow-lg border border-gray-100 dark:border-white/5 py-1 z-50 animate-fade-in-up">
                         <Link 
-                          href="/profile" 
+                          href={currentPet ? `/pets/${currentPet.id}/profile` : "/profile"} 
                           className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#1b110d] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                           onClick={() => setIsDropdownOpen(false)}
                         >
                           <span className="material-symbols-outlined text-[20px]">person</span>
                           Trang cá nhân
+                        </Link>
+                        <Link 
+                          href="/calendar" 
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#1b110d] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">calendar_month</span>
+                          Lịch hoạt động
+                        </Link>
+                        <Link 
+                          href="/medical-records" 
+                          className="flex items-center gap-2 px-4 py-2.5 text-sm text-[#1b110d] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">medical_services</span>
+                          Hồ sơ y tế
                         </Link>
                         <div className="h-px bg-gray-100 dark:bg-white/5 my-1"></div>
                         <button

@@ -63,6 +63,21 @@ const config = {
         "surface-dark": "#3c3632",
         "background-light": "#fbfaf9", 
         "background-dark": "#2a2622",
+        "event-medical": "#3b82f6",
+        "event-play": "#f97316",
+        "event-birthday": "#ef4444",
+        
+        // Activity Modal specific colors
+        "custom-primary": "#99e6bf",
+        "custom-primary-hover": "#80dcb0",
+        "custom-secondary": "#FFEB99",
+        "custom-secondary-hover": "#fde585",
+        "custom-text-main": "#101914",
+        "custom-text-sub": "#578e73",
+        "custom-card-light": "#ffffff",
+        "custom-card-dark": "#2c363f",
+        "custom-bg-dark": "#1f292e",
+        "custom-bg-light": "#fafaf9",
       },
       borderRadius: {
         lg: "var(--radius)",

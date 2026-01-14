@@ -4,17 +4,40 @@ import { useEffect, useState } from 'react';
 import { Users } from 'lucide-react';
 import groupService, { Group } from '@/services/groupService';
 
-export default function MyGroups() {
+interface MyGroupsProps {
+  petId?: number;
+}
+
+export default function MyGroups({ petId: propPetId }: MyGroupsProps) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [petId, setPetId] = useState<number | null>(propPetId || null);
 
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    // Get petId from localStorage if not provided as prop
+    if (!propPetId && typeof window !== 'undefined') {
+      const storedPet = localStorage.getItem('current-pet');
+      if (storedPet) {
+        try {
+          const pet = JSON.parse(storedPet);
+          setPetId(pet.id);
+        } catch (e) {}
+      }
+    }
+  }, [propPetId]);
+
+  useEffect(() => {
+    if (petId) {
+      fetchGroups();
+    } else {
+      setLoading(false);
+    }
+  }, [petId]);
 
   const fetchGroups = async () => {
+    if (!petId) return;
     try {
-      const response = await groupService.getMyGroups(0, 8);
+      const response = await groupService.getMyGroups(petId, 0, 8);
       if (response && response.content) {
         setGroups(response.content);
       }

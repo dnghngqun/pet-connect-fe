@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Users, Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,12 +20,14 @@ import { toast } from '@/components/ui/use-toast';
 import { createGroup } from '@/services/groupService';
 import Image from 'next/image';
 import PageHeader from '@/components/page-header';
+import { Pet } from '@/services/petService';
 
 export default function CreateGroupPage() {
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [currentPet, setCurrentPet] = useState<Pet | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -35,6 +37,13 @@ export default function CreateGroupPage() {
     isPrivate: false,
     rules: '',
   });
+
+  useEffect(() => {
+    const storedPet = localStorage.getItem('current-pet');
+    if (storedPet) {
+      setCurrentPet(JSON.parse(storedPet));
+    }
+  }, []);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,6 +78,15 @@ export default function CreateGroupPage() {
       return;
     }
 
+    if (!currentPet) {
+      toast({
+        title: 'Chưa chọn thú cưng',
+        description: 'Vui lòng chọn thú cưng để tạo nhóm',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setCreating(true);
       
@@ -82,7 +100,7 @@ export default function CreateGroupPage() {
         district: formData.district || undefined,
         isPrivate: formData.isPrivate,
         rules: formData.rules || undefined,
-      });
+      }, currentPet.id);
 
       if (response.success) {
         toast({

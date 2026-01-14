@@ -44,9 +44,12 @@ export interface Group {
 
 export interface GroupMember {
   id: number;
-  userId: number;
-  userName: string;
-  userAvatar?: string;
+  petId: number;
+  petName: string;
+  petAvatar?: string;
+  petBreed?: string;
+  ownerId: number;
+  ownerName: string;
   role: 'ADMIN' | 'MODERATOR' | 'MEMBER' | 'PENDING';
   joinedAt: string;
 }
@@ -84,12 +87,14 @@ export const getGroups = async (params: {
   search?: string;
   page?: number;
   size?: number;
+  petId?: number;
 }) => {
   try {
     const queryParams = new URLSearchParams();
     if (params.category) queryParams.append('category', params.category);
     if (params.city) queryParams.append('city', params.city);
     if (params.search) queryParams.append('search', params.search);
+    if (params.petId) queryParams.append('petId', params.petId.toString());
     queryParams.append('page', (params.page || 0).toString());
     queryParams.append('size', (params.size || 20).toString());
 
@@ -112,11 +117,12 @@ export const getGroups = async (params: {
 /**
  * Get group by slug
  */
-export const getGroupBySlug = async (slug: string) => {
+export const getGroupBySlug = async (slug: string, petId?: number) => {
   try {
     const token = getToken();
+    const queryParams = petId ? `?petId=${petId}` : '';
     
-    const response = await fetch(`${API_URL}/api/v1/groups/${slug}`, {
+    const response = await fetch(`${API_URL}/api/v1/groups/${slug}${queryParams}`, {
       headers: {
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
@@ -133,11 +139,11 @@ export const getGroupBySlug = async (slug: string) => {
 /**
  * Create a new group
  */
-export const createGroup = async (request: CreateGroupRequest) => {
+export const createGroup = async (request: CreateGroupRequest, petId: number) => {
   try {
     const token = getToken();
     
-    const response = await fetch(`${API_URL}/api/v1/groups`, {
+    const response = await fetch(`${API_URL}/api/v1/groups?petId=${petId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -157,11 +163,12 @@ export const createGroup = async (request: CreateGroupRequest) => {
 /**
  * Update group
  */
-export const updateGroup = async (groupId: number, request: UpdateGroupRequest) => {
+export const updateGroup = async (groupId: number, request: UpdateGroupRequest, petId?: number) => {
   try {
     const token = getToken();
+    const queryParams = petId ? `?petId=${petId}` : '';
     
-    const response = await fetch(`${API_URL}/api/v1/groups/${groupId}`, {
+    const response = await fetch(`${API_URL}/api/v1/groups/${groupId}${queryParams}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -201,13 +208,13 @@ export const deleteGroup = async (groupId: number) => {
 };
 
 /**
- * Join a group
+ * Join a group with a pet
  */
-export const joinGroup = async (groupId: number) => {
+export const joinGroup = async (groupId: number, petId: number) => {
   try {
     const token = getToken();
     
-    const response = await fetch(`${API_URL}/api/v1/groups/${groupId}/join`, {
+    const response = await fetch(`${API_URL}/api/v1/groups/${groupId}/join?petId=${petId}`, {
       method: 'POST',
       headers: {
         ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -223,13 +230,13 @@ export const joinGroup = async (groupId: number) => {
 };
 
 /**
- * Leave a group
+ * Leave a group with a pet
  */
-export const leaveGroup = async (groupId: number) => {
+export const leaveGroup = async (groupId: number, petId: number) => {
   try {
     const token = getToken();
     
-    const response = await fetch(`${API_URL}/api/v1/groups/${groupId}/leave`, {
+    const response = await fetch(`${API_URL}/api/v1/groups/${groupId}/leave?petId=${petId}`, {
       method: 'POST',
       headers: {
         ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -269,14 +276,14 @@ export const getGroupMembers = async (groupId: number, page = 0, size = 20) => {
 };
 
 /**
- * Get user's groups
+ * Get pet's groups
  */
-export const getMyGroups = async (page = 0, size = 20) => {
+export const getMyGroups = async (petId: number, page = 0, size = 20) => {
   try {
     const token = getToken();
     
     const response = await fetch(
-      `${API_URL}/api/v1/groups/my-groups?page=${page}&size=${size}`,
+      `${API_URL}/api/v1/groups/my-groups?petId=${petId}&page=${page}&size=${size}`,
       {
         headers: {
           ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -295,11 +302,14 @@ export const getMyGroups = async (page = 0, size = 20) => {
 /**
  * Get popular groups
  */
-export const getPopularGroups = async (limit = 10) => {
+export const getPopularGroups = async (limit = 10, petId?: number) => {
   try {
     const token = getToken();
+    const queryParams = new URLSearchParams();
+    queryParams.append('limit', limit.toString());
+    if (petId) queryParams.append('petId', petId.toString());
     
-    const response = await fetch(`${API_URL}/api/v1/groups/popular?limit=${limit}`, {
+    const response = await fetch(`${API_URL}/api/v1/groups/popular?${queryParams}`, {
       headers: {
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
@@ -319,13 +329,14 @@ export const getPopularGroups = async (limit = 10) => {
 export const updateMemberRole = async (
   groupId: number,
   memberId: number,
-  role: 'ADMIN' | 'MODERATOR' | 'MEMBER'
+  role: 'ADMIN' | 'MODERATOR' | 'MEMBER',
+  adminPetId: number
 ) => {
   try {
     const token = getToken();
     
     const response = await fetch(
-      `${API_URL}/api/v1/groups/${groupId}/members/${memberId}/role`,
+      `${API_URL}/api/v1/groups/${groupId}/members/${memberId}/role?adminPetId=${adminPetId}`,
       {
         method: 'PUT',
         headers: {
@@ -347,12 +358,12 @@ export const updateMemberRole = async (
 /**
  * Remove member from group
  */
-export const removeMember = async (groupId: number, userId: number) => {
+export const removeMember = async (groupId: number, petId: number, adminPetId: number) => {
   try {
     const token = getToken();
     
     const response = await fetch(
-      `${API_URL}/api/v1/groups/${groupId}/members/${userId}`,
+      `${API_URL}/api/v1/groups/${groupId}/members/${petId}?adminPetId=${adminPetId}`,
       {
         method: 'DELETE',
         headers: {
@@ -372,12 +383,12 @@ export const removeMember = async (groupId: number, userId: number) => {
 /**
  * Get pending join requests for a group (admin only)
  */
-export const getPendingMembers = async (groupId: number) => {
+export const getPendingMembers = async (groupId: number, adminPetId: number) => {
   try {
     const token = getToken();
     
     const response = await fetch(
-      `${API_URL}/api/v1/groups/${groupId}/pending-members`,
+      `${API_URL}/api/v1/groups/${groupId}/pending-members?petId=${adminPetId}`,
       {
         headers: {
           ...(token && { 'Authorization': `Bearer ${token}` }),
@@ -396,12 +407,12 @@ export const getPendingMembers = async (groupId: number) => {
 /**
  * Approve a pending member request (admin only)
  */
-export const approveMember = async (groupId: number, userId: number) => {
+export const approveMember = async (groupId: number, petId: number, adminPetId: number) => {
   try {
     const token = getToken();
     
     const response = await fetch(
-      `${API_URL}/api/v1/groups/${groupId}/members/${userId}/approve`,
+      `${API_URL}/api/v1/groups/${groupId}/members/${petId}/approve?adminPetId=${adminPetId}`,
       {
         method: 'POST',
         headers: {
@@ -421,12 +432,12 @@ export const approveMember = async (groupId: number, userId: number) => {
 /**
  * Reject a pending member request (admin only)
  */
-export const rejectMember = async (groupId: number, userId: number) => {
+export const rejectMember = async (groupId: number, petId: number, adminPetId: number) => {
   try {
     const token = getToken();
     
     const response = await fetch(
-      `${API_URL}/api/v1/groups/${groupId}/members/${userId}/reject`,
+      `${API_URL}/api/v1/groups/${groupId}/members/${petId}/reject?adminPetId=${adminPetId}`,
       {
         method: 'POST',
         headers: {
@@ -439,6 +450,30 @@ export const rejectMember = async (groupId: number, userId: number) => {
     return data;
   } catch (error) {
     console.error('Error rejecting member:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get posts in a group (members only)
+ */
+export const getGroupPosts = async (groupId: number, page = 0, size = 10) => {
+  try {
+    const token = getToken();
+    
+    const response = await fetch(
+      `${API_URL}/api/v1/groups/${groupId}/posts?page=${page}&size=${size}`,
+      {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+      }
+    );
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching group posts:', error);
     throw error;
   }
 };
@@ -459,5 +494,5 @@ export default {
   getPendingMembers,
   approveMember,
   rejectMember,
+  getGroupPosts,
 };
-

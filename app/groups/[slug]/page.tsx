@@ -1,32 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import {
-  Users,
-  MapPin,
-  Calendar,
-  Settings,
-  UserPlus,
-  UserMinus,
-  Lock,
-  Globe,
-  Crown,
-  Star,
-  MessageSquare,
-  ImageIcon,
-  PenSquare,
-  ChevronRight,
-  Check,
-  X,
-  Loader2,
-  Bell,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Link from 'next/link';
 import {
   getGroupBySlug,
   joinGroup,
@@ -35,18 +11,17 @@ import {
   getPendingMembers,
   approveMember,
   rejectMember,
+  removeMember,
+  getGroupPosts,
   Group,
   GroupMember,
 } from '@/services/groupService';
 import authService from '@/services/authService';
-
-const CATEGORY_LABELS: Record<string, { label: string; emoji: string; color: string }> = {
-  BREED: { label: 'Giống', emoji: '🐕', color: 'from-amber-400 to-orange-400' },
-  LOCATION: { label: 'Khu vực', emoji: '📍', color: 'from-blue-400 to-cyan-400' },
-  INTEREST: { label: 'Sở thích', emoji: '❤️', color: 'from-pink-400 to-rose-400' },
-  ACTIVITY: { label: 'Hoạt động', emoji: '🎯', color: 'from-green-400 to-emerald-400' },
-  OTHER: { label: 'Khác', emoji: '✨', color: 'from-purple-400 to-indigo-400' },
-};
+import petService, { Pet } from '@/services/petService';
+import PostCard from '@/components/dashboard/post-card';
+import CreatePostModal from '@/components/dashboard/create-post-modal';
+import PetSelectionModal from '@/components/groups/pet-selection-modal';
+import { toast } from 'react-hot-toast';
 
 export default function GroupDetailPage() {
   const params = useParams();
@@ -56,36 +31,64 @@ export default function GroupDetailPage() {
   const [group, setGroup] = useState<Group | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [pendingMembers, setPendingMembers] = useState<GroupMember[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [loadingPending, setLoadingPending] = useState(false);
+  const [loadingPosts, setLoadingPosts] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [approving, setApproving] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState('discussion');
+  const [kickingMember, setKickingMember] = useState<number | null>(null);
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const currentUser = authService.getCurrentUser();
-
-  // Load group first, then load members using group.id
+  
+  // Pet Selection State
+  const [myPets, setMyPets] = useState<Pet[]>([]);
+  const [isPetSelectorOpen, setIsPetSelectorOpen] = useState(false);
+  const [selectorMode, setSelectorMode] = useState<'JOIN' | 'LEAVE'>('JOIN');
+  
+  // Get current pet from localStorage
+  const [currentPet, setCurrentPet] = useState<Pet | null>(null);
   useEffect(() => {
-    if (slug) {
+    const storedPet = localStorage.getItem('current-pet');
+    if (storedPet) {
+      setCurrentPet(JSON.parse(storedPet));
+    }
+    loadMyPets();
+  }, []);
+
+  const loadMyPets = async () => {
+    try {
+      const response = await petService.getMyPets();
+      if (response.success && Array.isArray(response.data)) {
+        setMyPets(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading my pets:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (slug && currentPet) {
       loadGroup();
     }
-  }, [slug]);
+  }, [slug, currentPet?.id]);
 
-  // Load members AFTER group is loaded (fixes the bug!)
   useEffect(() => {
     if (group?.id) {
       loadMembers(group.id);
-      
-      // Load pending members if user is admin/moderator
+      if (group.isMember && group.memberRole !== 'PENDING') {
+        loadPosts(group.id);
+      }
       if (group.memberRole === 'ADMIN' || group.memberRole === 'MODERATOR') {
         loadPendingMembers(group.id);
       }
     }
-  }, [group?.id, group?.memberRole]);
+  }, [group?.id, group?.memberRole, group?.isMember]);
 
   const loadGroup = async () => {
     try {
       setLoading(true);
-      const response = await getGroupBySlug(slug);
+      const response = await getGroupBySlug(slug, currentPet?.id);
       if (response.success) {
         setGroup(response.data);
       }
@@ -96,7 +99,6 @@ export default function GroupDetailPage() {
     }
   };
 
-  // Fixed: use groupId parameter instead of parseInt(slug)
   const loadMembers = async (groupId: number) => {
     try {
       setLoadingMembers(true);
@@ -111,90 +113,151 @@ export default function GroupDetailPage() {
     }
   };
 
-  // Load pending members for admins/moderators
-  const loadPendingMembers = async (groupId: number) => {
+  const loadPosts = async (groupId: number) => {
     try {
-      setLoadingPending(true);
-      const response = await getPendingMembers(groupId);
+      setLoadingPosts(true);
+      const response = await getGroupPosts(groupId, 0, 20);
+      if (response.success) {
+        setPosts(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading posts:', error);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const loadPendingMembers = async (groupId: number) => {
+    if (!currentPet) return;
+    try {
+      const response = await getPendingMembers(groupId, currentPet.id);
       if (response.success) {
         setPendingMembers(response.data || []);
       }
     } catch (error) {
-      console.error('Error loading pending members:', error);
-    } finally {
-      setLoadingPending(false);
+      console.error('Error loading pending:', error);
     }
   };
 
-  // Handle approve member
-  const handleApproveMember = async (userId: number) => {
-    if (!group) return;
-    try {
-      setApproving(userId);
-      const response = await approveMember(group.id, userId);
-      if (response.success) {
-        // Remove from pending list
-        setPendingMembers(prev => prev.filter(m => m.userId !== userId));
-        // Reload members
-        loadMembers(group.id);
-        // Reload group to update member count
-        loadGroup();
-      }
-    } catch (error) {
-      console.error('Error approving member:', error);
-    } finally {
-      setApproving(null);
-    }
-  };
-
-  // Handle reject member
-  const handleRejectMember = async (userId: number) => {
-    if (!group) return;
-    try {
-      setApproving(userId);
-      const response = await rejectMember(group.id, userId);
-      if (response.success) {
-        // Remove from pending list
-        setPendingMembers(prev => prev.filter(m => m.userId !== userId));
-      }
-    } catch (error) {
-      console.error('Error rejecting member:', error);
-    } finally {
-      setApproving(null);
-    }
-  };
-
-  const handleJoinLeave = async () => {
+  const handleJoinClick = () => {
     if (!currentUser) {
       router.push('/sign-in');
       return;
     }
+    setSelectorMode('JOIN');
+    setIsPetSelectorOpen(true);
+  };
 
-    if (!group) return;
-
+  const handleLeaveGroup = async () => {
+    if (!currentUser) {
+      router.push('/sign-in');
+      return;
+    }
+    if (!group || !currentPet) {
+      toast.error('Vui lòng chọn thú cưng');
+      return;
+    }
+    
     try {
       setJoining(true);
-      if (group.isMember) {
-        await leaveGroup(group.id);
-      } else {
-        await joinGroup(group.id);
-      }
-      // Reload group to update member status
+      await leaveGroup(group.id, currentPet.id);
       await loadGroup();
+      await loadMembers(group.id);
+      toast.success(`${currentPet.name} đã rời nhóm`);
     } catch (error) {
-      console.error('Error joining/leaving group:', error);
-      alert('Có lỗi xảy ra. Vui lòng thử lại.');
+      console.error('Error leaving group:', error);
+      toast.error('Có lỗi xảy ra, vui lòng thử lại.');
     } finally {
       setJoining(false);
     }
   };
 
+  const handlePetSelectionconfirm = async (petId: number) => {
+    if (!group) return;
+    
+    try {
+      setJoining(true);
+      setIsPetSelectorOpen(false);
+
+      const response: any = await joinGroup(group.id, petId);
+      if (response.error) {
+         toast.error(response.message || "Không thể tham gia nhóm");
+      } else {
+        toast.success('Đã tham gia nhóm thành công!');
+      }
+      await loadGroup();
+      await loadMembers(group.id);
+    } catch (error) {
+      console.error('Error joining group:', error);
+      toast.error('Có lỗi xảy ra, vui lòng thử lại.');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  // Replaces handleJoinLeave
+  const handleJoinLeaveAction = () => {
+    if (group?.isMember) {
+      handleLeaveGroup();
+    } else {
+      handleJoinClick();
+    }
+  };
+
+  const handleApproveMember = async (petId: number) => {
+    if (!group || !currentPet) return;
+    try {
+      await approveMember(group.id, petId, currentPet.id);
+      setPendingMembers(prev => prev.filter(m => m.petId !== petId));
+      loadMembers(group.id);
+      loadGroup();
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleRejectMember = async (petId: number) => {
+    if (!group || !currentPet) return;
+    try {
+      await rejectMember(group.id, petId, currentPet.id);
+      setPendingMembers(prev => prev.filter(m => m.petId !== petId));
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const handleKickMember = async (petId: number) => {
+    if (!group || !currentPet) return;
+    try {
+      setKickingMember(petId);
+      await removeMember(group.id, petId, currentPet.id);
+      setMembers(prev => prev.filter(m => m.petId !== petId));
+      loadGroup();
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setKickingMember(null);
+    }
+  };
+
+  const handleCreatePost = () => {
+    if (group && currentPet) {
+      setIsCreatePostOpen(true);
+    }
+  };
+
+  const handlePostCreated = () => {
+    if (group) {
+      loadPosts(group.id);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#fcf8f8] flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-orange-400 border-r-transparent" />
-          <p className="mt-4 text-gray-600 font-medium">Đang tải nhóm...</p>
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-[#ff7366] border-r-transparent" />
+          <p className="mt-4 text-[#a14d45] font-medium">Đang tải nhóm...</p>
         </div>
       </div>
     );
@@ -202,479 +265,499 @@ export default function GroupDetailPage() {
 
   if (!group) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 flex items-center justify-center p-4">
-        <Card className="p-8 text-center max-w-md border-0 shadow-xl">
+      <div className="min-h-screen bg-[#fcf8f8] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-card p-8 text-center max-w-md border border-[#f4e7e6]">
           <div className="text-6xl mb-4">😿</div>
-          <h2 className="text-xl font-bold mb-2">Không tìm thấy hội nhóm</h2>
-          <p className="text-gray-500 mb-6">Nhóm này có thể đã bị xóa hoặc không tồn tại</p>
-          <Button 
+          <h2 className="text-xl font-bold mb-2 text-[#1d0e0c]">Không tìm thấy nhóm</h2>
+          <p className="text-[#a14d45] mb-6">Nhóm này có thể đã bị xóa hoặc không tồn tại</p>
+          <button 
             onClick={() => router.push('/groups')}
-            className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600"
+            className="bg-[#ff7366] hover:bg-[#e6685c] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors"
           >
-            Về trang hội nhóm
-          </Button>
-        </Card>
+            Về trang cộng đồng
+          </button>
+        </div>
       </div>
     );
   }
 
-  const categoryInfo = CATEGORY_LABELS[group.category] || CATEGORY_LABELS.OTHER;
-  
-  // Check if user can view detailed content
-  // For private groups, only members (not pending) can see members/posts tabs
-  const canViewContent = !group.isPrivate || 
-    (group.isMember && group.memberRole !== 'PENDING');
+  const canViewContent = !group.isPrivate || (group.isMember && group.memberRole !== 'PENDING');
+  const isAdmin = group.memberRole === 'ADMIN' || group.memberRole === 'MODERATOR';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 via-white to-pink-50/50">
-      {/* Cover Image with Gradient Overlay */}
-      <div className="relative h-72 md:h-80">
-        {group.coverImageUrl ? (
-          <img
-            src={group.coverImageUrl}
-            alt={group.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className={`w-full h-full bg-gradient-to-r ${categoryInfo.color}`} />
-        )}
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        
-        {/* Decorative Elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <span className="absolute top-6 right-6 text-5xl opacity-20">🐾</span>
-          <span className="absolute bottom-20 left-6 text-4xl opacity-20">🐕</span>
+    <div className="bg-[#fcf8f8] min-h-screen">
+      {/* Breadcrumb */}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center gap-2 text-sm text-[#a14d45]">
+          <Link href="/" className="hover:text-[#ff7366] flex items-center gap-1">
+            <span className="material-symbols-outlined text-[18px]">home</span>
+          </Link>
+          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          <Link href="/groups" className="hover:text-[#ff7366]">Cộng đồng</Link>
+          <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+          <span className="font-semibold text-[#1d0e0c]">{group.name}</span>
         </div>
       </div>
 
-      <div className="container mx-auto px-4">
-        <div className="max-w-5xl mx-auto">
-          {/* Group Header - Overlapping Cover */}
-          <div className="relative -mt-24 mb-6">
-            <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-sm overflow-hidden">
-              <CardContent className="p-6 md:p-8">
-                <div className="flex flex-col md:flex-row items-start gap-6">
-                  {/* Avatar with Ring */}
-                  <div className="relative">
-                    <div className={`p-1 rounded-2xl bg-gradient-to-br ${categoryInfo.color}`}>
-                      <Avatar className="h-28 w-28 md:h-36 md:w-36 rounded-xl border-4 border-white">
-                        <AvatarImage src={group.avatarUrl} alt={group.name} className="rounded-xl" />
-                        <AvatarFallback className="text-4xl bg-gradient-to-br from-orange-100 to-pink-100 rounded-xl">
-                          {categoryInfo.emoji}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    {/* Online indicator */}
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center">
-                      <span className="text-white text-xs">✓</span>
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                      <div className="space-y-3">
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                          {group.name}
-                        </h1>
-                        
-                        {/* Badges */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className={`bg-gradient-to-r ${categoryInfo.color} text-white border-0 px-3 py-1`}>
-                            {categoryInfo.emoji} {categoryInfo.label}
-                          </Badge>
-                          {group.isPrivate ? (
-                            <Badge variant="outline" className="gap-1 bg-gray-50">
-                              <Lock className="h-3 w-3" />
-                              Riêng tư
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="gap-1 bg-green-50 text-green-700 border-green-200">
-                              <Globe className="h-3 w-3" />
-                              Công khai
-                            </Badge>
-                          )}
-                          {group.isMember && group.memberRole && (
-                            <Badge className={`gap-1 ${
-                              group.memberRole === 'ADMIN' 
-                                ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-white' 
-                                : group.memberRole === 'MODERATOR'
-                                ? 'bg-gradient-to-r from-blue-400 to-indigo-400 text-white'
-                                : 'bg-gray-100 text-gray-700'
-                            }`}>
-                              {group.memberRole === 'ADMIN' && <><Crown className="h-3 w-3" /> Admin</>}
-                              {group.memberRole === 'MODERATOR' && <><Star className="h-3 w-3" /> Moderator</>}
-                              {group.memberRole === 'MEMBER' && 'Thành viên'}
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {/* Stats */}
-                        <div className="flex items-center gap-5 text-sm text-gray-600 flex-wrap">
-                          <div className="flex items-center gap-1.5 font-medium">
-                            <div className="p-1.5 rounded-lg bg-orange-100">
-                              <Users className="h-4 w-4 text-orange-600" />
-                            </div>
-                            <span><strong className="text-gray-900">{group.memberCount}</strong> thành viên</span>
-                          </div>
-                          {group.city && (
-                            <div className="flex items-center gap-1.5">
-                              <div className="p-1.5 rounded-lg bg-blue-100">
-                                <MapPin className="h-4 w-4 text-blue-600" />
-                              </div>
-                              <span>{group.city}</span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1.5">
-                            <div className="p-1.5 rounded-lg bg-green-100">
-                              <Calendar className="h-4 w-4 text-green-600" />
-                            </div>
-                            <span>Tạo {new Date(group.createdAt).toLocaleDateString('vi-VN')}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-3 flex-wrap">
-                        {currentUser && (
-                          <>
-                            {/* Handle three states: member, pending, or non-member */}
-                            {group.memberRole === 'PENDING' ? (
-                              <Button
-                                disabled
-                                className="gap-2 rounded-xl px-6 bg-amber-100 text-amber-700 border-amber-200"
-                                variant="outline"
-                              >
-                                <span className="animate-pulse">⏳</span>
-                                Đang chờ duyệt
-                              </Button>
-                            ) : (
-                              <Button
-                                onClick={handleJoinLeave}
-                                disabled={joining}
-                                className={`gap-2 rounded-xl px-6 shadow-lg transition-all ${
-                                  group.isMember 
-                                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-none' 
-                                    : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white shadow-orange-200/50'
-                                }`}
-                                variant={group.isMember ? 'outline' : 'default'}
-                              >
-                                {group.isMember ? (
-                                  <>
-                                    <UserMinus className="h-4 w-4" />
-                                    Rời nhóm
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserPlus className="h-4 w-4" />
-                                    {group.isPrivate ? 'Xin tham gia' : 'Tham gia'}
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                            {(group.memberRole === 'ADMIN' || group.memberRole === 'MODERATOR') && (
-                              <Button variant="outline" size="icon" className="rounded-xl">
-                                <Settings className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Hero Section */}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="bg-white rounded-2xl shadow-card border border-[#f4e7e6] overflow-hidden">
+          {/* Cover Image */}
+          <div 
+            className="h-[200px] sm:h-[300px] w-full bg-cover bg-center relative"
+            style={{ backgroundImage: group.coverImageUrl ? `url("${group.coverImageUrl}")` : 'linear-gradient(to right, #ff7366, #e6685c)' }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
           </div>
 
-          {/* Content Tabs - Social Media Style */}
-          <Tabs defaultValue="about" className="space-y-6">
-            <Card className="border-0 shadow-lg overflow-hidden">
-              <TabsList className="w-full justify-start rounded-none bg-white p-0 h-auto border-b">
-                <TabsTrigger 
-                  value="about" 
-                  className="flex-1 sm:flex-none gap-2 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-orange-50/50 data-[state=active]:text-orange-600 font-medium"
+          {/* Group Info */}
+          <div className="px-6 pb-6 relative">
+            <div className="flex flex-col sm:flex-row items-end sm:items-center justify-between gap-4 -mt-12 sm:-mt-16 mb-4 relative z-10">
+              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6 w-full sm:w-auto text-center sm:text-left">
+                {/* Avatar */}
+                <div 
+                  className="size-32 rounded-full border-4 border-white shadow-lg bg-cover bg-center shrink-0 bg-[#f4e7e6]"
+                  style={{ backgroundImage: group.avatarUrl ? `url("${group.avatarUrl}")` : undefined }}
                 >
-                  <MessageSquare className="h-4 w-4" />
-                  Giới thiệu
-                </TabsTrigger>
-                {canViewContent && (
-                  <>
-                    <TabsTrigger 
-                      value="members"
-                      className="flex-1 sm:flex-none gap-2 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-orange-50/50 data-[state=active]:text-orange-600 font-medium"
-                    >
-                      <Users className="h-4 w-4" />
-                      Thành viên ({group.memberCount})
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="posts"
-                      className="flex-1 sm:flex-none gap-2 py-4 px-6 rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-orange-50/50 data-[state=active]:text-orange-600 font-medium"
-                    >
-                      <ImageIcon className="h-4 w-4" />
-                      Bài viết
-                    </TabsTrigger>
-                  </>
-                )}
-              </TabsList>
-            </Card>
-
-            {/* About Tab */}
-            <TabsContent value="about" className="space-y-6 mt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                  <Card className="border-0 shadow-lg overflow-hidden">
-                    <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <span className="text-xl">📖</span>
-                        Về nhóm
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                        {group.description || 'Chưa có mô tả'}
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  {group.rules && (
-                    <Card className="border-0 shadow-lg overflow-hidden">
-                      <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <span className="text-xl">📋</span>
-                          Nội quy nhóm
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-6">
-                        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                          {group.rules}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  )}
+                  {!group.avatarUrl && <div className="w-full h-full rounded-full flex items-center justify-center text-4xl">🐾</div>}
                 </div>
-
-                {/* Sidebar */}
-                <div className="space-y-6">
-                  {/* Admins */}
-                  {group.admins && group.admins.length > 0 && (
-                    <Card className="border-0 shadow-lg overflow-hidden">
-                      <CardHeader className="bg-gradient-to-r from-yellow-50 to-amber-50 border-b py-4">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                          <Crown className="h-5 w-5 text-amber-500" />
-                          Quản trị viên
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          {group.admins.map((admin) => (
-                            <div key={admin.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-                              <Avatar className="h-10 w-10 border-2 border-amber-200">
-                                <AvatarImage src={admin.userAvatar} />
-                                <AvatarFallback className="bg-amber-100 text-amber-700">
-                                  {admin.userName.charAt(0).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{admin.userName}</p>
-                                <p className="text-xs text-amber-600">
-                                  {admin.role === 'ADMIN' ? '👑 Admin' : '⭐ Mod'}
-                                </p>
-                              </div>
-                              <ChevronRight className="h-4 w-4 text-gray-400" />
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  {/* Pending Members - Admin Panel */}
-                  {(group.memberRole === 'ADMIN' || group.memberRole === 'MODERATOR') && (
-                    <Card className="border-0 shadow-lg overflow-hidden border-l-4 border-l-orange-400">
-                      <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50 border-b py-4">
-                        <CardTitle className="flex items-center justify-between text-base">
-                          <div className="flex items-center gap-2">
-                            <Bell className="h-5 w-5 text-orange-500" />
-                            Yêu cầu tham gia
-                            {pendingMembers.length > 0 && (
-                              <Badge className="bg-orange-500 text-white text-xs px-2 py-0">
-                                {pendingMembers.length}
-                              </Badge>
-                            )}
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        {loadingPending ? (
-                          <div className="flex items-center justify-center py-6">
-                            <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
-                          </div>
-                        ) : pendingMembers.length === 0 ? (
-                          <div className="text-center py-6">
-                            <div className="text-3xl mb-2">✅</div>
-                            <p className="text-sm text-gray-500">Không có yêu cầu nào</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {pendingMembers.map((member) => (
-                              <div key={member.id} className="p-3 rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-100">
-                                <div className="flex items-center gap-3 mb-3">
-                                  <Avatar className="h-10 w-10 border-2 border-orange-200">
-                                    <AvatarImage src={member.userAvatar} />
-                                    <AvatarFallback className="bg-orange-100 text-orange-700">
-                                      {member.userName.charAt(0).toUpperCase()}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-sm truncate">{member.userName}</p>
-                                    <p className="text-xs text-gray-500">
-                                      Yêu cầu {new Date(member.joinedAt).toLocaleDateString('vi-VN')}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleApproveMember(member.userId)}
-                                    disabled={approving === member.userId}
-                                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs"
-                                  >
-                                    {approving === member.userId ? (
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      <>
-                                        <Check className="h-3 w-3 mr-1" />
-                                        Duyệt
-                                      </>
-                                    )}
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleRejectMember(member.userId)}
-                                    disabled={approving === member.userId}
-                                    className="flex-1 border-red-200 text-red-600 hover:bg-red-50 text-xs"
-                                  >
-                                    <X className="h-3 w-3 mr-1" />
-                                    Từ chối
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
+                <div className="mb-2" style={{
+                  background: "#ffffff",
+                  padding: "10px",
+                  borderRadius: "30px",
+                  marginLeft:"-10px"
+                }}
+                  >
+                  <h1 className="text-3xl font-extrabold text-[#1d0e0c]  sm:drop-shadow-md">{group.name}</h1>
+                  <div className="flex items-center justify-center sm:justify-start gap-2 text-[#1d0e0c]  font-medium text-sm mt-3">
+                    <span className="material-symbols-outlined text-[18px] filled-icon">{group.isPrivate ? 'lock' : 'public'}</span>
+                    <span>{group.isPrivate ? 'Nhóm Riêng tư' : 'Nhóm Công khai'}</span>
+                    <span>•</span>
+                    <span>{group.memberCount.toLocaleString()} Thành viên</span>
+                  </div>
                 </div>
               </div>
-            </TabsContent>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 w-full sm:w-auto justify-center">
+                {group.memberRole === 'PENDING' ? (
+                  <button disabled className="bg-amber-100 text-amber-700 font-semibold px-4 py-2 rounded-xl border border-amber-200 flex items-center gap-2">
+                    <span className="animate-pulse">⏳</span>
+                    Đang chờ duyệt
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleJoinLeaveAction}
+                    disabled={joining}
+                    className={`font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors flex items-center gap-2 ${
+                      group.isMember 
+                        ? 'bg-white hover:bg-gray-50 text-[#1d0e0c] border border-[#f4e7e6]'
+                        : 'bg-[#ff7366] hover:bg-[#e6685c] text-white shadow-lg shadow-[#ff7366]/30'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">{group.isMember ? 'group_remove' : 'group_add'}</span>
+                    {group.isMember ? 'Rời nhóm' : (group.isPrivate ? 'Xin tham gia' : 'Tham gia')}
+                  </button>
+                )}
+                
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="border-t border-[#f4e7e6] pt-2 mt-6 sm:mt-2">
+              <nav className="flex gap-6 overflow-x-auto pb-2 sm:pb-0">
+                <button
+                  onClick={() => setActiveTab('discussion')}
+                  className={`pb-3 px-1 text-sm font-medium whitespace-nowrap transition-colors ${
+                    activeTab === 'discussion' 
+                      ? 'text-[#ff7366] border-b-2 border-[#ff7366] font-bold' 
+                      : 'text-[#a14d45] hover:text-[#1d0e0c]'
+                  }`}
+                >
+                  Thảo luận
+                </button>
+                <button
+                  onClick={() => setActiveTab('about')}
+                  className={`pb-3 px-1 text-sm font-medium whitespace-nowrap transition-colors ${
+                    activeTab === 'about' 
+                      ? 'text-[#ff7366] border-b-2 border-[#ff7366] font-bold' 
+                      : 'text-[#a14d45] hover:text-[#1d0e0c]'
+                  }`}
+                >
+                  Giới thiệu
+                </button>
+                {canViewContent && (
+                  <button
+                    onClick={() => setActiveTab('members')}
+                    className={`pb-3 px-1 text-sm font-medium whitespace-nowrap transition-colors ${
+                      activeTab === 'members' 
+                        ? 'text-[#ff7366] border-b-2 border-[#ff7366] font-bold' 
+                        : 'text-[#a14d45] hover:text-[#1d0e0c]'
+                    }`}
+                  >
+                    Thành viên
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    onClick={() => setActiveTab('manage')}
+                    className={`pb-3 px-1 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                      activeTab === 'manage' 
+                        ? 'text-[#ff7366] border-b-2 border-[#ff7366] font-bold' 
+                        : 'text-[#a14d45] hover:text-[#1d0e0c]'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">admin_panel_settings</span>
+                    Quản lý
+                    {pendingMembers.length > 0 && (
+                      <span className="bg-[#ff7366] text-white text-xs px-1.5 py-0.5 rounded-full">{pendingMembers.length}</span>
+                    )}
+                  </button>
+                )}
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Main Content */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Discussion Tab */}
+            {activeTab === 'discussion' && (
+              <>
+                {/* Create Post Box */}
+                {group.isMember && group.memberRole !== 'PENDING' && (
+                  <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-card border border-[#f4e7e6]">
+                    <div className="flex gap-4 mb-4">
+                      <div 
+                        className="size-10 rounded-full bg-[#f4e7e6] shrink-0 bg-cover bg-center"
+                        style={{ backgroundImage: currentPet?.profilePhoto ? `url("${currentPet.profilePhoto}")` : undefined }}
+                      ></div>
+                      <input 
+                        onClick={handleCreatePost}
+                        className="w-full bg-[#fcf8f8] border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-[#ff7366]/20 hover:bg-[#f4e7e6] transition-colors cursor-pointer placeholder-[#a14d45]"
+                        placeholder={`${currentPet?.name || 'Bạn'} ơi, hôm nay có gì mới?`}
+                        readOnly
+                      />
+                    </div>
+                    <div className="flex items-center justify-between border-t border-[#f4e7e6] pt-3">
+                      <div className="flex gap-2">
+                        <button onClick={handleCreatePost} className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#fcf8f8] rounded-lg text-[#a14d45] text-sm font-medium transition-colors">
+                          <span className="material-symbols-outlined text-green-500 text-[20px]">image</span>
+                          Ảnh/Video
+                        </button>
+                        <button className="flex items-center gap-2 px-3 py-1.5 hover:bg-[#fcf8f8] rounded-lg text-[#a14d45] text-sm font-medium transition-colors">
+                          <span className="material-symbols-outlined text-yellow-500 text-[20px]">sentiment_satisfied</span>
+                          Cảm xúc
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Posts */}
+                {!canViewContent ? (
+                  <div className="bg-white rounded-2xl p-12 shadow-card border border-[#f4e7e6] text-center">
+                    <div className="text-6xl mb-4">🔒</div>
+                    <h3 className="text-lg font-semibold text-[#1d0e0c] mb-2">Nội dung riêng tư</h3>
+                    <p className="text-[#a14d45] mb-6">Tham gia nhóm để xem bài viết</p>
+                    <button 
+                      onClick={handleJoinLeaveAction}
+                      disabled={joining}
+                      className="bg-[#ff7366] hover:bg-[#e6685c] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors"
+                    >
+                      {group.isPrivate ? 'Xin tham gia' : 'Tham gia ngay'}
+                    </button>
+                  </div>
+                ) : loadingPosts ? (
+                  <div className="flex justify-center py-12">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#ff7366] border-r-transparent" />
+                  </div>
+                ) : posts.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-12 shadow-card border border-[#f4e7e6] text-center">
+                    <div className="text-6xl mb-4">📸</div>
+                    <h3 className="text-lg font-semibold text-[#1d0e0c] mb-2">Chưa có bài viết</h3>
+                    <p className="text-[#a14d45] mb-6">Hãy là người đầu tiên chia sẻ trong nhóm này!</p>
+                    {group.isMember && (
+                      <button 
+                        onClick={handleCreatePost}
+                        className="bg-[#ff7366] hover:bg-[#e6685c] text-white font-semibold px-6 py-2.5 rounded-xl transition-colors flex items-center gap-2 mx-auto"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">edit</span>
+                        Đăng bài đầu tiên
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {posts.map((post: any) => (
+                      <PostCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* About Tab */}
+            {activeTab === 'about' && (
+              <div className="bg-white rounded-2xl p-6 shadow-card border border-[#f4e7e6]">
+                <h3 className="font-bold text-lg text-[#1d0e0c] mb-4">Giới thiệu</h3>
+                <p className="text-[#1d0e0c]/80 text-sm mb-6 whitespace-pre-wrap">
+                  {group.description || 'Chưa có mô tả'}
+                </p>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-[#a14d45] text-[20px] mt-0.5">{group.isPrivate ? 'lock' : 'public'}</span>
+                    <div>
+                      <p className="text-sm font-bold text-[#1d0e0c]">{group.isPrivate ? 'Riêng tư' : 'Công khai'}</p>
+                      <p className="text-xs text-[#a14d45]">
+                        {group.isPrivate 
+                          ? 'Chỉ thành viên mới có thể xem nội dung nhóm.'
+                          : 'Ai cũng có thể nhìn thấy mọi người trong nhóm và những gì họ đăng.'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[#a14d45] text-[20px]">history</span>
+                    <div>
+                      <p className="text-sm font-bold text-[#1d0e0c]">
+                        Đã tạo {new Date(group.createdAt).toLocaleDateString('vi-VN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Members Tab */}
-            <TabsContent value="members" className="mt-0">
-              <Card className="border-0 shadow-lg overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <span className="text-xl">👥</span>
-                      Thành viên ({group.memberCount})
-                    </CardTitle>
+            {activeTab === 'members' && canViewContent && (
+              <div className="bg-white rounded-2xl p-6 shadow-card border border-[#f4e7e6]">
+                <h3 className="font-bold text-lg text-[#1d0e0c] mb-4">Thành viên ({group.memberCount})</h3>
+                {loadingMembers ? (
+                  <div className="flex justify-center py-12">
+                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#ff7366] border-r-transparent" />
                   </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {loadingMembers ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-orange-400 border-r-transparent" />
-                    </div>
-                  ) : members.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="text-5xl mb-4">😿</div>
-                      <p className="text-gray-500">Chưa có thành viên nào</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {members.map((member) => (
-                        <div
-                          key={member.id}
-                          className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-gray-50 to-white hover:from-orange-50 hover:to-pink-50 transition-all cursor-pointer border border-gray-100 hover:border-orange-200 hover:shadow-md"
-                        >
-                          <Avatar className={`h-14 w-14 border-2 ${
-                            member.role === 'ADMIN' ? 'border-amber-400' : 
-                            member.role === 'MODERATOR' ? 'border-blue-400' : 'border-gray-200'
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {members.map((member) => (
+                      <div key={member.id} className="flex items-center gap-4 p-4 rounded-xl bg-[#fcf8f8] hover:bg-[#f4e7e6] transition-colors">
+                        <div 
+                          className="size-12 rounded-full bg-cover bg-center bg-[#eacfcd]"
+                          style={{ backgroundImage: member.petAvatar ? `url("${member.petAvatar}")` : undefined }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#1d0e0c] truncate">{member.petName}</p>
+                          <p className={`text-xs font-medium ${
+                            member.role === 'ADMIN' ? 'text-amber-600' : 
+                            member.role === 'MODERATOR' ? 'text-blue-600' : 'text-[#a14d45]'
                           }`}>
-                            <AvatarImage src={member.userAvatar} />
-                            <AvatarFallback className="bg-gradient-to-br from-orange-100 to-pink-100 text-orange-600 font-bold">
-                              {member.userName.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                            {member.role === 'ADMIN' && '👑 Admin'}
+                            {member.role === 'MODERATOR' && '⭐ Moderator'}
+                            {member.role === 'MEMBER' && 'Thành viên'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Admin Manage Tab */}
+            {activeTab === 'manage' && isAdmin && (
+              <div className="space-y-6">
+                {/* Pending Requests */}
+                {pendingMembers.length > 0 && (
+                  <div className="bg-white rounded-2xl p-6 shadow-card border border-[#f4e7e6]">
+                    <h3 className="font-bold text-lg text-[#1d0e0c] mb-4 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#ff7366]">pending</span>
+                      Yêu cầu tham gia ({pendingMembers.length})
+                    </h3>
+                    <div className="space-y-4">
+                      {pendingMembers.map((member) => (
+                        <div key={member.id} className="flex items-center gap-4 p-4 rounded-xl bg-amber-50 border border-amber-100">
+                          <div 
+                            className="size-12 rounded-full bg-cover bg-center bg-amber-200"
+                            style={{ backgroundImage: member.petAvatar ? `url("${member.petAvatar}")` : undefined }}
+                          />
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 truncate">{member.userName}</p>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className={`font-medium ${
-                                member.role === 'ADMIN' ? 'text-amber-600' : 
-                                member.role === 'MODERATOR' ? 'text-blue-600' : 'text-gray-500'
-                              }`}>
-                                {member.role === 'ADMIN' && '👑 Admin'}
-                                {member.role === 'MODERATOR' && '⭐ Moderator'}
-                                {member.role === 'MEMBER' && 'Thành viên'}
-                              </span>
-                              <span className="text-gray-300">•</span>
-                              <span className="text-gray-400">
-                                {new Date(member.joinedAt).toLocaleDateString('vi-VN')}
-                              </span>
-                            </div>
+                            <p className="font-semibold text-[#1d0e0c]">{member.petName}</p>
+                            <p className="text-xs text-[#a14d45]">
+                              Yêu cầu {new Date(member.joinedAt).toLocaleDateString('vi-VN')}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => handleApproveMember(member.petId)}
+                              className="bg-green-500 hover:bg-green-600 text-white text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">check</span>
+                              Duyệt
+                            </button>
+                            <button 
+                              onClick={() => handleRejectMember(member.petId)}
+                              className="bg-white hover:bg-red-50 text-red-600 border border-red-200 text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">close</span>
+                              Từ chối
+                            </button>
                           </div>
                         </div>
                       ))}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Posts Tab */}
-            <TabsContent value="posts" className="mt-0">
-              <Card className="border-0 shadow-lg overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-orange-50 to-pink-50 border-b">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <span className="text-xl">📝</span>
-                      Bài viết trong nhóm
-                    </CardTitle>
-                    {group.isMember && (
-                      <Button className="gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600">
-                        <PenSquare className="h-4 w-4" />
-                        Viết bài
-                      </Button>
-                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="p-12">
-                  <div className="text-center">
-                    <div className="text-6xl mb-4">📸</div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Chưa có bài viết</h3>
-                    <p className="text-gray-500 mb-6">
-                      Hãy là người đầu tiên chia sẻ trong nhóm này!
-                    </p>
-                    {group.isMember && (
-                      <Button className="gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600">
-                        <PenSquare className="h-4 w-4" />
-                        Đăng bài đầu tiên
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                )}
 
-          {/* Bottom spacing */}
-          <div className="h-12" />
+                {/* Member Management */}
+                <div className="bg-white rounded-2xl p-6 shadow-card border border-[#f4e7e6]">
+                  <h3 className="font-bold text-lg text-[#1d0e0c] mb-4 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#ff7366]">manage_accounts</span>
+                    Quản lý thành viên
+                  </h3>
+                  <div className="space-y-3">
+                    {members.filter(m => m.role !== 'ADMIN').map((member) => (
+                      <div key={member.id} className="flex items-center gap-4 p-4 rounded-xl bg-[#fcf8f8] hover:bg-[#f4e7e6] transition-colors">
+                        <div 
+                          className="size-12 rounded-full bg-cover bg-center bg-[#eacfcd]"
+                          style={{ backgroundImage: member.petAvatar ? `url("${member.petAvatar}")` : undefined }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[#1d0e0c] truncate">{member.petName}</p>
+                          <p className={`text-xs font-medium ${
+                            member.role === 'MODERATOR' ? 'text-blue-600' : 'text-[#a14d45]'
+                          }`}>
+                            {member.role === 'MODERATOR' && '⭐ Moderator'}
+                            {member.role === 'MEMBER' && 'Thành viên'}
+                          </p>
+                        </div>
+                        <button 
+                          onClick={() => handleKickMember(member.petId)}
+                          disabled={kickingMember === member.petId}
+                          className="bg-white hover:bg-red-50 text-red-600 border border-red-200 text-sm font-medium px-3 py-1.5 rounded-lg flex items-center gap-1"
+                        >
+                          {kickingMember === member.petId ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-600 border-r-transparent" />
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined text-[16px]">person_remove</span>
+                              Xóa
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-4 relative">
+            <div className="sticky top-24 space-y-6">
+              {/* About Card */}
+              <div className="bg-white rounded-2xl p-6 shadow-card border border-[#f4e7e6]">
+                <h3 className="font-bold text-lg text-[#1d0e0c] mb-4">Giới thiệu</h3>
+                <p className="text-[#1d0e0c]/80 text-sm mb-4 line-clamp-3">
+                  {group.description || 'Cộng đồng yêu thú cưng'}
+                </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[#a14d45] text-[20px]">{group.isPrivate ? 'lock' : 'public'}</span>
+                    <p className="text-sm text-[#1d0e0c]">{group.isPrivate ? 'Riêng tư' : 'Công khai'}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-[#a14d45] text-[20px]">group</span>
+                    <p className="text-sm text-[#1d0e0c]">{group.memberCount.toLocaleString()} thành viên</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* New Members */}
+              {canViewContent && members.length > 0 && (
+                <div className="bg-white rounded-2xl p-6 shadow-card border border-[#f4e7e6]">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-lg text-[#1d0e0c]">Thành viên mới</h3>
+                    <button onClick={() => setActiveTab('members')} className="text-xs font-bold text-[#ff7366] hover:text-[#e6685c]">Xem tất cả</button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    {members.slice(0, 8).map((member) => (
+                      <div 
+                        key={member.id}
+                        className="aspect-square rounded-xl bg-cover bg-center bg-[#f4e7e6]"
+                        style={{ backgroundImage: member.petAvatar ? `url("${member.petAvatar}")` : undefined }}
+                        title={member.petName}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-[#a14d45] px-2">
+                <a className="hover:underline" href="#">Quyền riêng tư</a>
+                <a className="hover:underline" href="#">Điều khoản</a>
+                <span>Pet-Connect © 2024</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .material-symbols-outlined {
+          font-family: 'Material Symbols Outlined';
+          font-weight: normal;
+          font-style: normal;
+          font-size: 24px;
+          line-height: 1;
+          letter-spacing: normal;
+          text-transform: none;
+          display: inline-block;
+          white-space: nowrap;
+          word-wrap: normal;
+          direction: ltr;
+          -webkit-font-feature-settings: 'liga';
+          -webkit-font-smoothing: antialiased;
+        }
+        .filled-icon {
+          font-variation-settings: 'FILL' 1;
+        }
+        .shadow-card {
+          box-shadow: 0 0 0 1px #f4e7e6, 0 8px 24px -4px rgba(29, 14, 12, 0.04);
+        }
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
+
+      {/* Create Post Modal */}
+      {currentPet && group && (
+        <CreatePostModal
+          isOpen={isCreatePostOpen}
+          onClose={() => setIsCreatePostOpen(false)}
+          pet={currentPet}
+          onPostCreated={handlePostCreated}
+          groupId={group.id}
+        />
+      )}
+
+      {/* Pet Selection Modal */}
+      <PetSelectionModal
+        isOpen={isPetSelectorOpen}
+        onClose={() => setIsPetSelectorOpen(false)}
+        pets={myPets}
+        onConfirm={handlePetSelectionconfirm}
+        title={selectorMode === 'JOIN' ? "Chọn thú cưng tham gia nhóm" : "Chọn thú cưng rời nhóm"}
+        loading={joining}
+      />
     </div>
   );
 }

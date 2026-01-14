@@ -19,7 +19,7 @@ export function MiniChatBubble({ chat, index }: MiniChatBubbleProps) {
 
   return (
     <div
-      className="fixed bottom-5 z-50 group"
+      className="fixed hidden bottom-5 z-50 group"
       style={{ right: rightPosition }}
     >
       {/* Close button on hover */}

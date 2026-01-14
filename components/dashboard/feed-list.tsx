@@ -6,7 +6,11 @@ import petPostService, { PostListItem } from '@/services/petPostService';
 import PostCard from './post-card';
 import PostDetailModal from './post-detail-modal';
 
-export default function FeedList() {
+interface FeedListProps {
+  currentPetId?: number;
+}
+
+export default function FeedList({ currentPetId }: FeedListProps) {
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,12 +19,16 @@ export default function FeedList() {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [currentPetId]);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await petPostService.getPosts({ page: 0, size: 20 });
+      const response = await petPostService.getPosts({ 
+        page: 0, 
+        size: 20,
+        petId: currentPetId 
+      });
       if (response.success && response.data.posts) {
         const content = (response.data.posts as any).content || response.data.posts;
         if (Array.isArray(content)) {
@@ -96,6 +104,7 @@ export default function FeedList() {
             post={post} 
             onClick={() => setSelectedPost(post)}
             onPostUpdate={handlePostUpdate}
+            currentPetId={currentPetId}
           />
         ))}
       </div>
@@ -110,6 +119,7 @@ export default function FeedList() {
             post={selectedPost} 
             onClose={() => setSelectedPost(null)} 
             onPostUpdate={handlePostUpdate}
+            currentPetId={currentPetId}
            />
         </div>
       )}

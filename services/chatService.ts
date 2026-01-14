@@ -34,9 +34,11 @@ export const chatAPI = {
     return uniqueChats;
   },
 
-  getSingleChat: async (chatId: string) => {
+  getSingleChat: async (chatId: string, page = 1, limit = 50) => {
     // Updated endpoint to match socket file: /api/conversation/{id}
-    const response = await apiClient.get(`/api/conversation/${chatId}`);
+    const response = await apiClient.get(`/api/conversation/${chatId}`, {
+        params: { page, limit }
+    });
 
     const data = response.data.data || response.data; // Try to unwrap if wrapped
     const rawMessages = data.messages;

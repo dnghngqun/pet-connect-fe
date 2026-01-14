@@ -6,9 +6,6 @@ const STORAGE_KEY = 'pet-connect-user';
 
 const apiClient = axios.create({
     baseURL: BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
 
 // Flag to prevent multiple refresh requests
@@ -37,6 +34,11 @@ apiClient.interceptors.request.use(
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        // Explicitly remove Content-Type for GET requests
+        if (config.method?.toLowerCase() === 'get') {
+            delete config.headers['Content-Type'];
         }
 
         return config;

@@ -139,8 +139,13 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
   const [isFavorited, setIsFavorited] = useState(false);
   const [reactionCount, setReactionCount] = useState(0);
   const [userReaction, setUserReaction] = useState<string | null>(null);
+  const [currentPet, setCurrentPet] = useState<{ id: number; name: string } | null>(null);
 
   useEffect(() => {
+    const storedPet = localStorage.getItem('current-pet');
+    if (storedPet) {
+      setCurrentPet(JSON.parse(storedPet));
+    }
     loadPost();
   }, [resolvedParams.slug]);
 
@@ -300,9 +305,13 @@ export default function PetDetailPage({ params }: PetDetailPageProps) {
       router.push('/sign-in');
       return;
     }
+    if (!currentPet) {
+      alert('Vui lòng chọn thú cưng để thích bài viết');
+      return;
+    }
     try {
       const reactionType = userReaction ? null : 'LIKE';
-      await petPostService.toggleReaction(Number(post.id), reactionType);
+      await petPostService.toggleReaction(Number(post.id), reactionType, currentPet.id);
       
       // Update UI optimistically
       if (userReaction) {

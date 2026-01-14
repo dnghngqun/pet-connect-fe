@@ -21,11 +21,9 @@ export default function AddPetModal({ isOpen, onClose, onSuccess }: AddPetModalP
   })
   const [avatar, setAvatar] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string>("")
-  const [avatarUrl, setAvatarUrl] = useState<string>("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
@@ -45,38 +43,6 @@ export default function AddPetModal({ isOpen, onClose, onSuccess }: AddPetModalP
         setAvatarPreview(reader.result as string)
       }
       reader.readAsDataURL(file)
-
-      // Upload to Cloudinary
-      setIsUploadingAvatar(true)
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('folder', 'pets')
-
-        const response = await apiClient.post('/api/files/upload', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-
-        if (response.data.success && response.data.data.url) {
-          setAvatarUrl(response.data.data.url)
-          toast({
-            title: "Thành công",
-            description: "Đã tải ảnh lên thành công",
-          })
-        }
-      } catch (error: any) {
-        toast({
-          title: "Lỗi",
-          description: "Không thể tải ảnh lên. Vui lòng thử lại.",
-          variant: "destructive",
-        })
-        setAvatar(null)
-        setAvatarPreview("")
-      } finally {
-        setIsUploadingAvatar(false)
-      }
     }
   }
 
@@ -92,28 +58,22 @@ export default function AddPetModal({ isOpen, onClose, onSuccess }: AddPetModalP
       return
     }
 
-    if (isUploadingAvatar) {
-      toast({
-        title: "Vui lòng đợi",
-        description: "Đang tải ảnh lên...",
-      })
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
-      const requestData = {
-        name: formData.name,
-        type: formData.type,
-        breed: formData.breed || formData.type,
-        gender: formData.gender,
-        age: parseInt(formData.age),
-        bio: formData.bio,
-        profilePhoto: avatarUrl || undefined,
+      const formPayload = new FormData()
+      formPayload.append('name', formData.name)
+      formPayload.append('type', formData.type)
+      formPayload.append('breed', formData.breed || formData.type)
+      formPayload.append('gender', formData.gender)
+      formPayload.append('age', formData.age)
+      formPayload.append('bio', formData.bio)
+      
+      if (avatar) {
+        formPayload.append('file', avatar)
       }
 
-      await apiClient.post("/api/v1/pets", requestData)
+      await apiClient.post("/api/v1/pets", formPayload)
 
       toast({
         title: "Thành công",
@@ -132,11 +92,12 @@ export default function AddPetModal({ isOpen, onClose, onSuccess }: AddPetModalP
       })
       setAvatar(null)
       setAvatarPreview("")
-      setAvatarUrl("")
+
 
       onSuccess()
       onClose()
     } catch (error: any) {
+      console.error(error);
       toast({
         title: "Lỗi",
         description: error.response?.data?.message || "Không thể thêm thú cưng",
@@ -185,12 +146,7 @@ export default function AddPetModal({ isOpen, onClose, onSuccess }: AddPetModalP
               <div className="flex flex-col items-center justify-center mb-8">
                 <label htmlFor="avatar-upload" className="relative group cursor-pointer">
                   <div className="size-28 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-[#f05324]/50 group-hover:border-[#f05324] transition-colors overflow-hidden relative">
-                    {isUploadingAvatar ? (
-                      <div className="flex flex-col items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#f05324] border-t-transparent"></div>
-                        <span className="text-xs text-[#f05324] mt-2">Đang tải...</span>
-                      </div>
-                    ) : avatarPreview ? (
+                    {avatarPreview ? (
                       <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
                       <>
@@ -201,22 +157,19 @@ export default function AddPetModal({ isOpen, onClose, onSuccess }: AddPetModalP
                       </>
                     )}
                   </div>
-                  {!isUploadingAvatar && (
-                    <div className="absolute bottom-1 right-1 bg-white dark:bg-gray-700 text-[#1c110d] rounded-full p-1.5 shadow-md border-2 border-white dark:border-gray-600">
-                      <span className="material-symbols-outlined text-[16px] text-[#f05324]">edit</span>
-                    </div>
-                  )}
+                  <div className="absolute bottom-1 right-1 bg-white dark:bg-gray-700 text-[#1c110d] rounded-full p-1.5 shadow-md border-2 border-white dark:border-gray-600">
+                    <span className="material-symbols-outlined text-[16px] text-[#f05324]">edit</span>
+                  </div>
                   <input
                     id="avatar-upload"
                     type="file"
                     accept="image/*"
                     className="hidden"
                     onChange={handleAvatarChange}
-                    disabled={isUploadingAvatar}
                   />
                 </label>
                 <span className="mt-3 text-sm font-medium text-[#9b5d4b] dark:text-gray-400">
-                  {isUploadingAvatar ? "Đang tải ảnh lên..." : "Tải ảnh đại diện"}
+                  Tải ảnh đại diện
                 </span>
               </div>
 

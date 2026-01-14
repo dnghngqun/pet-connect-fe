@@ -8,7 +8,7 @@ export interface Pet {
   age?: number;
   gender: string;
   bio?: string;
-  avatarUrl?: string;
+  profilePhoto?: string;
   isCastrated?: boolean;
   weight?: number;
   birthday?: string;
@@ -51,11 +51,7 @@ const petService = {
     if (data.avatar) formData.append('file', data.avatar);
 
     try {
-      const response = await apiClient.post('/api/v1/pets', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiClient.post('/api/v1/pets', formData);
       return { success: true, data: response.data };
     } catch (error: any) {
       return {

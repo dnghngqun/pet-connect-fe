@@ -7,6 +7,9 @@ import { PostListItem } from '@/services/petPostService';
 import petPostService from '@/services/petPostService';
 import { useAuth } from '@/hooks/useAuth';
 import CreatePostModal from './create-post-modal';
+import { toast } from 'react-hot-toast';
+import Link from 'next/link';
+import ConfirmModal from '@/components/common/confirm-modal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,30 +21,31 @@ interface PostCardProps {
   post: PostListItem;
   onClick?: () => void;
   onPostUpdate?: (updatedPost: PostListItem) => void;
+  currentPetId?: number;
 }
 
-export default function PostCard({ post, onClick, onPostUpdate }: PostCardProps) {
+export default function PostCard({ post, onClick, onPostUpdate, currentPetId }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(false); // Default false, will set in useEffect if data available
   const [likeCount, setLikeCount] = useState(post.reactionCount || 0);
 
   // Sync state with props
   useEffect(() => {
-    // Assuming we have a way to know if user liked from post data. 
-    // Currently post.isFavorited (from my earlier assumption) or we assume false if missing.
-    // If backend provides `userReaction` or similar, use that.
-    // For now, trusting prop updates.
     setLikeCount(post.reactionCount || 0);
-    // If post has isFavorited or similar field, sync it.
-    // Assuming post might have 'isFavorited' added by FeedList update logic? 
-    // If not, we might lose "isLiked" state if we strictly sync from a prop that misses it.
-    // But since FeedList updates it using the object we sent from onPostUpdate, it should persist our isFavorited flag.
-    if ((post as any).isFavorited !== undefined) {
-        setIsLiked((post as any).isFavorited);
+    
+    // Check userReaction first for Like status
+    if (post.userReaction) {
+        setIsLiked(post.userReaction === 'LIKE');
+    } else if ((post as any).isFavorited !== undefined) {
+        // Fallback or if isFavorited is explicitly used (though mapped to Saved in backend now)
+        // We should trust userReaction for Likes. 
+        // If userReaction is missing, assume not liked or fallback if needed.
+        // For now, if userReaction is present, use it.
     }
   }, [post]);
 
   const { user } = useAuth();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const isOwner = (() => {
     if (!user) return false;
@@ -57,15 +61,19 @@ export default function PostCard({ post, onClick, onPostUpdate }: PostCardProps)
     return false; 
   })();
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Bạn có chắc chắn muốn xóa bài viết này không?')) return;
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
     try {
         await petPostService.deletePost(post.id);
-        window.location.reload(); // Simple reload for now
+        toast.success('Đã xóa bài viết');
+        window.location.reload();
     } catch (error) {
         console.error("Failed to delete post", error);
-        alert('Có lỗi xảy ra khi xóa bài viết');
+        toast.error('Có lỗi xảy ra khi xóa bài viết');
     }
   };
 
@@ -84,14 +92,13 @@ export default function PostCard({ post, onClick, onPostUpdate }: PostCardProps)
     setLikeCount(newLikeCount);
 
     try {
-        await petPostService.reactToPost(post.id, 'LIKE');
+        await petPostService.reactToPost(post.id, 'LIKE', currentPetId);
         if (onPostUpdate) {
             onPostUpdate({
                 ...post,
                 reactionCount: newLikeCount,
-                // Assuming isFavorited maps to isLiked notion for now or we rely on reactionCount
-                // Ideally we update isFavorited if that's what tracks 'liked by me'
-                isFavorited: newIsLiked 
+                userReaction: newIsLiked ? 'LIKE' : undefined,
+                // Keep isFavorited as is, unless we want to track it separately
             });
         }
     } catch (error) {
@@ -107,18 +114,22 @@ export default function PostCard({ post, onClick, onPostUpdate }: PostCardProps)
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-full bg-cover bg-center ring-2 ring-offset-2 ring-[#f06e42]/20 ring-offset-white dark:ring-offset-[#232329]"
-            style={{
-              backgroundImage: post.postedBy.avatar
-                ? `url('${post.postedBy.avatar}')`
-                : 'url(https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100)',
-            }}
-          />
+          <Link href={post.pet?.id ? `/pets/${post.pet.id}/profile` : '#'} onClick={(e) => e.stopPropagation()}>
+            <div
+              className="w-10 h-10 rounded-full bg-cover bg-center ring-2 ring-offset-2 ring-[#f06e42]/20 ring-offset-white dark:ring-offset-[#232329] cursor-pointer hover:ring-[#f06e42]/50 transition-all"
+              style={{
+                backgroundImage: post.postedBy.avatar
+                  ? `url('${post.postedBy.avatar}')`
+                  : 'url(https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100)',
+              }}
+            />
+          </Link>
           <div>
-            <h3 className="text-[#1b110d] dark:text-white font-bold text-base leading-tight">
-              {post.postedBy.name}
-            </h3>
+            <Link href={post.pet?.id ? `/pets/${post.pet.id}/profile` : '#'} onClick={(e) => e.stopPropagation()} className="hover:underline">
+              <h3 className="text-[#1b110d] dark:text-white font-bold text-base leading-tight">
+                {post.postedBy.name}
+              </h3>
+            </Link>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: vi })}
               {post.location && ` • ${post.location}`}
@@ -367,6 +378,17 @@ export default function PostCard({ post, onClick, onPostUpdate }: PostCardProps)
           <span className="material-symbols-outlined">bookmark</span>
         </button>
       </div>
+
+      <ConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Xác nhận xóa bài viết"
+        message="Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        isDestructive={true}
+      />
     </article>
   );
 }

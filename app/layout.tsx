@@ -5,9 +5,9 @@ import Footer from "@/components/footer";
 import Header from "@/components/header";
 import PageBackground from "@/components/page-background";
 import { Toaster } from "@/components/ui/toaster";
-import { MiniChatProvider } from "@/contexts/mini-chat-context";
-import { ChatProvider } from "@/hooks/useChat";
-import { MiniChatContainer } from "@/components/mini-chat/mini-chat-container";
+import { ChatProvider } from "@/context/ChatContext";
+import MiniChat from "@/components/chat/mini-chat";
+import GlobalSseListener from "@/components/chat/global-sse-listener";
 import AuthManager from "@/components/auth-manager";
 import { Toaster as HotToaster } from "react-hot-toast";
 import PetMascot from "@/components/pet-mascot";
@@ -47,7 +47,7 @@ export default function RootLayout({
         <PageBackground />
         <CartProvider>
           <ChatProvider>
-            <MiniChatProvider>
+            
               <AuthGuard>
                 <PostModalProvider>
                   <div className="flex min-h-screen flex-col">
@@ -55,12 +55,13 @@ export default function RootLayout({
                     <ConditionalLayout>{children}</ConditionalLayout>
                   </div>
                   <PetMascot />
-                  <MiniChatContainer />
+                  <MiniChat />
+                  <GlobalSseListener />
                   <Toaster />
                   <HotToaster position="top-right" />
                 </PostModalProvider>
               </AuthGuard>
-            </MiniChatProvider>
+          
           </ChatProvider>
         </CartProvider>
       </body>

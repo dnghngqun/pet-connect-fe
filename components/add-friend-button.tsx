@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { UserPlus, UserMinus, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { sendFriendRequest, unfriend } from '@/services/friendshipService';
+import { toast } from 'react-hot-toast';
+import ConfirmModal from '@/components/common/confirm-modal';
 
 interface AddFriendButtonProps {
   userId: number;
@@ -21,6 +23,7 @@ export default function AddFriendButton({
   const [loading, setLoading] = useState(false);
   const [localIsFriend, setLocalIsFriend] = useState(isFriend);
   const [localIsPending, setLocalIsPending] = useState(isPending);
+  const [isUnfriendModalOpen, setIsUnfriendModalOpen] = useState(false);
 
   const handleAddFriend = async () => {
     try {
@@ -30,24 +33,27 @@ export default function AddFriendButton({
       onUpdate?.();
     } catch (error) {
       console.error('Error sending friend request:', error);
-      alert('Có lỗi xảy ra');
+      toast.error('Có lỗi xảy ra khi gửi lời mời kết bạn');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUnfriend = async () => {
-    if (!confirm('Bạn có chắc muốn hủy kết bạn?')) return;
-    
+  const handleUnfriend = () => {
+    setIsUnfriendModalOpen(true);
+  };
+
+  const confirmUnfriend = async () => {
     try {
       setLoading(true);
       await unfriend(userId);
       setLocalIsFriend(false);
       setLocalIsPending(false);
       onUpdate?.();
+      toast.success('Đã hủy kết bạn');
     } catch (error) {
       console.error('Error unfriending:', error);
-      alert('Có lỗi xảy ra');
+      toast.error('Có lỗi xảy ra');
     } finally {
       setLoading(false);
     }
@@ -78,14 +84,26 @@ export default function AddFriendButton({
   }
 
   return (
-    <Button
-      size="sm"
-      onClick={handleAddFriend}
-      disabled={loading}
-      className="gap-2"
-    >
-      <UserPlus className="h-4 w-4" />
-      Kết bạn
-    </Button>
+    <>
+      <Button
+        size="sm"
+        onClick={handleAddFriend}
+        disabled={loading}
+        className="gap-2"
+      >
+        <UserPlus className="h-4 w-4" />
+        Kết bạn
+      </Button>
+      <ConfirmModal 
+        isOpen={isUnfriendModalOpen}
+        onClose={() => setIsUnfriendModalOpen(false)}
+        onConfirm={confirmUnfriend}
+        title="Hủy kết bạn"
+        message="Bạn có chắc chắn muốn hủy kết bạn không?"
+        confirmText="Hủy kết bạn"
+        cancelText="Đóng"
+        isDestructive={true}
+      />
+    </>
   );
 }

@@ -739,11 +739,8 @@ export function ChatProvider({ children, demo }: { children: ReactNode; demo?: b
     if (!currentUser?._id) return;
 
     fetchAllChats();
-    if (!demo) {
-      const interval = setInterval(fetchAllChats, 10000); // Poll every 10 seconds for chat list
-      return () => clearInterval(interval);
-    }
-  }, [currentUser?._id, fetchAllChats, demo]);
+    // Polling removed in favor of SSE/WebSocket updates
+  }, [currentUser?._id, fetchAllChats]);
 
   const value: ChatContextType = {
     chats,

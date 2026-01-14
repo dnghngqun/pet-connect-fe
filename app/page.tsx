@@ -8,6 +8,7 @@ import PostComposer from '@/components/dashboard/post-composer';
 import FeedList from '@/components/dashboard/feed-list';
 import UpcomingEvents from '@/components/dashboard/upcoming-events';
 import MyGroups from '@/components/dashboard/my-groups';
+import PetSuggestions from '@/components/dashboard/pet-suggestions';
 import petService from '@/services/petService';
 
 export default function DashboardPage() {
@@ -79,7 +80,7 @@ export default function DashboardPage() {
           <div className="flex justify-center py-2">
             {/* Feed List Container */}
             <div className="w-full">
-              <FeedList key={feedKey} />
+              <FeedList key={feedKey} currentPetId={currentPet?.id} />
             </div>
           </div>
         </section>
@@ -87,27 +88,11 @@ export default function DashboardPage() {
         {/* Right Sidebar */}
         <aside className="hidden xl:block xl:col-span-3 space-y-6 lg:sticky lg:top-24">
           <UpcomingEvents />
-          <MyGroups />
-          
-           {/* Suggestions - from HTML - Optional or Placeholder */}
-           <div className="bg-white dark:bg-[#232329] rounded-2xl shadow-soft p-5">
-            <h3 className="font-bold text-[#1b110d] dark:text-white text-sm uppercase tracking-wider mb-4">Có thể bạn biết</h3>
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-full bg-cover bg-center" 
-                style={{backgroundImage: "url('https://images.unsplash.com/photo-1629740032638-58bfd37fa201?w=100')"}}
-              ></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-[#1b110d] dark:text-white">Spot</p>
-                <p className="text-xs text-gray-400">Chó Đốm</p>
-              </div>
-              <button className="text-[#f06e42] hover:bg-[#f06e42]/10 p-1.5 rounded-lg transition-colors">
-                <span className="material-symbols-outlined text-[20px]">person_add</span>
-              </button>
-            </div>
-          </div>
+          <MyGroups petId={currentPet?.id} />
+          <PetSuggestions currentPetId={currentPet?.id} />
         </aside>
       </div>
     </div>
   );
 }
+
