@@ -277,12 +277,14 @@ export default function MedicalRecordsPage() {
                 </div>
             </div>
 
-            <CreateMedicalRecordModal 
-                isOpen={isCreateModalOpen} 
-                onClose={() => setIsCreateModalOpen(false)} 
-                onSuccess={fetchRecords} 
-                petId={currentPet.id}
-            />
+            {isCreateModalOpen && (
+                <CreateMedicalRecordModal 
+                    isOpen={isCreateModalOpen} 
+                    onClose={() => setIsCreateModalOpen(false)} 
+                    onSuccess={fetchRecords} 
+                    petId={currentPet.id}
+                />
+            )}
 
             {editingRecord && (
                 <EditMedicalRecordModal 

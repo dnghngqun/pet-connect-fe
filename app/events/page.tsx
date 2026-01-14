@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import CreateEventModal from '@/components/events/create-event-modal';
 import EventCard, { Event } from '@/components/event-card';
 
 // Mock Data for now as no service exists yet
@@ -65,6 +66,7 @@ export default function EventsPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('');
   const [city, setCity] = useState<string>('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen">
@@ -76,14 +78,17 @@ export default function EventsPage() {
               <h1 className="text-3xl font-bold text-foreground">Events</h1>
               <p className="text-muted-foreground mt-1">Don&apos;t miss out on the fun! Browse upcoming pet events.</p>
             </div>
-            <Button className="rounded-xl shadow-md hover:shadow-lg transition-all">
+            <Button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="rounded-xl shadow-md hover:shadow-lg transition-all"
+            >
                <Plus className="w-5 h-5 mr-2" />
                Host an Event
             </Button>
          </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Sidebar Filters */}
+            {/* ... (Sidebar Filters) ... */} 
             <aside className="lg:col-span-3 sticky top-24 space-y-6">
               <div className="bg-card rounded-2xl shadow-soft p-5 border border-border">
                 <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
@@ -193,6 +198,15 @@ export default function EventsPage() {
             </main>
           </div>
       </div>
+      
+      <CreateEventModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onEventCreated={() => {
+            // TODO: Refresh events list
+            console.log('Event created!');
+        }}
+      />
     </div>
   );
 }

@@ -165,12 +165,13 @@ export function MiniChatWindow({ chat, index }: MiniChatWindowProps) {
       // Extract message data from WebSocket response wrapper
       const messageData = wsResponse?.data || wsResponse;
       
-      if (!messageData || !messageData.chatId) return;
-      
-      // Only handle messages for this chat
-      if (String(messageData.chatId) !== String(chatIdToListen)) return;
-      
+      if (!messageData) return;
+
       const normalizedMsg = normalizeMessageResponse(messageData);
+      if (!normalizedMsg.chatId) return;
+
+      // Only handle messages for this chat
+      if (String(normalizedMsg.chatId) !== String(chatIdToListen)) return;
 
       let matchedTempId: string | null = null;
 

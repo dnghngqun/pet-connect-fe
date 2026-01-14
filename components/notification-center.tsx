@@ -127,9 +127,9 @@ export default function NotificationCenter() {
                   <div className="flex-1">
                     <div className="flex gap-3">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={notif.fromUserAvatar} />
+                        <AvatarImage src={notif.fromPetAvatar || notif.fromUserAvatar} />
                         <AvatarFallback>
-                          {notif.fromUserName?.charAt(0) || 'N'}
+                          {(notif.fromPetName || notif.fromUserName || 'N').charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">

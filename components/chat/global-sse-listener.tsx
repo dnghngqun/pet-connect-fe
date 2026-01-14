@@ -3,10 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { useChatContext } from '@/context/ChatContext';
 import { useSseNotifications, NotificationDTO } from '@/hooks/useSseNotifications';
-import authService from '@/services/authService';
 
 export default function GlobalSseListener() {
-    const { openChat, recipient } = useChatContext();
+    const { startChatWithUser, recipient } = useChatContext();
     const { notifications } = useSseNotifications();
 
     const processedIds = useRef<Set<number>>(new Set());
@@ -33,15 +32,15 @@ export default function GlobalSseListener() {
                      }
                      
                      // Auto open mini chat
-                     openChat(latest.fromUserId, 'USER', {
+                     void startChatWithUser(latest.fromUserId, {
                          id: latest.fromUserId,
-                         fullName: latest.fromUserName || 'User',
-                         avatarUrl: latest.fromUserAvatar
+                         fullName: latest.fromPetName || latest.fromUserName || 'User',
+                         avatarUrl: latest.fromPetAvatar || latest.fromUserAvatar
                      });
                 }
             }
         }
-    }, [notifications, openChat, recipient]);
+    }, [notifications, startChatWithUser, recipient]);
 
     // DEV ONLY: Expose a helper to simulate incoming SSE message for testing
     useEffect(() => {

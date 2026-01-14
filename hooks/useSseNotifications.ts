@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import authService from '@/services/authService';
+import { notificationService } from '@/services/notificationService';
+import { BASE_URL } from '@/common/Constant/COMMON_API';
 
 export interface NotificationDTO {
   id: number;
@@ -13,6 +15,9 @@ export interface NotificationDTO {
   fromUserId?: number;
   fromUserName?: string;
   fromUserAvatar?: string;
+  fromPetId?: number;
+  fromPetName?: string;
+  fromPetAvatar?: string;
   isRead: boolean;
   createdAt: string;
 }
@@ -26,13 +31,22 @@ interface UseSseNotificationsReturn {
   clearNotifications: () => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_BASE = BASE_URL;
 
 export function useSseNotifications(): UseSseNotificationsReturn {
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const data = await notificationService.getNotifications();
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  }, []);
 
   const connect = useCallback(() => {
     const user = authService.getCurrentUser();
@@ -55,14 +69,22 @@ export function useSseNotifications(): UseSseNotificationsReturn {
       setIsConnected(true);
     };
 
-    eventSource.onmessage = (event) => {
+    const handleIncoming = (event: MessageEvent) => {
       try {
         const notification: NotificationDTO = JSON.parse(event.data);
-        setNotifications(prev => [notification, ...prev].slice(0, 50)); // Keep last 50
+        setNotifications(prev => {
+          if (prev.some(item => item.id === notification.id)) {
+            return prev;
+          }
+          return [notification, ...prev].slice(0, 50);
+        });
       } catch (err) {
         console.error('Failed to parse SSE notification:', err);
       }
     };
+
+    eventSource.addEventListener('NOTIFICATION', handleIncoming);
+    eventSource.onmessage = handleIncoming;
 
     eventSource.onerror = (error) => {
       console.error('SSE Notifications error:', error);
@@ -77,6 +99,7 @@ export function useSseNotifications(): UseSseNotificationsReturn {
   }, []);
 
   useEffect(() => {
+    loadNotifications();
     connect();
 
     return () => {
@@ -87,18 +110,22 @@ export function useSseNotifications(): UseSseNotificationsReturn {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [connect]);
+  }, [connect, loadNotifications]);
 
   const markAsRead = useCallback((id: number) => {
+    notificationService.markAsRead(id).catch((error) => {
+      console.error('Failed to mark notification as read:', error);
+    });
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
     );
-    // TODO: Call backend API to mark as read
   }, []);
 
   const markAllAsRead = useCallback(() => {
+    notificationService.markAllAsRead().catch((error) => {
+      console.error('Failed to mark all notifications as read:', error);
+    });
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    // TODO: Call backend API to mark all as read
   }, []);
 
   const clearNotifications = useCallback(() => {

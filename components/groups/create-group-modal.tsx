@@ -56,6 +56,14 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }: Cr
       return;
     }
 
+    // Get current pet
+    const storedPet = localStorage.getItem('current-pet');
+    if (!storedPet) {
+        toast({ variant: 'destructive', title: 'Lỗi', description: 'Vui lòng chọn thú cưng để tạo nhóm' });
+        return;
+    }
+    const currentPet = JSON.parse(storedPet);
+
     setIsLoading(true);
     try {
       let finalAvatarUrl = formData.avatarUrl;
@@ -68,11 +76,12 @@ export default function CreateGroupModal({ isOpen, onClose, onGroupCreated }: Cr
         finalCoverUrl = await uploadService.uploadFile(coverFile, "groups/covers");
       }
 
+      // Fix: Pass petId as second argument
       const response = await groupService.createGroup({
         ...formData,
         avatarUrl: finalAvatarUrl,
         coverImageUrl: finalCoverUrl
-      });
+      }, currentPet.id);
       
       if (response.success) {
         toast({ title: 'Thành công', description: 'Đã tạo nhóm mới!' });

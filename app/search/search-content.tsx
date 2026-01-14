@@ -3,13 +3,15 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import SearchBar from '@/components/search-bar';
-import { Loader2, Search as SearchIcon, Users, PawPrint, Bone, Heart, Cat, Dog, Bird, Fish, Rabbit } from 'lucide-react';
-import userService from '@/services/userService';
+import { Loader2, Search as SearchIcon, Users, PawPrint, Bone, Heart, Cat, Calendar, Users2 } from 'lucide-react';
+import searchService, { SearchResponse } from '@/services/searchService';
 import PetPostCard from '@/components/pet-post-card';
 import PostDetailModal from '@/components/post-detail-modal';
 import type { PetPost } from '@/lib/types';
 import PostCardSkeleton from '@/components/post-card-skeleton';
-import petPostService from '@/services/petPostService';
+import Link from 'next/link';
+import { Group } from '@/services/groupService';
+import EventCard from '@/components/event-card';
 
 // Define User type to match API response
 interface UserResult {
@@ -25,10 +27,12 @@ export default function SearchPageContent() {
   
   const [activeTab, setActiveTab] = useState('all');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any>({
+  const [results, setResults] = useState<SearchResponse>({
     posts: [],
     users: [],
-    totalItems: 0,
+    pets: [],
+    groups: [],
+    events: []
   });
 
   // Modal state
@@ -37,88 +41,22 @@ export default function SearchPageContent() {
 
   useEffect(() => {
     if (query) {
-      if (activeTab === 'users') {
-        searchUsers(query);
-      } else {
-        searchPosts(query);
-      }
+      performSearch(query);
     }
-  }, [query, activeTab]);
+  }, [query]);
 
-  const searchUsers = async (searchQuery: string) => {
+  const performSearch = async (searchQuery: string) => {
     setLoading(true);
     try {
-      const response = await userService.searchUsers(searchQuery);
+      const response = await searchService.search(searchQuery);
       if (response && response.success) {
-        setResults((prev: any) => ({
-          ...prev,
-          users: response.data || [],
-          totalItems: response.data?.length || 0
-        }));
-      } else {
-         setResults((prev: any) => ({
-          ...prev,
-          users: Array.isArray(response) ? response : [],
-          totalItems: Array.isArray(response) ? response.length : 0
-        }));
-      }
-    } catch (error) {
-      console.error('User search error:', error);
-      setResults((prev: any) => ({ ...prev, users: [], totalItems: 0 }));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const searchPosts = async (searchQuery: string) => {
-    setLoading(true);
-    try {
-      const typeFilter = (activeTab !== 'all' && activeTab !== 'users') ? activeTab.toUpperCase() : undefined;
-      
-      const data = await petPostService.getPosts({
-        q: searchQuery,
-        page: 0,
-        size: 20,
-        type: typeFilter
-      });
-
-      if (data.success) {
-        const mappedPosts = (data.data?.posts || []).map((post: any) => ({
-            id: post.id?.toString() || '',
-            title: post.title,
-            slug: post.slug,
-            description: post.description,
-            image: post.images?.[0] || post.image || '',
-            petType: post.petType,
-            status: post.status,
-            postType: post.postType,
-            location: post.location || `${post.district}, ${post.city}`,
-            city: post.city,
-            district: post.district,
-            postedBy: {
-              id: post.postedBy?.id?.toString() || '',
-              name: post.postedBy?.name || 'Unknown',
-              phone: post.postedBy?.phone || '',
-              avatar: post.postedBy?.avatar,
-              isVerified: false, 
-            },
-            createdAt: post.createdAt,
-            tags: post.tags || [],
-            views: post.views || 0,
-            featured: post.featured,
-            reactionCount: post.reactionCount || 0,
-            favoriteCount: post.favoriteCount || 0,
-            commentCount: post.commentCount || 0,
-            userReaction: post.userReaction || null,
-            isFavorited: post.isFavorited || false,
-            meta: post.meta || {},
-        }));
-
-        setResults((prev: any) => ({
-          ...prev,
-          posts: mappedPosts,
-          totalItems: data.pagination?.totalItems || 0,
-        }));
+        setResults({
+            posts: response.data.posts || [],
+            users: response.data.users || [],
+            pets: response.data.pets || [],
+            groups: response.data.groups || [],
+            events: response.data.events || []
+        });
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -140,6 +78,14 @@ export default function SearchPageContent() {
 
   const handleUserClick = (userId: number) => {
     router.push(`/profile/${userId}`);
+  };
+
+  const getTotalResults = () => {
+    return (results.posts?.length || 0) + 
+           (results.users?.length || 0) + 
+           (results.pets?.length || 0) + 
+           (results.groups?.length || 0) + 
+           (results.events?.length || 0);
   };
 
   return (
@@ -189,7 +135,7 @@ export default function SearchPageContent() {
                   </span>
                 ) : (
                   <>
-                    Tìm thấy <span className="font-semibold text-orange-600">{results.totalItems}</span> kết quả cho{' '}
+                    Tìm thấy <span className="font-semibold text-orange-600">{getTotalResults()}</span> kết quả cho{' '}
                     <span className="font-semibold text-foreground">"{query}"</span>
                   </>
                 )}
@@ -204,125 +150,148 @@ export default function SearchPageContent() {
                 </TabsTrigger>
                 <TabsTrigger value="users" className="gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
                   <Users className="h-4 w-4"/> Mọi người
+                  <span className="ml-1 text-xs bg-white/20 px-1.5 rounded-full">{results.users?.length || 0}</span>
                 </TabsTrigger>
-                <TabsTrigger value="lost_found" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
-                  🔍 Thất lạc
+                <TabsTrigger value="posts" className="gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
+                  <Cat className="h-4 w-4"/> Bài viết
+                  <span className="ml-1 text-xs bg-white/20 px-1.5 rounded-full">{results.posts?.length || 0}</span>
                 </TabsTrigger>
-                <TabsTrigger value="adoption" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
-                  🏠 Nhận nuôi
+                <TabsTrigger value="pets" className="gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
+                  <PawPrint className="h-4 w-4"/> Thú cưng
+                  <span className="ml-1 text-xs bg-white/20 px-1.5 rounded-full">{results.pets?.length || 0}</span>
                 </TabsTrigger>
-                <TabsTrigger value="review" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
-                  ⭐ Review
+                <TabsTrigger value="groups" className="gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
+                  <Users2 className="h-4 w-4"/> Nhóm
+                  <span className="ml-1 text-xs bg-white/20 px-1.5 rounded-full">{results.groups?.length || 0}</span>
                 </TabsTrigger>
-                <TabsTrigger value="qna" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
-                  ❓ Hỏi đáp
-                </TabsTrigger>
-                <TabsTrigger value="tip" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
-                  💡 Mẹo hay
-                </TabsTrigger>
-                <TabsTrigger value="marketplace" className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
-                  🛒 Chợ Pet
+                <TabsTrigger value="events" className="gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-400 data-[state=active]:to-amber-500 data-[state=active]:text-white">
+                  <Calendar className="h-4 w-4"/> Sự kiện
+                  <span className="ml-1 text-xs bg-white/20 px-1.5 rounded-full">{results.events?.length || 0}</span>
                 </TabsTrigger>
               </TabsList>
 
-              {/* Users Tab Content */}
-              <TabsContent value="users">
-                {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                     <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-                  </div>
-                ) : results.users && results.users.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {results.users.map((user: UserResult) => (
-                      <div 
-                        key={user.id} 
-                        onClick={() => handleUserClick(user.id)}
-                        className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-sm border border-white/50 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-4"
-                      >
-                         <div className="h-14 w-14 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden flex-shrink-0 ring-2 ring-orange-200/50">
-                           <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.fullName}`} alt={user.fullName} className="h-full w-full object-cover" />
-                         </div>
-                         <div className="min-w-0">
-                           <h3 className="font-semibold text-gray-900 truncate">{user.fullName}</h3>
-                           <p className="text-sm text-orange-500 flex items-center gap-1">
-                             <PawPrint className="h-3 w-3" /> Người yêu thú cưng
-                           </p>
-                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 mb-4">
-                      <Users className="h-8 w-8 text-orange-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">Không tìm thấy người dùng</h3>
-                    <p className="text-muted-foreground">Thử tìm với từ khóa hoặc số điện thoại khác 🐕</p>
-                  </div>
-                )}
+              {/* ALL Tab Content (Simplified: show top results from each) */}
+              <TabsContent value="all" className="space-y-8">
+                 {/* Users Preview */}
+                 {results.users && results.users.length > 0 && (
+                    <section>
+                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Users className="h-5 w-5 text-orange-500"/> Mọi người</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {results.users.slice(0, 3).map(user => (
+                             <UserCard key={user.id} user={user} onClick={handleUserClick} />
+                          ))}
+                       </div>
+                    </section>
+                 )}
+
+                 {/* Groups Preview */}
+                 {results.groups && results.groups.length > 0 && (
+                    <section>
+                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Users2 className="h-5 w-5 text-orange-500"/> Nhóm</h3>
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {results.groups.slice(0, 3).map(group => (
+                             <GroupCard key={group.id} group={group} />
+                          ))}
+                       </div>
+                    </section>
+                 )}
+
+                 {/* Events Preview */}
+                 {results.events && results.events.length > 0 && (
+                    <section>
+                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Calendar className="h-5 w-5 text-orange-500"/> Sự kiện</h3>
+                       <div className="space-y-4">
+                          {results.events.slice(0, 2).map(event => (
+                            // @ts-ignore
+                             <EventCard key={event.id} event={event} />
+                          ))}
+                       </div>
+                    </section>
+                 )}
+                 
+                 {/* Pets Preview */}
+                 {results.pets && results.pets.length > 0 && (
+                    <section>
+                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><PawPrint className="h-5 w-5 text-orange-500"/> Thú cưng</h3>
+                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {results.pets.slice(0, 4).map(pet => (
+                             <PetCard key={pet.id} pet={pet} />
+                          ))}
+                       </div>
+                    </section>
+                 )}
+
+                 {/* Posts Preview */}
+                 {results.posts && results.posts.length > 0 && (
+                    <section>
+                       <h3 className="text-lg font-bold mb-3 flex items-center gap-2"><Cat className="h-5 w-5 text-orange-500"/> Bài viết</h3>
+                       <div className="space-y-4">
+                          {results.posts.slice(0, 3).map(post => (
+                             <PetPostCard key={post.id} post={post} onPostClick={handlePostClick} />
+                          ))}
+                       </div>
+                    </section>
+                 )}
               </TabsContent>
 
-              {/* Post List Content for all other tabs */}
-              {['all', 'lost_found', 'adoption', 'review', 'qna', 'tip', 'marketplace'].map((tabValue) => (
-                <TabsContent key={tabValue} value={tabValue}>
-                  {loading ? (
-                     <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                           <PostCardSkeleton key={i} />
-                        ))}
-                     </div>
-                  ) : results.posts.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-4">
-                      {results.posts.map((post: PetPost) => (
-                        <PetPostCard 
-                            key={post.id} 
-                            post={post} 
-                            onPostClick={handlePostClick} 
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 mb-4">
-                        <Cat className="h-8 w-8 text-orange-400" />
-                      </div>
-                      <h3 className="text-lg font-semibold mb-2">Không tìm thấy kết quả</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Thử tìm kiếm với từ khóa khác hoặc thay đổi bộ lọc 🐱
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => setActiveTab('all')}
-                        className="rounded-full border-orange-200 hover:bg-orange-50"
-                      >
-                        <PawPrint className="h-4 w-4 mr-2" />
-                        Xem tất cả kết quả
-                      </Button>
-                    </div>
-                  )}
-                </TabsContent>
-              ))}
+              {/* Individual Tabs */}
+              <TabsContent value="users">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {results.users.map(user => (
+                       <UserCard key={user.id} user={user} onClick={handleUserClick} />
+                    ))}
+                 </div>
+              </TabsContent>
+
+              <TabsContent value="groups">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {results.groups.map(group => (
+                       <GroupCard key={group.id} group={group} />
+                    ))}
+                 </div>
+              </TabsContent>
+
+              <TabsContent value="events">
+                 <div className="space-y-4">
+                    {results.events.map(event => (
+                       // @ts-ignore
+                       <EventCard key={event.id} event={event} />
+                    ))}
+                 </div>
+              </TabsContent>
+
+              <TabsContent value="pets">
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {results.pets.map(pet => (
+                       <PetCard key={pet.id} pet={pet} />
+                    ))}
+                 </div>
+              </TabsContent>
+
+              <TabsContent value="posts">
+                 <div className="space-y-4">
+                    {results.posts.map(post => (
+                       <PetPostCard key={post.id} post={post} onPostClick={handlePostClick} />
+                    ))}
+                 </div>
+              </TabsContent>
+
             </Tabs>
           </>
         )}
 
         {!query && (
           <div className="text-center py-16 bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 mb-6">
+            {/* ... (keep existing empty state) */}
+             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 mb-6">
               <SearchIcon className="h-10 w-10 text-orange-500" />
             </div>
             <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-              Tìm kiếm bài viết
+              Tìm kiếm đa năng
             </h3>
             <p className="text-muted-foreground mb-6">
-              Nhập từ khóa để tìm kiếm bài viết về thú cưng 🐾
+              Tìm bài viết, mọi người, nhóm, sự kiện và thú cưng tại đây 🐾
             </p>
-            <div className="flex justify-center gap-3 text-3xl">
-              <span className="animate-bounce delay-100">🐕</span>
-              <span className="animate-bounce delay-200">🐈</span>
-              <span className="animate-bounce delay-300">🐦</span>
-              <span className="animate-bounce delay-500">🐰</span>
-            </div>
           </div>
         )}
       </div>
@@ -338,4 +307,52 @@ export default function SearchPageContent() {
     </div>
   );
 }
+
+// Sub-components for cleaner code
+const UserCard = ({ user, onClick }: { user: UserResult, onClick: (id: number) => void }) => (
+  <div 
+    onClick={() => onClick(user.id)}
+    className="bg-white/80 backdrop-blur-sm p-4 rounded-xl shadow-sm border border-white/50 hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer flex items-center gap-4"
+  >
+     <div className="h-14 w-14 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden flex-shrink-0 ring-2 ring-orange-200/50">
+       <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.fullName}`} alt={user.fullName} className="h-full w-full object-cover" />
+     </div>
+     <div className="min-w-0">
+       <h3 className="font-semibold text-gray-900 truncate">{user.fullName}</h3>
+       <p className="text-sm text-orange-500 flex items-center gap-1">
+         <PawPrint className="h-3 w-3" /> Người dùng
+       </p>
+     </div>
+  </div>
+);
+
+const GroupCard = ({ group }: { group: Group }) => (
+    <div className={`bg-white/80 backdrop-blur-sm rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group flex flex-col h-full border border-white/50`}>
+      <div className="h-32 bg-cover bg-center relative" style={{ backgroundImage: `url('${group.coverImageUrl || "https://images.unsplash.com/photo-1599141022634-11818274718c?w=500"}')` }}>
+      </div>
+      <div className="p-3 flex-1 flex flex-col">
+        <Link href={`/groups/${group.slug}`}>
+          <h3 className="text-base font-bold text-gray-900 mb-1 group-hover:text-orange-600 transition-colors line-clamp-1">{group.name}</h3>
+        </Link>
+        <div className="mt-auto flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Users2 className="h-4 w-4"/>
+            {group.memberCount} thành viên
+          </div>
+        </div>
+      </div>
+    </div>
+);
+
+const PetCard = ({ pet }: { pet: any }) => (
+  <Link href={`/pets/${pet.id}/public`} className="block">
+     <div className="bg-white/80 backdrop-blur-sm p-3 rounded-xl shadow-sm border border-white/50 hover:shadow-md hover:scale-[1.02] transition-all flex flex-col items-center text-center">
+         <div className="h-20 w-20 rounded-full bg-gray-100 overflow-hidden mb-2 ring-2 ring-orange-200">
+             <img src={pet.profilePhoto || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=100'} alt={pet.name} className="h-full w-full object-cover" />
+         </div>
+         <h3 className="font-bold text-gray-900 truncate w-full">{pet.name}</h3>
+         <p className="text-xs text-muted-foreground truncate w-full">{pet.breed || 'Không rõ giống'}</p>
+     </div>
+  </Link>
+);
 

@@ -149,9 +149,9 @@ export default function Header() {
                            }`}
                          >
                            <div className="flex gap-3">
-                             {notification.fromUserAvatar && (
+                             {(notification.fromPetAvatar || notification.fromUserAvatar) && (
                                <img 
-                                 src={notification.fromUserAvatar} 
+                                 src={notification.fromPetAvatar || notification.fromUserAvatar} 
                                  alt="" 
                                  className="size-10 rounded-full object-cover"
                                />

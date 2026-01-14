@@ -4,6 +4,20 @@
 import { COMMON_API } from '@/common/Constant/COMMON_API';
 import apiClient from '@/common/apiClient';
 
+const getCurrentPetId = (): number | undefined => {
+  if (typeof window === "undefined") return undefined;
+  const storedPet = localStorage.getItem("current-pet");
+  if (!storedPet) return undefined;
+  try {
+    const pet = JSON.parse(storedPet);
+    const petId = Number(pet?.id);
+    return Number.isFinite(petId) ? petId : undefined;
+  } catch (error) {
+    console.error("Failed to parse current pet:", error);
+    return undefined;
+  }
+};
+
 // ============ Types based on backend DTOs ============
 
 // PosterDTO
@@ -404,8 +418,9 @@ const petPostService = {
    * React / like post
    */
   async reactToPost(id: number, type: string = "LIKE", petId?: number): Promise<ApiResponse<{ reaction?: string; reactionCount: number }>> {
+    const resolvedPetId = petId ?? getCurrentPetId();
     const response = await apiClient.post(COMMON_API.postReaction(id, type), null, {
-      params: { petId }
+      params: resolvedPetId ? { petId: resolvedPetId } : {}
     });
     return response.data;
   },
@@ -444,7 +459,11 @@ const petPostService = {
    * Add comment
    */
   async addComment(postId: number, payload: { content: string; parentCommentId?: number; petId?: number }): Promise<ApiResponse<any>> {
-    const response = await apiClient.post(COMMON_API.postComments(postId), payload);
+    const resolvedPetId = payload.petId ?? getCurrentPetId();
+    const response = await apiClient.post(COMMON_API.postComments(postId), {
+      ...payload,
+      petId: resolvedPetId,
+    });
     return response.data;
   },
 
@@ -453,10 +472,11 @@ const petPostService = {
    * POST /api/v1/posts/{id}/reactions
    */
   async toggleReaction(postId: number, reactionType: string | null, petId?: number): Promise<ApiResponse<void>> {
+    const resolvedPetId = petId ?? getCurrentPetId();
     const response = await apiClient.post(`/api/v1/posts/${postId}/reactions`, {
       reactionType: reactionType || 'LIKE'
     }, {
-        params: { type: reactionType || 'LIKE', petId }
+        params: { type: reactionType || 'LIKE', petId: resolvedPetId }
     });
     return response.data;
   },

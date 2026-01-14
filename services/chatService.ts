@@ -14,6 +14,21 @@ import { BASE_URL } from "@/common/Constant/COMMON_API";
 let stompClient: Client | null = null;
 let isConnected = false;
 
+const getWebSocketBaseUrl = () => BASE_URL.replace(/\/api\/v1\/?$/, '');
+const getCurrentPetId = (): number | undefined => {
+  if (typeof window === "undefined") return undefined;
+  const storedPet = localStorage.getItem("current-pet");
+  if (!storedPet) return undefined;
+  try {
+    const pet = JSON.parse(storedPet);
+    const petId = Number(pet?.id);
+    return Number.isFinite(petId) ? petId : undefined;
+  } catch (error) {
+    console.error("Failed to parse current pet:", error);
+    return undefined;
+  }
+};
+
 export const chatAPI = {
   // Chats
   getAllChats: async () => {
@@ -93,8 +108,10 @@ export const chatAPI = {
   // Messages
   sendMessage: async (payload: CreateMessagePayload): Promise<MessageType | null> => {
     // Transform frontend payload to backend format
+    const petId = getCurrentPetId();
     const backendPayload = {
       conversationId: payload.chatId ? Number(payload.chatId) : undefined,
+      petId,
       content: payload.content,
       image: payload.image,
       replyToId: payload.replyToId ? Number(payload.replyToId) : undefined,
@@ -105,6 +122,7 @@ export const chatAPI = {
     if (stompClient && isConnected) {
       const message = {
         conversationId: backendPayload.conversationId,
+        petId: backendPayload.petId,
         content: backendPayload.content,
         image: backendPayload.image,
         replyToId: backendPayload.replyToId,
@@ -156,7 +174,7 @@ export const chatAPI = {
 
     if (stompClient?.active) return;
 
-    const socket = new SockJS(`${BASE_URL}/ws`);
+    const socket = new SockJS(`${getWebSocketBaseUrl()}/ws`);
     stompClient = new Client({
       webSocketFactory: () => socket,
       connectHeaders: {
@@ -327,6 +345,7 @@ function normalizeChatResponse(data: any): ChatType {
 export function normalizeMessageResponse(data: any): MessageType {
   // Handle both chatId (REST) and conversationId (WebSocket)
   const chatId = data.chatId || (data.conversationId ? String(data.conversationId) : "");
+  const image = data.image || data.mediaUrl;
   
   // Map replyTo from ReplyInfoDTO (simplified format: id, content, sender)
   let replyTo: MessageType | undefined = undefined;
@@ -344,7 +363,7 @@ export function normalizeMessageResponse(data: any): MessageType {
     id: data.id,
     _id: String(data.id),
     content: data.content,
-    image: data.image,
+    image,
     sender: normalizeUserResponse(data.sender),
     replyTo,
     chatId,

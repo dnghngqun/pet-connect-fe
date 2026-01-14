@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { chatAPI, normalizeMessageResponse } from '@/services/chatService';
+import authService from '@/services/authService';
 import { MessageType } from '@/lib/chat.types';
 
 interface UseWebSocketChatReturn {
@@ -19,6 +20,13 @@ export function useWebSocketChat(conversationId: number | null): UseWebSocketCha
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isConnected, setIsConnected] = useState(false); // Local tracking if needed, or rely on global
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const user = authService.getCurrentUser();
+    if (!user?.token) return;
+    chatAPI.connectWebSocket(user.token);
+  }, [conversationId]);
 
   // Listen for WEBSOCKET messages
   useEffect(() => {

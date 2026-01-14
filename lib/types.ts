@@ -150,6 +150,9 @@ export interface Notification {
   fromUserId?: number
   fromUserName?: string
   fromUserAvatar?: string
+  fromPetId?: number
+  fromPetName?: string
+  fromPetAvatar?: string
   postId?: number
 }
 
